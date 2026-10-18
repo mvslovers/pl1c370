@@ -1,0 +1,24 @@
+ T214ATT: PROC OPTIONS(MAIN);
+   /* the twin of t214att.opt.pli: the same declarations without
+      ANSI's attributes, as PL/I (F) writes them */
+   DCL A(3) FIXED BIN(15) INIT(1, 2, 3);
+   DCL B(2:4) CHAR(2) INIT('X', 'YY', 'ZZZ');
+   DCL M(2, 2) FIXED DEC(5) INIT(11, 12, 21, 22);
+   DCL 1 S, 2 T CHAR(3) INIT('TTT'),
+       2 U, 3 V FIXED BIN(15) INIT(7);
+   DCL L LABEL;
+   DCL SYSPRINT FILE STREAM OUTPUT PRINT;
+   DCL F ENTRY(FIXED BIN(15)) RETURNS(FIXED BIN(15));
+   ON CONDITION(OOPS) PUT SKIP LIST('OOPS RAISED');
+   PUT LIST(A, B, M);
+   PUT SKIP LIST(T, V, F(5));
+   SIGNAL CONDITION(OOPS);
+   L = DONE;
+   GO TO L;
+   PUT SKIP LIST('NOT HERE');
+ DONE: PUT SKIP LIST('DONE');
+ F: PROC(X) RETURNS(FIXED BIN(15));
+   DCL X FIXED BIN(15);
+   RETURN(X * 2);
+ END F;
+ END T214ATT;

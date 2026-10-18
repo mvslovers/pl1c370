@@ -1,0 +1,16 @@
+ T212TAB: PROC OPTIONS(MAIN);
+   /* the twin of t212tab.opt.pli: its lines by COLUMN, as ANSI
+      X3.53-1976 8.7.2.10 places them with tab positions 10, 30, 45
+      in a line of 60 (a LIST item ends with one blank) */
+   OPEN FILE(SYSPRINT) LINESIZE(60) PAGESIZE(40);
+   PUT EDIT('A', 'B', 'C', 'D ') (A, COL(10), A, COL(30), A,
+      COL(45), A);
+   PUT SKIP EDIT('E ') (COL(10), A);
+   PUT SKIP EDIT('ABCDEFGHIJKL', 'X ') (A, COL(30), A);
+   PUT SKIP EDIT('ABCDEFGHI', 'Y ') (A, COL(30), A);
+   PUT SKIP EDIT('P', 'Q', 'R') (A, COL(10), A, COL(45), A);
+   PUT SKIP EDIT('S') (A);
+   PUT SKIP EDIT('T') (COL(10), A);
+   PUT SKIP EDIT('UV') (A);
+   PUT SKIP EDIT('END') (A);
+ END T212TAB;

@@ -1,0 +1,11 @@
+ T73EXPL: PROC OPTIONS(MAIN);
+   DCL (C,D) FLOAT DEC(16), I FIXED BIN(15);
+   DCL X(8) FLOAT DEC(16) INIT(0.001, 0.01, 0.1, 0.5, 2, -0.001,
+       0.3, 1.0E-5);
+   DO I = 1 TO 8;
+     C = X(I); D = EXP(C);
+     PUT SKIP LIST(C, D);
+   END;
+   C = 1.000000000000000E-3; D = EXP(C); PUT SKIP LIST(C, D);
+   C = 10; D = LOG(C); PUT SKIP LIST(C, D);
+ END T73EXPL;

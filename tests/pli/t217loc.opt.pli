@@ -1,0 +1,30 @@
+ T217LOC: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976's locator qualifiers: any pointer-valued
+      reference, chained qualifiers, BASED without a pointer */
+   DCL X FIXED BIN(31) BASED;
+   DCL 1 N BASED, 2 V FIXED BIN(31), 2 NXT PTR;
+   DCL C CHAR(4) BASED;
+   DCL (P, Q, R) PTR, A FIXED BIN(31) INIT(42),
+       S CHAR(8) INIT('ABCDEFGH');
+   DCL PV(3) PTR;
+   DCL GETP ENTRY RETURNS(PTR);
+   P = ADDR(A);
+   PUT LIST(P -> X, ADDR(A) -> X, GETP -> X);
+   GETP -> X = 7;
+   PUT SKIP LIST(A);
+   ADDR(S) -> C = 'WXYZ';
+   PUT SKIP LIST(S);
+   ALLOCATE N SET(Q);
+   Q -> V = 1;
+   ALLOCATE N SET(R);
+   R -> V = 2;
+   Q -> NXT = R;
+   R -> NXT = NULL;
+   PUT SKIP LIST(Q -> NXT -> V, Q -> V + Q -> NXT -> V);
+   PV(2) = Q;
+   PUT SKIP LIST(PV(2) -> V, PV(2) -> NXT -> V);
+   FREE Q -> N, R -> N;
+ GETP: PROC RETURNS(PTR);
+   RETURN(P);
+ END GETP;
+ END T217LOC;

@@ -1,0 +1,19 @@
+ T92PIC3: PROC OPTIONS(MAIN);
+   DCL A PIC 'ZZZ9V.99-' INIT(-12.5), B PIC '$$,$$9V.99' INIT(1234.5);
+   DCL 1 S, 2 N PIC '999', 2 M PIC 'S9V99', 2 T CHAR(2);
+   DCL F FLOAT DEC(6) INIT(3.75E0), I FIXED BIN(31) INIT(-42);
+   DCL R(4) PIC 'ZZ9V.9';
+   DCL K FIXED BIN(15);
+   PUT SKIP LIST(A, B);
+   S.N = 7; S.M = -1.234; S.T = 'XY';
+   PUT SKIP DATA(S);
+   S.N = F; S.M = F; PUT SKIP LIST(S.N, S.M);
+   S.N = I; S.M = I / 100; PUT SKIP LIST(S.N, S.M);
+   DO K = 1 TO 4; R(K) = K * 2.5 + A; END;
+   PUT SKIP LIST(R);
+   PUT SKIP LIST(A + B, A * I, B / 2, S.N + K);
+   PUT SKIP EDIT(B, A, I, F)(P'ZZ,ZZ9V.99', P'---9V.9', P'S(4)9',
+     P'**9V.999');
+   PUT SKIP EDIT(K, -K)(P'99B99', P'Z9CR');
+   B = B - 1234.5; PUT SKIP LIST(B, B = 0);
+ END T92PIC3;

@@ -1,0 +1,31 @@
+1A                       B
+ C5=                     AB CD                   CE=
+ V=                      VARYING                 VE=                                             END
+ CL=                     ABCDEFGHIJKLMNOPQRSTUVWXYZ0123                  NEXT
+ H0                              0
+ H7                              7
+ HM7                            -7
+ HMAX                        32767
+ HMIN                       -32767
+ W0                                   0
+ W                               123456
+ WM                             -123456
+ WMAX                        2147483647
+ WMIN                       -2147483647
+ D50 0                          0
+ D50                        12345
+ D50M                         -42
+ D72                       12345.67
+ D72M                         -0.05
+ D72 0                         0.00
+ D150                       999999999999999
+ D33M                    -0.125
+ D11                        5
+ LIT                        42                     -3                      1.50                  IT'S
+0AFTER SKIP2
++OVERPRINT
+ ROW                             1                       2                       3                       4
+         5                       6                       7                       8                       9
+        10                      11                      12
+1NEW PAGE
+ LAST

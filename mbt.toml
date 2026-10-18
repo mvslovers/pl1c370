@@ -1,0 +1,1505 @@
+schema = 3
+
+[project]
+name    = "pl1c370"
+version = "0.3.0-dev"
+# A library: a plain mbt build writes only the run time archive
+# (build/pl1rt.a), the release asset.  tests/run_mvs.py builds the test
+# modules with mbt build --all.
+kind    = "library"
+
+# The run time is built with these.  Moving either pin gives a new pl1rt.a,
+# and so a pl1c370 release: the archive carries their code and conventions.
+[toolchain]
+mbt     = "3.0"
+cc370   = "1.6.3"
+libc370 = "2.15.0"
+
+# The run time, linked into every PL/I program: private to the test
+# modules here ([internal]), published as pl1rt.a with the ABI header
+# ([lib]).
+[internal]
+sources = ["rt/*.c", "rt/*.asm"]
+
+[lib]
+name    = "pl1rt"
+sources = ["rt/*.c", "rt/*.asm"]
+headers = ["rt/pl1abi.h"]
+
+# Seam test: hand-written target code, see tests/mvs/seam/seam0.asm.
+[module.P0HELLO]
+sources = ["tests/mvs/seam/seam0.asm"]
+rent    = false
+reus    = false
+
+# CHELLO, CHELLOS: a C program's start-up on LIBC/370 alone, with the
+# default stack and with 16 KB, measured against PL/I (F) and PL1C/370
+# for #177 (internals/research/pli/startup-measurement.md).
+[module.CHELLO]
+sources = ["tests/mvs/chello/chello.c"]
+rent    = false
+reus    = false
+
+[module.CHELLOS]
+sources = ["tests/mvs/chello/chellos.c"]
+rent    = false
+reus    = false
+
+# XDRIVER: calls an external REXX function as TSO/E REXX does, for the
+# tests with a <name>.xdrv (tests/mvs/xdriver/xdriver.asm).
+[module.XDRIVER]
+sources = ["tests/mvs/xdriver/xdriver.asm"]
+entry   = "XDRIVER"                # assembler, no C startup
+rent    = false
+reus    = false
+
+# ASMTST: an assembler routine the OPTIONS(ASSEMBLER) tests call, here
+# for PL/I (F)'s link-edit to find by autocall (tests/mvs/asmsub).
+[module.ASMTST]
+sources = ["tests/mvs/asmsub/asmtst.asm"]
+entry   = "ASMTST"
+rent    = false
+reus    = false
+
+[module.ASMVAL]
+sources = ["tests/mvs/asmsub/asmval.asm"]
+entry   = "ASMVAL"
+rent    = false
+reus    = false
+
+# Programs compiled by PL1C/370 from tests/pli/*.pli, compared with PL/I (F)
+# on MVS.  tests/run_mvs.py rewrites this block.
+
+# BEGIN TESTS (tests/run_mvs.py)
+
+[module.TP0HELLO]
+sources = ["build/gen/p0hello.asm"]
+rent    = false
+reus    = false
+
+[module.TP3LIST]
+sources = ["build/gen/p3list.asm"]
+rent    = false
+reus    = false
+
+[module.TT100EFP]
+sources = ["build/gen/t100efp.asm"]
+rent    = false
+reus    = false
+
+[module.TT101FPA]
+sources = ["build/gen/t101fpa.asm"]
+rent    = false
+reus    = false
+
+[module.TT102UPD]
+sources = ["build/gen/t102upd.asm"]
+rent    = false
+reus    = false
+
+[module.TT103UPD]
+sources = ["build/gen/t103upd2.asm"]
+rent    = false
+reus    = false
+
+[module.TT104END]
+sources = ["build/gen/t104endp.asm"]
+rent    = false
+reus    = false
+
+[module.TT105UND]
+sources = ["build/gen/t105undf.asm"]
+rent    = false
+reus    = false
+
+[module.TT106PSV]
+sources = ["build/gen/t106psv.asm"]
+rent    = false
+reus    = false
+
+[module.TT107ENT]
+sources = ["build/gen/t107ent.asm"]
+rent    = false
+reus    = false
+
+[module.TT108ENT]
+sources = ["build/gen/t108ent2.asm"]
+rent    = false
+reus    = false
+
+[module.TT109PP]
+sources = ["build/gen/t109pp.asm"]
+rent    = false
+reus    = false
+
+[module.TT10NOT]
+sources = ["build/gen/t10not.asm"]
+rent    = false
+reus    = false
+
+[module.TT110PP2]
+sources = ["build/gen/t110pp2.asm"]
+rent    = false
+reus    = false
+
+[module.TT111PPR]
+sources = ["build/gen/t111ppro.asm"]
+rent    = false
+reus    = false
+
+[module.TT112PPR]
+sources = ["build/gen/t112ppr2.asm"]
+rent    = false
+reus    = false
+
+[module.TT113ARE]
+sources = ["build/gen/t113area.asm"]
+rent    = false
+reus    = false
+
+[module.TT114AFR]
+sources = ["build/gen/t114afre.asm"]
+rent    = false
+reus    = false
+
+[module.TT115AER]
+sources = ["build/gen/t115aerr.asm"]
+rent    = false
+reus    = false
+
+[module.TT116REG]
+sources = ["build/gen/t116reg.asm"]
+rent    = false
+reus    = false
+
+[module.TT117RKE]
+sources = ["build/gen/t117rkey.asm"]
+rent    = false
+reus    = false
+
+[module.TT118RDU]
+sources = ["build/gen/t118rdum.asm"]
+rent    = false
+reus    = false
+
+[module.TT119DO]
+sources = ["build/gen/t119do.asm"]
+rent    = false
+reus    = false
+
+[module.TT11MIX]
+sources = ["build/gen/t11mix.asm"]
+rent    = false
+reus    = false
+
+[module.TT120DO2]
+sources = ["build/gen/t120do2.asm"]
+rent    = false
+reus    = false
+
+[module.TT121FIL]
+sources = ["build/gen/t121fill.asm"]
+rent    = false
+reus    = false
+
+[module.TT122IDX]
+sources = ["build/gen/t122idx.asm"]
+rent    = false
+reus    = false
+
+[module.TT123IKE]
+sources = ["build/gen/t123ikey.asm"]
+rent    = false
+reus    = false
+
+[module.TT124IDX]
+sources = ["build/gen/t124idx2.asm"]
+rent    = false
+reus    = false
+
+[module.TT125SEL]
+sources = ["build/gen/t125sel.asm"]
+rent    = false
+reus    = false
+
+[module.TT126LEA]
+sources = ["build/gen/t126leav.asm"]
+rent    = false
+reus    = false
+
+[module.TT127DFL]
+sources = ["build/gen/t127dflt.asm"]
+rent    = false
+reus    = false
+
+[module.TT128DFT]
+sources = ["build/gen/t128dft2.asm"]
+rent    = false
+reus    = false
+
+[module.TT129FAC]
+sources = ["build/gen/t129fac.asm"]
+rent    = false
+reus    = false
+
+[module.TT12ARR]
+sources = ["build/gen/t12arr.asm"]
+rent    = false
+reus    = false
+
+[module.TT130STA]
+sources = ["build/gen/t130star.asm"]
+rent    = false
+reus    = false
+
+[module.TT131END]
+sources = ["build/gen/t131end.asm"]
+rent    = false
+reus    = false
+
+[module.TT132ARE]
+sources = ["build/gen/t132are2.asm"]
+rent    = false
+reus    = false
+
+[module.TT133ARE]
+sources = ["build/gen/t133arec.asm"]
+rent    = false
+reus    = false
+
+[module.TT134DFT]
+sources = ["build/gen/t134dfta.asm"]
+rent    = false
+reus    = false
+
+[module.TT135LOC]
+sources = ["build/gen/t135loc.asm"]
+rent    = false
+reus    = false
+
+[module.TT136RG2]
+sources = ["build/gen/t136rg2.asm"]
+rent    = false
+reus    = false
+
+[module.TT137RG3]
+sources = ["build/gen/t137rg3.asm"]
+rent    = false
+reus    = false
+
+[module.TT138OKY]
+sources = ["build/gen/t138oky.asm"]
+rent    = false
+reus    = false
+
+[module.TT139IXB]
+sources = ["build/gen/t139ixb.asm"]
+rent    = false
+reus    = false
+
+[module.TT13STRU]
+sources = ["build/gen/t13struc.asm"]
+rent    = false
+reus    = false
+
+[module.TT140IXE]
+sources = ["build/gen/t140ixe.asm"]
+rent    = false
+reus    = false
+
+[module.TT141STR]
+sources = ["build/gen/t141str.asm"]
+rent    = false
+reus    = false
+
+[module.TT142AST]
+sources = ["build/gen/t142ast.asm"]
+rent    = false
+reus    = false
+
+[module.TT143SKY]
+sources = ["build/gen/t143sky.asm"]
+rent    = false
+reus    = false
+
+[module.TT144ADM]
+sources = ["build/gen/t144adm.asm"]
+rent    = false
+reus    = false
+
+[module.TT145UNS]
+sources = ["build/gen/t145uns.asm"]
+rent    = false
+reus    = false
+
+[module.TT146AWH]
+sources = ["build/gen/t146awh.asm"]
+rent    = false
+reus    = false
+
+[module.TT147BAR]
+sources = ["build/gen/t147bar.asm"]
+rent    = false
+reus    = false
+
+[module.TT148BMP]
+sources = ["build/gen/t148bmp.asm"]
+rent    = false
+reus    = false
+
+[module.TT149BFM]
+sources = ["build/gen/t149bfm.asm"]
+rent    = false
+reus    = false
+
+[module.TT14AGG]
+sources = ["build/gen/t14agg.asm"]
+rent    = false
+reus    = false
+
+[module.TT150FEX]
+sources = ["build/gen/t150fex.asm"]
+rent    = false
+reus    = false
+
+[module.TT151EFX]
+sources = ["build/gen/t151efx.asm"]
+rent    = false
+reus    = false
+
+[module.TT152RL]
+sources = ["build/gen/t152rl.asm"]
+rent    = false
+reus    = false
+
+[module.TT153WC]
+sources = ["build/gen/t153wc.asm"]
+rent    = false
+reus    = false
+
+[module.TT154EXT]
+sources = ["build/gen/t154ext.asm"]
+rent    = false
+reus    = false
+
+[module.TT155EX2]
+sources = ["build/gen/t155ex2.asm"]
+rent    = false
+reus    = false
+
+[module.TT156SEP]
+sources = ["build/gen/t156sep_0.asm", "build/gen/t156sep_1.asm", "build/gen/t156sep_2.asm"]
+rent    = false
+reus    = false
+
+[module.TT157SNP]
+sources = ["build/gen/t157snp.asm"]
+rent    = false
+reus    = false
+
+[module.TT158SNP]
+sources = ["build/gen/t158snp.asm"]
+rent    = false
+reus    = false
+
+[module.TT159SNP]
+sources = ["build/gen/t159snp.asm"]
+rent    = false
+reus    = false
+
+[module.TT15PROC]
+sources = ["build/gen/t15proc.asm"]
+rent    = false
+reus    = false
+
+[module.TT160SNP]
+sources = ["build/gen/t160snp.asm"]
+rent    = false
+reus    = false
+
+[module.TT161SIG]
+sources = ["build/gen/t161sig.asm"]
+rent    = false
+reus    = false
+
+[module.TT162CTX]
+sources = ["build/gen/t162ctx_0.asm", "build/gen/t162ctx_1.asm", "build/gen/t162ctx_2.asm"]
+rent    = false
+reus    = false
+
+[module.TT163BYN]
+sources = ["build/gen/t163byn.asm"]
+rent    = false
+reus    = false
+
+[module.TT164BY2]
+sources = ["build/gen/t164by2.asm"]
+rent    = false
+reus    = false
+
+[module.TT165RL3]
+sources = ["build/gen/t165rl3.asm"]
+rent    = false
+reus    = false
+
+[module.TT166BLT]
+sources = ["build/gen/t166blt.asm"]
+rent    = false
+reus    = false
+
+[module.TT167ENT]
+sources = ["build/gen/t167ent.asm"]
+rent    = false
+reus    = false
+
+[module.TT168ENS]
+sources = ["build/gen/t168ens_0.asm", "build/gen/t168ens_1.asm"]
+rent    = false
+reus    = false
+
+[module.TT169RFM]
+sources = ["build/gen/t169rfm.asm"]
+rent    = false
+reus    = false
+
+[module.TT16SCOP]
+sources = ["build/gen/t16scope.asm"]
+rent    = false
+reus    = false
+
+[module.TT170RPT]
+sources = ["build/gen/t170rpt.asm"]
+rent    = false
+reus    = false
+
+[module.TT171BIG]
+sources = ["build/gen/t171big.asm"]
+rent    = false
+reus    = false
+
+[module.TT172INI]
+sources = ["build/gen/t172ini.asm"]
+rent    = false
+reus    = false
+
+[module.TT173INB]
+sources = ["build/gen/t173inb.asm"]
+rent    = false
+reus    = false
+
+[module.TT174SEP]
+sources = ["build/gen/t174sep_0.asm", "build/gen/t174sep_1.asm", "build/gen/t174sep_2.asm"]
+rent    = false
+reus    = false
+
+[module.TT175SUC]
+sources = ["build/gen/t175suc.asm"]
+rent    = false
+reus    = false
+
+[module.TT176SUS]
+sources = ["build/gen/t176sus_0.asm", "build/gen/t176sus_1.asm"]
+rent    = false
+reus    = false
+
+[module.TT177STR]
+sources = ["build/gen/t177str_0.asm", "build/gen/t177str_1.asm", "build/gen/t177str_2.asm", "build/gen/t177str_3.asm", "build/gen/t177str_4.asm", "build/gen/t177str_5.asm", "build/gen/t177str_6.asm", "build/gen/t177str_7.asm"]
+rent    = false
+reus    = false
+
+[module.TT178VST]
+sources = ["build/gen/t178vst.asm"]
+rent    = false
+reus    = false
+
+[module.TT179FMT]
+sources = ["build/gen/t179fmt.asm"]
+rent    = false
+reus    = false
+
+[module.TT17PROC]
+sources = ["build/gen/t17proc2.asm"]
+rent    = false
+reus    = false
+
+[module.TT180LNG]
+sources = ["build/gen/t180lng.asm"]
+rent    = false
+reus    = false
+
+[module.TT181LNS]
+sources = ["build/gen/t181lns_0.asm", "build/gen/t181lns_1.asm", "build/gen/t181lns_2.asm"]
+rent    = false
+reus    = false
+
+[module.TT182UND]
+sources = ["build/gen/t182und.asm"]
+rent    = false
+reus    = false
+
+[module.TT183FCV]
+sources = ["build/gen/t183fcv.asm"]
+rent    = false
+reus    = false
+
+[module.TT184BFM]
+sources = ["build/gen/t184bfm.asm"]
+rent    = false
+reus    = false
+
+[module.TT185SBN]
+sources = ["build/gen/t185sbn.asm"]
+rent    = false
+reus    = false
+
+[module.TT186SCV]
+sources = ["build/gen/t186scv.asm"]
+rent    = false
+reus    = false
+
+[module.TT187SGT]
+sources = ["build/gen/t187sgt.asm"]
+rent    = false
+reus    = false
+
+[module.TT188SUM]
+sources = ["build/gen/t188sum.asm"]
+rent    = false
+reus    = false
+
+[module.TT189ALL]
+sources = ["build/gen/t189all.asm"]
+rent    = false
+reus    = false
+
+[module.TT18MOD]
+sources = ["build/gen/t18mod.asm"]
+rent    = false
+reus    = false
+
+[module.TT190POL]
+sources = ["build/gen/t190pol.asm"]
+rent    = false
+reus    = false
+
+[module.TT191ORD]
+sources = ["build/gen/t191ord.asm"]
+rent    = false
+reus    = false
+
+[module.TT192MSC]
+sources = ["build/gen/t192msc.asm"]
+rent    = false
+reus    = false
+
+[module.TT193XSC]
+sources = ["build/gen/t193xsc.asm"]
+rent    = false
+reus    = false
+
+[module.TT194XSI]
+sources = ["build/gen/t194xsi.asm"]
+rent    = false
+reus    = false
+
+[module.TT195NAM]
+sources = ["build/gen/t195nam.asm"]
+rent    = false
+reus    = false
+
+[module.TT196NMS]
+sources = ["build/gen/t196nms.asm"]
+rent    = false
+reus    = false
+
+[module.TT197REF]
+sources = ["build/gen/t197ref.asm"]
+rent    = false
+reus    = false
+
+[module.TT198RFS]
+sources = ["build/gen/t198rfs.asm"]
+rent    = false
+reus    = false
+
+[module.TT199CHK]
+sources = ["build/gen/t199chk.asm"]
+rent    = false
+reus    = false
+
+[module.TT19IO]
+sources = ["build/gen/t19io.asm"]
+rent    = false
+reus    = false
+
+[module.TT1BIN]
+sources = ["build/gen/t1bin.asm"]
+rent    = false
+reus    = false
+
+[module.TT200ANS]
+sources = ["build/gen/t200ans.asm"]
+rent    = false
+reus    = false
+
+[module.TT201ANS]
+sources = ["build/gen/t201ans.asm"]
+rent    = false
+reus    = false
+
+[module.TT202ANS]
+sources = ["build/gen/t202ans.asm"]
+rent    = false
+reus    = false
+
+[module.TT203STR]
+sources = ["build/gen/t203str.asm"]
+rent    = false
+reus    = false
+
+[module.TT204UNS]
+sources = ["build/gen/t204uns.asm"]
+rent    = false
+reus    = false
+
+[module.TT205GEN]
+sources = ["build/gen/t205gen.asm"]
+rent    = false
+reus    = false
+
+[module.TT206GEN]
+sources = ["build/gen/t206gen.asm"]
+rent    = false
+reus    = false
+
+[module.TT207IO]
+sources = ["build/gen/t207io.asm"]
+rent    = false
+reus    = false
+
+[module.TT208ANB]
+sources = ["build/gen/t208anb.asm"]
+rent    = false
+reus    = false
+
+[module.TT209ANS]
+sources = ["build/gen/t209ans.asm"]
+rent    = false
+reus    = false
+
+[module.TT20EDIT]
+sources = ["build/gen/t20edit.asm"]
+rent    = false
+reus    = false
+
+[module.TT210RDX]
+sources = ["build/gen/t210rdx.asm"]
+rent    = false
+reus    = false
+
+[module.TT211LSZ]
+sources = ["build/gen/t211lsz.asm"]
+rent    = false
+reus    = false
+
+[module.TT212TAB]
+sources = ["build/gen/t212tab.asm"]
+rent    = false
+reus    = false
+
+[module.TT213CPY]
+sources = ["build/gen/t213cpy.asm"]
+rent    = false
+reus    = false
+
+[module.TT214ATT]
+sources = ["build/gen/t214att.asm"]
+rent    = false
+reus    = false
+
+[module.TT215EVR]
+sources = ["build/gen/t215evr.asm"]
+rent    = false
+reus    = false
+
+[module.TT216EDS]
+sources = ["build/gen/t216eds.asm"]
+rent    = false
+reus    = false
+
+[module.TT217LOC]
+sources = ["build/gen/t217loc.asm"]
+rent    = false
+reus    = false
+
+[module.TT218GEN]
+sources = ["build/gen/t218gen.asm"]
+rent    = false
+reus    = false
+
+[module.TT219INI]
+sources = ["build/gen/t219ini.asm"]
+rent    = false
+reus    = false
+
+[module.TT21IO2]
+sources = ["build/gen/t21io2.asm"]
+rent    = false
+reus    = false
+
+[module.TT220INI]
+sources = ["build/gen/t220ini.asm"]
+rent    = false
+reus    = false
+
+[module.TT221ING]
+sources = ["build/gen/t221ing.asm"]
+rent    = false
+reus    = false
+
+[module.TT222C48]
+sources = ["build/gen/t222c48.asm"]
+rent    = false
+reus    = false
+
+[module.TT223MPM]
+sources = ["build/gen/t223mpm.asm"]
+rent    = false
+reus    = false
+
+[module.TT224MPP]
+sources = ["build/gen/t224mpp.asm"]
+rent    = false
+reus    = false
+
+[module.TT225ADJ]
+sources = ["build/gen/t225adj.asm"]
+rent    = false
+reus    = false
+
+[module.TT226FCT]
+sources = ["build/gen/t226fct.asm"]
+rent    = false
+reus    = false
+
+[module.TT227CUT]
+sources = ["build/gen/t227cut.asm"]
+rent    = false
+reus    = false
+
+[module.TT228PI]
+sources = ["build/gen/t228pi.asm"]
+rent    = false
+reus    = false
+
+[module.TT229PRM]
+sources = ["build/gen/t229prm.asm"]
+rent    = false
+reus    = false
+
+[module.TT22PAGE]
+sources = ["build/gen/t22page.asm"]
+rent    = false
+reus    = false
+
+[module.TT230PRM]
+sources = ["build/gen/t230prm.asm"]
+rent    = false
+reus    = false
+
+[module.TT231ABN]
+sources = ["build/gen/t231abn.asm"]
+rent    = false
+reus    = false
+
+[module.TT233MVS]
+sources = ["build/gen/t233mvs.asm"]
+rent    = false
+reus    = false
+
+[module.TT234RET]
+sources = ["build/gen/t234ret.asm"]
+rent    = false
+reus    = false
+
+[module.TT235RET]
+sources = ["build/gen/t235ret.asm"]
+rent    = false
+reus    = false
+
+[module.TT236EAD]
+sources = ["build/gen/t236ead.asm"]
+rent    = false
+reus    = false
+
+[module.TT237SIN]
+sources = ["build/gen/t237sin.asm"]
+rent    = false
+reus    = false
+
+[module.TT238B37]
+sources = ["build/gen/t238b37.asm"]
+rent    = false
+reus    = false
+
+[module.TT239SPR]
+sources = ["build/gen/t239spr.asm"]
+rent    = false
+reus    = false
+
+[module.TT23REC]
+sources = ["build/gen/t23rec.asm"]
+rent    = false
+reus    = false
+
+[module.TT240ASM]
+sources = ["build/gen/t240asm.asm", "tests/mvs/asmsub/asmtst.asm"]
+rent    = false
+reus    = false
+
+[module.TT241OPT]
+sources = ["build/gen/t241opt.asm", "tests/mvs/asmsub/asmtst.asm", "tests/mvs/asmsub/asmval.asm"]
+rent    = false
+reus    = false
+
+[module.TT242BYV]
+sources = ["build/gen/t242byv.asm"]
+rent    = false
+reus    = false
+
+[module.TT243FET]
+sources = ["build/gen/t243fet.asm", "tests/mvs/asmsub/asmtst.asm"]
+rent    = false
+reus    = false
+
+[module.TT244GAP]
+sources = ["build/gen/t244gap.asm"]
+rent    = false
+reus    = false
+
+[module.TT245RED]
+sources = ["build/gen/t245red.asm"]
+rent    = false
+reus    = false
+
+[module.TT246EXC]
+sources = ["build/gen/t246exc.asm"]
+rent    = false
+reus    = false
+
+[module.TT247ENV]
+sources = ["build/gen/t247env.asm"]
+rent    = false
+reus    = false
+
+[module.TT248DSP]
+sources = ["build/gen/t248dsp.asm"]
+rent    = false
+reus    = false
+
+[module.TT249STL]
+sources = ["build/gen/t249stl.asm"]
+rent    = false
+reus    = false
+
+[module.TT24CONV]
+sources = ["build/gen/t24conv.asm"]
+rent    = false
+reus    = false
+
+[module.TT250LNK]
+sources = ["build/gen/t250lnk.asm"]
+rent    = false
+reus    = false
+
+[module.TT251LNQ]
+sources = ["build/gen/t251lnq.asm"]
+rent    = false
+reus    = false
+
+[module.TT252NSP]
+sources = ["build/gen/t252nsp.asm"]
+rent    = false
+reus    = false
+
+[module.TT253NSZ]
+sources = ["build/gen/t253nsz.asm"]
+rent    = false
+reus    = false
+
+[module.TT254ARG]
+sources = ["build/gen/t254arg.asm"]
+rent    = false
+reus    = false
+
+[module.TT255FAC]
+sources = ["build/gen/t255fac.asm"]
+rent    = false
+reus    = false
+
+[module.TT256FUN]
+sources = ["build/gen/t256fun.asm"]
+rent    = false
+reus    = false
+
+[module.TT257BIT]
+sources = ["build/gen/t257bit.asm"]
+rent    = false
+reus    = false
+
+[module.TT258SAR]
+sources = ["build/gen/t258sar_0.asm", "build/gen/t258sar_1.asm", "build/gen/t258sar_2.asm"]
+rent    = false
+reus    = false
+
+[module.TT259ICL]
+sources = ["build/gen/t259icl.asm"]
+rent    = false
+reus    = false
+
+[module.TT25MAP]
+sources = ["build/gen/t25map.asm"]
+rent    = false
+reus    = false
+
+[module.TT260STG]
+sources = ["build/gen/t260stg.asm"]
+rent    = false
+reus    = false
+
+[module.TT261PPB]
+sources = ["build/gen/t261ppb.asm"]
+rent    = false
+reus    = false
+
+[module.TT262DMP]
+sources = ["build/gen/t262dmp.asm"]
+rent    = false
+reus    = false
+
+[module.TT263NOD]
+sources = ["build/gen/t263nod.asm"]
+rent    = false
+reus    = false
+
+[module.TT264ATT]
+sources = ["build/gen/t264att.asm"]
+rent    = false
+reus    = false
+
+[module.TT265INT]
+sources = ["build/gen/t265int.asm"]
+rent    = false
+reus    = false
+
+[module.TT266SRT]
+sources = ["build/gen/t266srt.asm"]
+rent    = false
+reus    = false
+
+[module.TT267SRE]
+sources = ["build/gen/t267sre.asm"]
+rent    = false
+reus    = false
+
+[module.TT268SRG]
+sources = ["build/gen/t268srg.asm"]
+rent    = false
+reus    = false
+
+[module.TT269SRS]
+sources = ["build/gen/t269srs.asm"]
+rent    = false
+reus    = false
+
+[module.TT26NPR]
+sources = ["build/gen/t26npr.asm"]
+rent    = false
+reus    = false
+
+[module.TT270SRX]
+sources = ["build/gen/t270srx.asm"]
+rent    = false
+reus    = false
+
+[module.TT271CKP]
+sources = ["build/gen/t271ckp.asm"]
+rent    = false
+reus    = false
+
+[module.TT272RST]
+sources = ["build/gen/t272rst.asm"]
+rent    = false
+reus    = false
+
+[module.TT273CDC]
+sources = ["build/gen/t273cdc.asm"]
+rent    = false
+reus    = false
+
+[module.TT274CLS]
+sources = ["build/gen/t274cls.asm"]
+rent    = false
+reus    = false
+
+[module.TT275CMO]
+sources = ["build/gen/t275cmo.asm"]
+rent    = false
+reus    = false
+
+[module.TT276CBF]
+sources = ["build/gen/t276cbf.asm"]
+rent    = false
+reus    = false
+
+[module.TT277CAD]
+sources = ["build/gen/t277cad.asm"]
+rent    = false
+reus    = false
+
+[module.TT278EVT]
+sources = ["build/gen/t278evt.asm"]
+rent    = false
+reus    = false
+
+[module.TT279EVW]
+sources = ["build/gen/t279evw.asm"]
+rent    = false
+reus    = false
+
+[module.TT27ZDIV]
+sources = ["build/gen/t27zdiv.asm"]
+rent    = false
+reus    = false
+
+[module.TT280DLY]
+sources = ["build/gen/t280dly.asm"]
+rent    = false
+reus    = false
+
+[module.TT281DSE]
+sources = ["build/gen/t281dse.asm"]
+rent    = false
+reus    = false
+
+[module.TT282EIO]
+sources = ["build/gen/t282eio.asm"]
+rent    = false
+reus    = false
+
+[module.TT283EIW]
+sources = ["build/gen/t283eiw.asm"]
+rent    = false
+reus    = false
+
+[module.TT284EVC]
+sources = ["build/gen/t284evc.asm"]
+rent    = false
+reus    = false
+
+[module.TT28CONV]
+sources = ["build/gen/t28conv.asm"]
+rent    = false
+reus    = false
+
+[module.TT29FOFL]
+sources = ["build/gen/t29fofl.asm"]
+rent    = false
+reus    = false
+
+[module.TT2DEC]
+sources = ["build/gen/t2dec.asm"]
+rent    = false
+reus    = false
+
+[module.TT30ERR]
+sources = ["build/gen/t30err.asm"]
+rent    = false
+reus    = false
+
+[module.TT31SIG]
+sources = ["build/gen/t31sig.asm"]
+rent    = false
+reus    = false
+
+[module.TT32FIN]
+sources = ["build/gen/t32fin.asm"]
+rent    = false
+reus    = false
+
+[module.TT33EOF]
+sources = ["build/gen/t33eof.asm"]
+rent    = false
+reus    = false
+
+[module.TT34GOTO]
+sources = ["build/gen/t34goto.asm"]
+rent    = false
+reus    = false
+
+[module.TT35CODE]
+sources = ["build/gen/t35code.asm"]
+rent    = false
+reus    = false
+
+[module.TT36CONV]
+sources = ["build/gen/t36conv.asm"]
+rent    = false
+reus    = false
+
+[module.TT37NAME]
+sources = ["build/gen/t37name.asm"]
+rent    = false
+reus    = false
+
+[module.TT38BERR]
+sources = ["build/gen/t38berr.asm"]
+rent    = false
+reus    = false
+
+[module.TT39SERR]
+sources = ["build/gen/t39serr.asm"]
+rent    = false
+reus    = false
+
+[module.TT3IF]
+sources = ["build/gen/t3if.asm"]
+rent    = false
+reus    = false
+
+[module.TT40INPL]
+sources = ["build/gen/t40inpl.asm"]
+rent    = false
+reus    = false
+
+[module.TT41FLST]
+sources = ["build/gen/t41flst.asm"]
+rent    = false
+reus    = false
+
+[module.TT42FAR]
+sources = ["build/gen/t42far.asm"]
+rent    = false
+reus    = false
+
+[module.TT43FED]
+sources = ["build/gen/t43fed.asm"]
+rent    = false
+reus    = false
+
+[module.TT44FIM]
+sources = ["build/gen/t44fim.asm"]
+rent    = false
+reus    = false
+
+[module.TT45FGE]
+sources = ["build/gen/t45fge.asm"]
+rent    = false
+reus    = false
+
+[module.TT46FBI]
+sources = ["build/gen/t46fbi.asm"]
+rent    = false
+reus    = false
+
+[module.TT47FMIX]
+sources = ["build/gen/t47fmix.asm"]
+rent    = false
+reus    = false
+
+[module.TT48BEG]
+sources = ["build/gen/t48beg.asm"]
+rent    = false
+reus    = false
+
+[module.TT49EXIT]
+sources = ["build/gen/t49exit.asm"]
+rent    = false
+reus    = false
+
+[module.TT4LOOP]
+sources = ["build/gen/t4loop.asm"]
+rent    = false
+reus    = false
+
+[module.TT50BASE]
+sources = ["build/gen/t50base.asm"]
+rent    = false
+reus    = false
+
+[module.TT51BARG]
+sources = ["build/gen/t51barg.asm"]
+rent    = false
+reus    = false
+
+[module.TT52LIST]
+sources = ["build/gen/t52list.asm"]
+rent    = false
+reus    = false
+
+[module.TT53STR]
+sources = ["build/gen/t53str.asm"]
+rent    = false
+reus    = false
+
+[module.TT54ARI]
+sources = ["build/gen/t54ari.asm"]
+rent    = false
+reus    = false
+
+[module.TT55POW]
+sources = ["build/gen/t55pow.asm"]
+rent    = false
+reus    = false
+
+[module.TT56ARI]
+sources = ["build/gen/t56ari.asm"]
+rent    = false
+reus    = false
+
+[module.TT57LONG]
+sources = ["build/gen/t57long.asm"]
+rent    = false
+reus    = false
+
+[module.TT58PUTD]
+sources = ["build/gen/t58putd.asm"]
+rent    = false
+reus    = false
+
+[module.TT59GETD]
+sources = ["build/gen/t59getd.asm"]
+rent    = false
+reus    = false
+
+[module.TT5CHAR]
+sources = ["build/gen/t5char.asm"]
+rent    = false
+reus    = false
+
+[module.TT60STR]
+sources = ["build/gen/t60str.asm"]
+rent    = false
+reus    = false
+
+[module.TT61GDAT]
+sources = ["build/gen/t61gdat.asm"]
+rent    = false
+reus    = false
+
+[module.TT62SUBR]
+sources = ["build/gen/t62subr.asm"]
+rent    = false
+reus    = false
+
+[module.TT63SIZE]
+sources = ["build/gen/t63size.asm"]
+rent    = false
+reus    = false
+
+[module.TT64STRG]
+sources = ["build/gen/t64strg.asm"]
+rent    = false
+reus    = false
+
+[module.TT65NO]
+sources = ["build/gen/t65no.asm"]
+rent    = false
+reus    = false
+
+[module.TT66SQRT]
+sources = ["build/gen/t66sqrt.asm"]
+rent    = false
+reus    = false
+
+[module.TT67MAT1]
+sources = ["build/gen/t67mat1.asm"]
+rent    = false
+reus    = false
+
+[module.TT68MAT2]
+sources = ["build/gen/t68mat2.asm"]
+rent    = false
+reus    = false
+
+[module.TT69MAT3]
+sources = ["build/gen/t69mat3.asm"]
+rent    = false
+reus    = false
+
+[module.TT6MISC]
+sources = ["build/gen/t6misc.asm"]
+rent    = false
+reus    = false
+
+[module.TT70POW]
+sources = ["build/gen/t70pow.asm"]
+rent    = false
+reus    = false
+
+[module.TT71MERR]
+sources = ["build/gen/t71merr.asm"]
+rent    = false
+reus    = false
+
+[module.TT72MERL]
+sources = ["build/gen/t72merl.asm"]
+rent    = false
+reus    = false
+
+[module.TT73EXPL]
+sources = ["build/gen/t73expl.asm"]
+rent    = false
+reus    = false
+
+[module.TT74ATP]
+sources = ["build/gen/t74atp.asm"]
+rent    = false
+reus    = false
+
+[module.TT75ATB]
+sources = ["build/gen/t75atb.asm"]
+rent    = false
+reus    = false
+
+[module.TT76OVF]
+sources = ["build/gen/t76ovf.asm"]
+rent    = false
+reus    = false
+
+[module.TT77HYP]
+sources = ["build/gen/t77hyp.asm"]
+rent    = false
+reus    = false
+
+[module.TT78HYPL]
+sources = ["build/gen/t78hypl.asm"]
+rent    = false
+reus    = false
+
+[module.TT79ERF]
+sources = ["build/gen/t79erf.asm"]
+rent    = false
+reus    = false
+
+[module.TT7DIV]
+sources = ["build/gen/t7div.asm"]
+rent    = false
+reus    = false
+
+[module.TT80HYER]
+sources = ["build/gen/t80hyer.asm"]
+rent    = false
+reus    = false
+
+[module.TT81OVF]
+sources = ["build/gen/t81ovf.asm"]
+rent    = false
+reus    = false
+
+[module.TT82OVSA]
+sources = ["build/gen/t82ovsa.asm"]
+rent    = false
+reus    = false
+
+[module.TT83OVLA]
+sources = ["build/gen/t83ovla.asm"]
+rent    = false
+reus    = false
+
+[module.TT84LIKE]
+sources = ["build/gen/t84like.asm"]
+rent    = false
+reus    = false
+
+[module.TT85DEF]
+sources = ["build/gen/t85def.asm"]
+rent    = false
+reus    = false
+
+[module.TT86DEF2]
+sources = ["build/gen/t86def2.asm"]
+rent    = false
+reus    = false
+
+[module.TT87PICA]
+sources = ["build/gen/t87pica.asm"]
+rent    = false
+reus    = false
+
+[module.TT88PICB]
+sources = ["build/gen/t88picb.asm"]
+rent    = false
+reus    = false
+
+[module.TT89PICC]
+sources = ["build/gen/t89picc.asm"]
+rent    = false
+reus    = false
+
+[module.TT8BIT]
+sources = ["build/gen/t8bit.asm"]
+rent    = false
+reus    = false
+
+[module.TT90PICD]
+sources = ["build/gen/t90picd.asm"]
+rent    = false
+reus    = false
+
+[module.TT91PCTX]
+sources = ["build/gen/t91pctx.asm"]
+rent    = false
+reus    = false
+
+[module.TT92PIC3]
+sources = ["build/gen/t92pic3.asm"]
+rent    = false
+reus    = false
+
+[module.TT93LAB]
+sources = ["build/gen/t93lab.asm"]
+rent    = false
+reus    = false
+
+[module.TT94LAB2]
+sources = ["build/gen/t94lab2.asm"]
+rent    = false
+reus    = false
+
+[module.TT95INC]
+sources = ["build/gen/t95inc.asm"]
+rent    = false
+reus    = false
+
+[module.TT96CTL]
+sources = ["build/gen/t96ctl.asm"]
+rent    = false
+reus    = false
+
+[module.TT97CTL2]
+sources = ["build/gen/t97ctl2.asm"]
+rent    = false
+reus    = false
+
+[module.TT98BITS]
+sources = ["build/gen/t98bits.asm"]
+rent    = false
+reus    = false
+
+[module.TT99BITS]
+sources = ["build/gen/t99bits2.asm"]
+rent    = false
+reus    = false
+
+[module.TT9STR]
+sources = ["build/gen/t9str.asm"]
+rent    = false
+reus    = false
+
+[module.TTATTN]
+sources = ["build/gen/tattn.asm"]
+rent    = false
+reus    = false
+
+# END TESTS

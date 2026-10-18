@@ -1,0 +1,22 @@
+ T149BFM: PROC OPTIONS(MAIN);
+   /* the B format item: PUT EDIT and GET EDIT */
+   DCL B5 BIT(5) INIT('10011'B), B1 BIT(1) INIT('1'B);
+   DCL B40 BIT(40), BV BIT(10) VARYING INIT('101'B);
+   DCL (G1, G2) BIT(6), GV BIT(8) VARYING, C CHAR(4) INIT('1101');
+   DCL N FIXED BIN(15) INIT(5);
+   B40 = (20)'10'B;
+   PUT SKIP EDIT(B5) (B);
+   PUT SKIP EDIT('<', B5, '>') (A, B(8), A);
+   PUT SKIP EDIT('<', B5, '>') (A, B(3), A);
+   PUT SKIP EDIT('<', B1, B5, '>') (A, B, B(5), A);
+   PUT SKIP EDIT('<', B40, '>') (A, B, A);
+   PUT SKIP EDIT('<', BV, '>') (A, B, A);
+   PUT SKIP EDIT('<', BV, '>') (A, B(6), A);
+   PUT SKIP EDIT('<', '1100'B, '>') (A, B(5), A);
+   PUT SKIP EDIT('<', C, '>') (A, B, A);
+   GET EDIT(G1, G2, GV) (B(4), X(1), B(6), X(1), B(3));
+   PUT SKIP EDIT('<', G1, '><', G2, '><', GV, '>')
+     (A, B, A, B, A, B, A);
+   GET SKIP EDIT(G1) (B(8));
+   PUT SKIP EDIT('<', G1, '>') (A, B, A);
+ END T149BFM;

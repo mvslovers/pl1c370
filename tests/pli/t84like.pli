@@ -1,0 +1,15 @@
+ T84LIKE: PROC OPTIONS(MAIN);
+   DCL 1 A, 2 X FIXED BIN(15), 2 Y CHAR(3), 2 Z, 3 U FIXED DEC(5,2),
+       3 V FLOAT DEC(6);
+   DCL 1 B LIKE A;
+   DCL 1 C(2) LIKE A;
+   DCL 1 D, 2 P CHAR(1), 2 Q LIKE A.Z, 2 R BIT(4);
+   DCL 1 E STATIC LIKE A;
+   A.X = 7; A.Y = 'ABC'; A.U = 12.34; A.V = 2.5E0;
+   B = A; PUT SKIP DATA(B);
+   C(2) = A; C(1).X = 9; C(1).Y = 'XY'; C(1).Z = A.Z;
+   PUT SKIP DATA(C);
+   D.P = 'P'; D.Q = A.Z; D.R = '1010'B; E = B;
+   PUT SKIP DATA(D, E);
+   PUT SKIP LIST(B.X, C(2).Y, E.Z.U, E.Z.V, D.Q.U);
+ END T84LIKE;

@@ -1,0 +1,15 @@
+ T70POW: PROC OPTIONS(MAIN);
+   DCL (A,B,E) FLOAT DEC(6), (C,D,F) FLOAT DEC(16);
+   A = 2E0; E = 0.5E0; C = 2E0; F = 0.5E0;
+   B = A ** E; D = C ** F; PUT SKIP LIST(A, E, B, D);
+   A = 10E0; E = -1.5E0; C = 10E0; F = -1.5E0;
+   B = A ** E; D = C ** F; PUT SKIP LIST(A, E, B, D);
+   A = 1.5E0; E = 2.25E0; C = 1.5E0; F = 2.25E0;
+   B = A ** E; D = C ** F; PUT SKIP LIST(A, E, B, D);
+   A = 0.3E0; E = 7.7E0; C = 0.3E0; F = 7.7E0;
+   B = A ** E; D = C ** F; PUT SKIP LIST(A, E, B, D);
+   A = 9E0; E = 0.5E0; C = 9E0; F = 0.5E0;
+   B = A ** E; D = C ** F; PUT SKIP LIST(A, E, B, D);
+   PUT SKIP LIST(ATAN(1E0, 2E0), ATAN(-1E0, -2E0), ATAND(1E0, 1E0));
+   C = 1; PUT SKIP LIST(ATAN(C, 3E0), ATAND(-C, 0E0));
+ END T70POW;

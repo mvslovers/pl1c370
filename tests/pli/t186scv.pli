@@ -1,0 +1,21 @@
+ T186SCV: PROC OPTIONS(MAIN);
+   DCL U FIXED BIN(31,16), V FIXED BIN(15,6), D FIXED DEC(7,3);
+   DCL E FIXED DEC(3,1) INIT(1.1), I FIXED BIN(15) INIT(3);
+   U = 1.1;        PUT SKIP LIST('C 1.1', U);
+   D = 1.1;
+   U = D;          PUT SKIP LIST('D(7,3)', U);
+   U = E;          PUT SKIP LIST('E(3,1)', U);
+   U = 1.1 + 0;    PUT SKIP LIST('1.1+0', U);
+   U = 2.71828;    PUT SKIP LIST('C 2.71828', U);
+   V = 0.1;        PUT SKIP LIST('V 0.1', V, UNSPEC(V));
+   V = E;          PUT SKIP LIST('V E', V, UNSPEC(V));
+   U = I * 1.1;    PUT SKIP LIST('I*1.1', U);
+   U = -0.7;       PUT SKIP LIST('C -0.7', U);
+   BEGIN;
+     DCL W FIXED BIN(15,3) STATIC INIT(5.5), X(2) FIXED BIN(31,10)
+         STATIC INIT(-0.75, 3.1416), F FLOAT DEC(6) INIT(1.1E0);
+     PUT SKIP LIST('STATIC', W, X(1), X(2));
+     U = F;        PUT SKIP LIST('FLOAT', U);
+     V = -F;       PUT SKIP LIST('-FLOAT', V);
+   END;
+ END T186SCV;

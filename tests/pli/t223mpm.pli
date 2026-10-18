@@ -1,0 +1,23 @@
+ T223MPM: PROC(PARM) OPTIONS(MAIN);
+   /* THE PARM AS THE MAIN PROCEDURE'S CHAR(100) VARYING PARAMETER,
+      AND AN ARRAY ELEMENT AS A CONTROL VARIABLE (FOO, RXCOMM) */
+   DCL PARM CHAR(100) VARYING;
+   DCL A(3) FIXED BIN(15) INIT(0, 0, 0), (I, K) FIXED BIN(15);
+   PUT LIST(LENGTH(PARM), '<' || PARM || '>');
+   K = 2;
+   DO A(K) = 7;
+     PUT SKIP LIST('ONCE', A(1), A(2), A(3));
+   END;
+   DO A(3) = 9 WHILE(K = 5);
+     PUT SKIP LIST('NOT');
+   END;
+   PUT SKIP LIST(A(1), A(2), A(3));
+   DO I = 1 TO 3;
+     IF I = 2 THEN A(I) = 0;
+     ELSE DO
+       A(I) = I * 10;
+       PUT SKIP LIST('ELSE', I);
+     END;
+   END;
+   PUT SKIP LIST(A(1), A(2), A(3));
+ END T223MPM;

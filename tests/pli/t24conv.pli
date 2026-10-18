@@ -1,0 +1,20 @@
+ P14CONV: PROC OPTIONS(MAIN);
+    /* CHARACTER TO ARITHMETIC CONVERSION */
+    DCL I FIXED BIN(15);
+    DCL K FIXED BIN(31);
+    DCL D FIXED DEC(7,2);
+    DCL C CHAR(8) INIT('  123.4 ');
+    DCL V CHAR(10) VARYING INIT('-77');
+    I = '42';
+    K = C;
+    D = C;
+    PUT SKIP LIST('I K D', I, K, D);
+    D = V;
+    K = V;
+    PUT SKIP LIST('V', D, K);
+    D = '1.236';
+    PUT SKIP LIST('ROUND?', D);
+    K = SUBSTR('XX99YY', 3, 2) + 1;
+    PUT SKIP LIST('EXPR', K, '5' + 2, '1.5' * 2);
+    IF '10' > 9 THEN PUT SKIP LIST('CMP');
+ END P14CONV;

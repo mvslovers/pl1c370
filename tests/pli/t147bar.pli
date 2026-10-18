@@ -1,0 +1,37 @@
+ T147BAR: PROC OPTIONS(MAIN);
+   /* BIT arrays and BIT members: their layout, in a REPORT record */
+   DCL REPORT FILE RECORD OUTPUT;
+   DCL 1 S, 2 BA(4) BIT(3), 2 C CHAR(2), 2 BB(3) BIT(1),
+     2 BC BIT(5), 2 D CHAR(1);
+   DCL I FIXED BIN(15);
+   BA(1) = '101'B; BA(2) = '011'B; BA(3) = '111'B; BA(4) = '001'B;
+   C = 'XY';
+   BB(1) = '1'B; BB(2) = '0'B; BB(3) = '1'B;
+   BC = '10011'B;
+   D = 'Z';
+   DO I = 1 TO 4;
+     PUT SKIP LIST(BA(I));
+   END;
+   PUT SKIP LIST(BB(1), BB(2), BB(3), BC);
+   WRITE FILE(REPORT) FROM(S);
+   CALL SHOW(BA(2));
+   CALL SHOWS(BC);
+   IF BA(3) = '111'B THEN PUT SKIP LIST('BA(3) ALL ONES');
+   IF BA(1) > BA(2) THEN PUT SKIP LIST('BA(1) GREATER');
+   PUT SKIP LIST(SUBSTR(BC, 2, 3), UNSPEC(BA(4)), BA(1) || BB(2));
+   DO I = 1 TO 4;
+     BA(I) = BA(I) | '100'B;
+   END;
+   BB = '0'B;
+   PUT SKIP LIST(BA(1), BA(2), BA(3), BA(4), BB(3), BC, C, D);
+   WRITE FILE(REPORT) FROM(S);
+ SHOW: PROC(X);
+   DCL X BIT(3);
+   PUT SKIP LIST('SHOW', X);
+   X = '000'B;
+ END SHOW;
+ SHOWS: PROC(Y);
+   DCL Y BIT(*);
+   PUT SKIP LIST('SHOWS', Y, LENGTH(Y));
+ END SHOWS;
+ END T147BAR;

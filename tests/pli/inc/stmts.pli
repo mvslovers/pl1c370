@@ -1,0 +1,3 @@
+   X = 7; Y = X * 6;
+   TOTAL = TOTAL + Y / 4;
+   PUT SKIP LIST(NAME, X, Y, TOTAL);

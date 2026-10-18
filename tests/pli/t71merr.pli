@@ -1,0 +1,44 @@
+ T71MERR: PROC OPTIONS(MAIN);
+   DCL A FLOAT DEC(6), N FIXED BIN(15) INIT(0);
+   ON ERROR BEGIN;
+     PUT SKIP LIST('ERR', N, ONCODE);
+     IF N = 1 THEN GO TO L1;
+     IF N = 2 THEN GO TO L2;
+     IF N = 3 THEN GO TO L3;
+     IF N = 4 THEN GO TO L4;
+     IF N = 5 THEN GO TO L5;
+     IF N = 6 THEN GO TO L6;
+     IF N = 7 THEN GO TO L7;
+     IF N = 8 THEN GO TO L8;
+     IF N = 9 THEN GO TO L9;
+     IF N = 10 THEN GO TO L10;
+     IF N = 11 THEN GO TO L11;
+     IF N = 12 THEN GO TO L12;
+     GO TO DONE;
+   END;
+   N = 1; A = SQRT(-1E0); PUT SKIP LIST('1 RET', A);
+ L1:
+   N = 2; A = LOG(0E0); PUT SKIP LIST('2 RET', A);
+ L2:
+   N = 3; A = LOG(-2E0); PUT SKIP LIST('3 RET', A);
+ L3:
+   N = 4; A = LOG10(0E0); PUT SKIP LIST('4 RET', A);
+ L4:
+   N = 5; A = EXP(200E0); PUT SKIP LIST('5 RET', A);
+ L5:
+   N = 6; A = SQRT(-9E0); PUT SKIP LIST('6 RET', A);
+ L6:
+   N = 7; A = SIN(1E20); PUT SKIP LIST('7 RET', A);
+ L7:
+   N = 8; A = TAN(1E20); PUT SKIP LIST('8 RET', A);
+ L8:
+   N = 9; A = ATAN(0E0,0E0); PUT SKIP LIST('9 RET', A);
+ L9:
+   N = 10; A = (-2E0)**0.5E0; PUT SKIP LIST('10 RET', A);
+ L10:
+   N = 11; A = 0E0**(-1E0); PUT SKIP LIST('11 RET', A);
+ L11:
+   N = 12; A = EXP(300E0); PUT SKIP LIST('12 RET', A);
+ L12:
+ DONE: PUT SKIP LIST('DONE');
+ END T71MERR;

@@ -1,0 +1,32 @@
+ RXCUT:   PROCEDURE(EFPLCOM, EFPLBARG, EFPLEARG, EFPLFB,
+                   EFPLARG, EFPLEVAL) OPTIONS(MAIN);
+   %INCLUDE RXCOMM;
+
+ /* -------------------------------------------------------------------
+  * RXCUT(STRING-TO-DETERMINE,N)
+  * RETURN EVERY N.TH CHAR OF A INPUT STRING
+  * CALL FUNCTION IN A REXX SCRIPT WITH STR=RXCUT(STRING,N)
+  * -------------------------------------------------------------------
+  */
+
+ /* -------------------------------------------------------------------
+  * INPUT VARIABLES
+  *   ARGNUM      CONTAINS NUMBER OF PROVIDED ARGUMENTS (MAX 15)
+  *   ARG(I)      CONTAINS CONTENTS OF ARGUMENT I (1 TO 15)
+  *   ARG_LEN(I)  CONTAINS LENGTH   OF ARGUMENT I (1 TO 15)
+  * RETURN VARIABLES
+  *   RESULT      CONTAINS RESULT TO BE RETURNED TO BREXX
+  *               THE RETURN VALUE MUST NOT EXCEED 1024 BYTES
+  *   RESULT_LEN  CONTAINS LENGTH OF RETURNED STRING
+  * -------------------------------------------------------------------
+  */
+
+  RESULT='';
+  N=ARG(2);
+  RESULT_LEN=0;
+  DO I=N TO ARG_LEN(1) BY N;
+     RESULT_LEN=RESULT_LEN+1;
+     SUBSTR(RESULT,RESULT_LEN,1)=SUBSTR(ARG(1),I,1);
+  END;
+ END RXCUT;
+

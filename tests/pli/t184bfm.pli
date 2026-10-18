@@ -1,0 +1,11 @@
+ T184BFM: PROC OPTIONS(MAIN);
+   /* B(w) of FIXED values: their bits after PL/I (F)'s conversion */
+   DCL X FIXED BIN(15) INIT(13), Y FIXED BIN(31) INIT(1000);
+   DCL Z FIXED DEC(5,2) INIT(-19.99), Q FIXED DEC(7) INIT(255);
+   DCL H FIXED DEC(15) INIT(123456789);
+   PUT SKIP EDIT(Y) (B(40));
+   PUT SKIP EDIT(Z, Q) (B(8), B(30));
+   PUT SKIP EDIT(X, 'A', Z) (B(5), A(2), B(3));
+   PUT SKIP EDIT(H) (B(60));
+   PUT SKIP EDIT(0, 1) (B(4), B(4));
+ END T184BFM;

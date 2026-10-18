@@ -1,0 +1,24 @@
+ T164BY2: PROC OPTIONS(MAIN);
+   DCL 1 A, 2 X FIXED BIN(15), 2 Y CHAR(4), 2 S, 3 P FIXED DEC(3),
+         3 Q CHAR(2), 2 Z FLOAT DEC(6);
+   DCL 1 B, 2 Y CHAR(6), 2 W FIXED BIN(15), 2 S, 3 Q CHAR(3),
+         3 R FIXED BIN(15), 2 X FIXED DEC(5);
+   DCL 1 C(2), 2 X FIXED BIN(15), 2 Y CHAR(4);
+   DCL 1 D(2), 2 Y CHAR(2), 2 X FIXED BIN(31);
+   A.X = 7; A.Y = 'ABCD'; A.P = 123; A.Q = 'QQ'; A.Z = 1.5;
+   B.Y = '------'; B.W = 99; B.Q = '???'; B.R = 5; B.X = 0;
+   B = A, BY NAME;
+   PUT SKIP LIST(B.Y, B.W, B.Q, B.R, B.X);
+   B.X = 42; B.Y = 'BBBBBB';
+   A = B, BY NAME;
+   PUT SKIP LIST(A.X, A.Y, A.P, A.Q, A.Z);
+   C(1).X = 1; C(1).Y = 'C1'; C(2).X = 2; C(2).Y = 'C2';
+   D = C, BY NAME;
+   PUT SKIP LIST(D(1).X, D(1).Y, D(2).X, D(2).Y);
+   PUT SKIP LIST(BOOL('1100'B, '1010'B, '0110'));
+   PUT SKIP LIST(BOOL('1100'B, '1010'B, '0001'));
+   PUT SKIP LIST(BOOL('1100'B, '1010'B, '0111'));
+   PUT SKIP LIST(BOOL('1100'B, '10'B, '1001'));
+   PUT SKIP LIST(BOOL('11001010'B, '10101100'B, '1110'));
+   PUT SKIP LIST(BOOL('1'B, '0'B, '1101'B));
+ END T164BY2;

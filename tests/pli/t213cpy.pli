@@ -1,0 +1,15 @@
+ T213CPY: PROC OPTIONS(MAIN);
+   /* the twin of t213cpy.opt.pli: the lines its COPY(REPORT) writes,
+      by PUT EDIT */
+   DCL (A, B, D) FIXED BIN(15), C CHAR(3);
+   DCL REPORT FILE STREAM OUTPUT;
+   GET LIST(A, B);
+   GET SKIP EDIT(C) (A(3));
+   GET SKIP DATA(D);
+   PUT FILE(REPORT) EDIT('12') (A);
+   PUT FILE(REPORT) SKIP EDIT('345') (A);
+   PUT FILE(REPORT) SKIP EDIT('XYZ') (A);
+   PUT FILE(REPORT) SKIP EDIT('D=9;') (A);
+   GET SKIP LIST(A) COPY;
+   PUT SKIP LIST(A, B, C, D);
+ END T213CPY;

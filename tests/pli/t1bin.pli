@@ -1,0 +1,20 @@
+ T1BIN: PROC OPTIONS(MAIN);
+    /* FIXED BINARY ARITHMETIC AND THE PRECISION OF ITS RESULTS */
+    DCL (A,B,C) FIXED BIN(31);
+    DCL (H,K) FIXED BIN(15);
+    A = 1000;
+    B = -37;
+    C = A + B;  PUT SKIP LIST('A+B', C);
+    C = A - B;  PUT SKIP LIST('A-B', C);
+    C = A * B;  PUT SKIP LIST('A*B', C);
+    C = -A + 5; PUT SKIP LIST('-A+5', C);
+    H = 300;
+    K = H * 3 - 7;
+    PUT SKIP LIST('K', K);
+    PUT SKIP LIST('EXPR', A + B, H * 2, A * B * 2);
+    C = (A + B) * (A - B);
+    PUT SKIP LIST('PAREN', C);
+    PUT SKIP LIST('NEG', -H, -(A - B));
+    K = 7;
+    PUT SKIP LIST('MIXED', K + 1, K * 10, 100 - K);
+ END T1BIN;

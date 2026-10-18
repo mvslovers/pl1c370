@@ -1,0 +1,21 @@
+ T260STG: PROC OPTIONS(MAIN);
+   /* THE PL/I (F) TWIN OF T260STG.OPT.PLI: THE SIZES WRITTEN OUT AS
+      PL/I (F) MAPS THE ITEMS (GC28-6594-7, DATA ELEMENTS), AN AREA'S
+      EXTENT AS ITS LIBRARY KEEPS IT (TIER 29) */
+   DCL A(5) FIXED BIN(31);
+   DCL R(20) FIXED BIN(31), K FIXED BIN(15);
+   R(1) = 2; R(2) = 4; R(3) = 4; R(4) = 4;
+   R(5) = 8; R(6) = 10; R(7) = 4; R(8) = 22;
+   R(9) = 5; R(10) = 3; R(11) = 20;
+   R(12) = 4; R(13) = 14; R(14) = 14;
+   R(15) = 8; R(16) = 116; R(17) = 16;
+   R(18) = 24;
+   R(19) = 9;
+   CALL SUMS(A, K);
+   R(20) = K;
+   PUT SKIP LIST(R);
+ SUMS: PROC(A, N);
+   DCL A(*) FIXED BIN(31), N FIXED BIN(15);
+   N = HBOUND(A, 1);
+ END SUMS;
+ END T260STG;

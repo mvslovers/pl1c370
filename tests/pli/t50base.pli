@@ -1,0 +1,41 @@
+ T50BASE: PROC OPTIONS(MAIN);
+   DCL (P, Q, HEAD) POINTER;
+   DCL 1 NODE BASED(P),
+         2 VAL FIXED BIN(31),
+         2 NAME CHAR(6),
+         2 NEXT POINTER;
+   DCL X FIXED DEC(7,2) BASED(Q);
+   DCL Y FIXED DEC(7,2) INIT(12.5);
+   DCL B CHAR(3) BASED(Q);
+   DCL C CHAR(3) INIT('XYZ');
+   DCL I FIXED BIN(15);
+   HEAD = NULL;
+   DO I = 1 TO 4;
+     ALLOCATE NODE;
+     VAL = I * 10;
+     NAME = 'NODE' || I;
+     NEXT = HEAD;
+     HEAD = P;
+   END;
+   P = HEAD;
+   DO WHILE (P ¬= NULL);
+     PUT SKIP LIST(VAL, NAME);
+     Q = NEXT;
+     FREE NODE;
+     P = Q;
+   END;
+   Q = ADDR(Y);
+   PUT SKIP LIST(X);
+   X = X * 2;
+   PUT SKIP LIST(Y);
+   Q = ADDR(C); PUT SKIP LIST(B);
+   ALLOCATE NODE SET(Q);
+   Q -> VAL = 99;
+   Q -> NODE.NAME = 'QQ';
+   PUT SKIP LIST(Q -> VAL, Q -> NAME);
+   IF Q = NULL THEN PUT SKIP LIST('NULL');
+   ELSE PUT SKIP LIST('NOT NULL');
+   P = Q;
+   IF P = Q THEN PUT SKIP LIST('SAME');
+   FREE Q -> NODE;
+ END T50BASE;

@@ -1,0 +1,9 @@
+ T173INB: PROC OPTIONS(MAIN);
+   DCL C1(4) CHAR(4) INIT((3)'AB');
+   DCL F1(4) FIXED BIN(15) INIT((3)7);
+   DCL C2(4) CHAR(4) INIT((2)((2)'XY'));
+   DCL C3(3) CHAR(6) STATIC INIT((2)'Q', 'R', 'S');
+   PUT SKIP LIST(C1(1) || '|', F1(1), F1(3));
+   PUT SKIP LIST(C2(1) || '|', C2(2) || '|');
+   PUT SKIP LIST(C3(1) || '|', C3(2) || '|', C3(3) || '|');
+ END T173INB;

@@ -1,0 +1,28 @@
+ T129FAC: PROC OPTIONS(MAIN);
+   DCL (A FIXED BIN(31), B FLOAT DEC(6), C CHAR(5)) STATIC;
+   DCL ((D, E) FIXED DEC(5,2), F FIXED BIN(15)) INIT(0);
+   DCL 1 S, 2 (X, Y) FIXED BIN(15), 2 (Z1 CHAR(2), Z2 CHAR(3));
+   DCL (G(3), H(2)) FIXED BIN(15), (P, Q) CHAR(4) VARYING;
+   DCL ((K1 INIT(11), K2 INIT(22)) FIXED BIN(15),
+       K3 CHAR(3) INIT('K3')) AUTOMATIC;
+   A = 5;
+   B = 2.5;
+   C = 'HELLO';
+   D = 1.25;
+   X = 7;
+   Y = -7;
+   Z1 = 'Z1Z1';
+   Z2 = 'ABC';
+   G(3) = 9;
+   H(1) = 4;
+   P = 'PP';
+   Q = 'QQQQQ';
+   PUT SKIP LIST(A, B, C, D, E, F);
+   PUT SKIP LIST(X, Y, Z1, Z2, G(3), H(1));
+   PUT SKIP LIST(P, LENGTH(P), Q, LENGTH(Q), K1, K2, K3);
+   CALL SUB(C, 'ABCDEFGHIJ');
+ SUB: PROC(U, V);
+   DCL (U, V) CHAR(*);
+   PUT SKIP LIST('SUB', U, LENGTH(U), V, LENGTH(V));
+ END SUB;
+ END T129FAC;

@@ -1,0 +1,25 @@
+ T208ANB: PROC OPTIONS(MAIN);
+   /* the PL/I (F) twin of t208anb.opt.pli: INDEX and SUBSTR of bit
+      strings, and the values ANSI 9.4.4 gives */
+   DCL B BIT(8) INIT('10110110'B), V BIT(16) VARYING;
+   DCL N FIXED BIN(15) INIT(3), C CHAR(10) VARYING, I FIXED BIN(15);
+   DCL K FIXED BIN(15);
+   I = INDEX(B, '11'B);
+   V = SUBSTR(B, I + 2);    PUT SKIP LIST(V, LENGTH(V));
+   V = SUBSTR(B, 1, I - 1); PUT SKIP LIST(V, LENGTH(V));
+   V = ''B;                 PUT SKIP LIST(V, LENGTH(V));
+   V = B;                   PUT SKIP LIST(V, LENGTH(V));
+   V = SUBSTR(B, 1, I - 1) || SUBSTR(B, I + 2); PUT SKIP LIST(V);
+   V = '11'B;               PUT SKIP LIST(V);
+   V = ''B;
+   DO K = 8 TO 1 BY -1; V = V || SUBSTR(B, K, 1); END;
+   PUT SKIP LIST(V);
+   V = '1'B;                PUT SKIP LIST(V);
+   V = '101010'B;           PUT SKIP LIST(V, LENGTH(V));
+   V = ''B;
+   DO K = 1 TO N; V = V || '1'B; END;
+   PUT SKIP LIST(V);
+   V = ''B;                 PUT SKIP LIST(V, LENGTH(V));
+   C = '0Z';                PUT SKIP LIST(C);
+   C = '01101101';          PUT SKIP LIST(C);
+ END T208ANB;

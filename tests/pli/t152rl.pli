@@ -1,0 +1,75 @@
+ T152RL: PROC OPTIONS(MAIN);
+   /* A realistic program: an inventory report with sorting,
+      string handling, a function, ON conditions and edits */
+   DCL 1 ITEM(8),
+         2 CODE CHAR(5),
+         2 NAME CHAR(12) VARYING,
+         2 QTY FIXED BIN(31),
+         2 PRICE FIXED DEC(7,2);
+   DCL (I, J, N) FIXED BIN(15);
+   DCL (T, TOTAL) FIXED DEC(11,2);
+   DCL 1 TMP LIKE ITEM;
+   DCL LINE CHAR(60), P FIXED BIN(15), W CHAR(20) VARYING;
+   DCL VALUE ENTRY(FIXED BIN(31), FIXED DEC(7,2))
+     RETURNS(FIXED DEC(11,2));
+   DCL MAXQ ENTRY RETURNS(FIXED BIN(31));
+   DCL DATA(8) CHAR(40) INIT(
+     'A100 WIDGET 12 1.50', 'B200 GADGET 3 12.25',
+     'A050 BOLT 500 0.05', 'C900 SPROCKET 7 3.10',
+     'B150 NUT 450 0.04', 'A999 GEAR 2 45.00',
+     'C100 SPRING 60 0.75', 'B001 WASHER 900 0.01');
+   N = 8;
+   DO I = 1 TO N;
+     LINE = DATA(I);
+     ITEM(I).CODE = SUBSTR(LINE, 1, 4);
+     P = INDEX(SUBSTR(LINE, 6), ' ');
+     ITEM(I).NAME = SUBSTR(LINE, 6, P - 1);
+     LINE = SUBSTR(LINE, 6 + P);
+     P = INDEX(LINE, ' ');
+     GET STRING(SUBSTR(LINE, 1, P - 1)) LIST(ITEM(I).QTY);
+     GET STRING(SUBSTR(LINE, P + 1)) LIST(ITEM(I).PRICE);
+   END;
+   /* bubble sort by code */
+   DO I = 1 TO N - 1;
+     DO J = 1 TO N - I;
+       IF ITEM(J).CODE > ITEM(J + 1).CODE THEN DO;
+         TMP = ITEM(J);
+         ITEM(J) = ITEM(J + 1);
+         ITEM(J + 1) = TMP;
+       END;
+     END;
+   END;
+   TOTAL = 0;
+   PUT EDIT('CODE', 'NAME', 'QTY', 'PRICE', 'VALUE')
+     (COLUMN(2), A, COLUMN(9), A, COLUMN(25), A, COLUMN(33), A,
+      COLUMN(45), A);
+   DO I = 1 TO N;
+     T = VALUE(ITEM(I).QTY, ITEM(I).PRICE);
+     TOTAL = TOTAL + T;
+     PUT SKIP EDIT(ITEM(I).CODE, ITEM(I).NAME, ITEM(I).QTY,
+       ITEM(I).PRICE, T)
+       (COLUMN(2), A, COLUMN(9), A, COLUMN(22), F(6), COLUMN(30),
+        F(8,2), COLUMN(40), F(10,2));
+   END;
+   PUT SKIP(2) EDIT('TOTAL', TOTAL)
+     (COLUMN(2), A, COLUMN(40), F(10,2));
+   W = '';
+   DO I = 1 TO N;
+     IF SUBSTR(ITEM(I).CODE, 1, 1) = 'B' THEN
+       W = W || SUBSTR(ITEM(I).NAME, 1, 1);
+   END;
+   PUT SKIP LIST('B INITIALS', W, LENGTH(W));
+   PUT SKIP LIST('MAX QTY', MAXQ);
+ VALUE: PROC(Q, PR) RETURNS(FIXED DEC(11,2));
+   DCL Q FIXED BIN(31), PR FIXED DEC(7,2);
+   RETURN(Q * PR);
+ END VALUE;
+ MAXQ: PROC RETURNS(FIXED BIN(31));
+   DCL (M, K) FIXED BIN(31);
+   M = 0;
+   DO K = 1 TO N;
+     M = MAX(M, ITEM(K).QTY);
+   END;
+   RETURN(M);
+ END MAXQ;
+ END T152RL;

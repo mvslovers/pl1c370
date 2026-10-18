@@ -1,0 +1,16 @@
+ T210RDX: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976 radix factors: bit constants 'x'B1 to 'x'B4
+      (CL22, CL23) and the format items B1 to B4 (CM145) */
+   DCL B BIT(16) INIT('F0A5'B4), C BIT(9) INIT('17'B3);
+   DCL D BIT(6) INIT('132'B2), E BIT(3) INIT('101'B1);
+   DCL V BIT(32) VARYING, G BIT(12);
+   PUT SKIP LIST(B, C, D, E);
+   PUT SKIP LIST('7'B3 = '111'B, 'C'B4 || '1'B, LENGTH('ABC'B4));
+   PUT SKIP EDIT(B, B, B, B) (B4(4), X(1), B3(6), X(1), B2(8), X(1),
+     B1(16));
+   PUT SKIP EDIT(C, C) (B4(3), X(1), B3);
+   PUT SKIP EDIT(B) (B4(2));
+   PUT SKIP EDIT(B) (B4(6));
+   GET EDIT(G, V) (B4(3), X(1), B3(4));
+   PUT SKIP LIST(G, V);
+ END T210RDX;

@@ -1,0 +1,14 @@
+ T194XSI: PROC OPTIONS(MAIN);
+   DCL M(2,3) FIXED DEC(5,1);
+   DCL 1 S(3), 2 X FIXED BIN(15), 2 Y CHAR(1);
+   DCL I FIXED BIN(15);
+   GET LIST(M(2,*));
+   M(1,*) = -1;
+   PUT SKIP LIST(M);
+   GET EDIT(M(*,1)) (2 F(4,1));
+   PUT SKIP LIST(M);
+   DO I = 1 TO 3; S(I).X = I; S(I).Y = 'P'; END;
+   PUT SKIP LIST(S.X, S(*).Y);
+   S(*).X = S(*).X * 3;
+   PUT SKIP LIST(S.X);
+ END T194XSI;

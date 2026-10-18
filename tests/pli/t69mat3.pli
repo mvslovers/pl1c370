@@ -1,0 +1,9 @@
+ T69MAT3: PROC OPTIONS(MAIN);
+   DCL (A,B) FLOAT DEC(6), (C,D) FLOAT DEC(16);
+   A = 1E0; C = 1E0; B = ATAND(A); D = ATAND(C);
+   PUT SKIP LIST('ATAND', A, B, D);
+   A = 0.5E0; C = 0.5E0; B = ATAND(A); D = ATAND(C);
+   PUT SKIP LIST('ATAND', A, B, D);
+   A = -20E0; C = -20E0; B = ATAND(A); D = ATAND(C);
+   PUT SKIP LIST('ATAND', A, B, D);
+ END T69MAT3;

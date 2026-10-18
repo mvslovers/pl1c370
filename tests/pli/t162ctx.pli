@@ -1,0 +1,21 @@
+ T162CTX: PROC OPTIONS(MAIN);
+   /* CALL of a name declared nowhere: an external entry; the
+      procedures compiled apart (t162ctx.sep) */
+   DCL N FIXED BIN(31) INIT(41), S CHAR(5) INIT('HELLO');
+   CALL BUMP(N);
+   CALL BUMP(N);
+   CALL SHOUT(S);
+   PUT SKIP LIST('N', N, S);
+ END T162CTX;
+*PROCESS;
+ BUMP: PROC(X);
+   DCL X FIXED BIN(31);
+   X = X + 1;
+   PUT SKIP LIST('BUMP', X);
+ END BUMP;
+*PROCESS;
+ SHOUT: PROC(C);
+   DCL C CHAR(5);
+   PUT SKIP LIST('SHOUT', C);
+   C = 'WORLD';
+ END SHOUT;

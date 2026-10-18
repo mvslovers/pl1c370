@@ -1,0 +1,24 @@
+ T209ANS: PROC OPTIONS(MAIN);
+   /* the PL/I (F) twin of t209ans.opt.pli: an on-unit for each cut
+      string while STRINGSIZE is enabled, the cut value after it; with
+      no on-unit the system action's message (GC33-0009-4, SC33-0027-5
+      IBM441I) */
+   DCL C3 CHAR(3), V CHAR(3) VARYING, B BIT(4);
+   DCL BL BIT(40) INIT((40)'1'B);
+   DCL (S1 INIT(150), S2 INIT(454)) FIXED BIN(15);
+   PUT SKIP LIST('STRINGSIZE', S1); C3 = 'ABCDE'; PUT SKIP LIST(C3);
+   PUT SKIP LIST('STRINGSIZE', S1); V = 'WXYZ';   PUT SKIP LIST(V);
+   PUT SKIP LIST('STRINGSIZE', S1); B = '1010'B;  PUT SKIP LIST(B);
+   PUT SKIP LIST('STRINGSIZE', S1); PUT SKIP LIST(SUBSTR(BL, 36));
+   C3 = 'AB';               PUT SKIP LIST(C3 || '|');
+   C3 = 'LONGER';           PUT SKIP LIST(C3);
+   C3 = 'QUIETLY';          PUT SKIP LIST(C3);
+   PUT SKIP LIST('STRINGSIZE', S1);
+   PUT SKIP EDIT('') (A);
+   PUT SKIP EDIT('IBM441I ''STRINGSIZE'' CONDITION RAISED',
+     ' AT OFFSET +00000 FROM ENTRY POINT T209ANS') (A, A);
+   PUT SKIP EDIT('') (A);
+   C3 = 'TOOLONG';          PUT SKIP LIST(C3);
+   PUT SKIP LIST('STORAGE', S2);
+   PUT SKIP LIST('STORAGE RAISED', '1'B, '1'B);
+ END T209ANS;

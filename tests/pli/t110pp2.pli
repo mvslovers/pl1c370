@@ -1,0 +1,26 @@
+ T110PP: PROC OPTIONS(MAIN);
+   %DECLARE (I, J, NEG) FIXED, (S, W, OP) CHARACTER;
+   %INCLUDE PPINC;
+   %NEG = -12;
+   %S = 'PUT SKIP LIST(''GENERATED'', NEG);';
+   %OP = '+';
+   %W = 'I OP J';
+   DCL A(3,2) FIXED BIN(31), T FIXED BIN(31);
+   S
+   %DO I = 1 TO 3;
+     %DO J = 1 TO 2;
+       %IF I = J %THEN %DO; A(I,J) = 0; %END;
+       %ELSE %DO; A(I,J) = W; %END;
+     %END;
+   %END;
+   PUT SKIP LIST(A);
+   PUT SKIP LIST('FROM INC', FROMINC, K);
+   %IF S = 'X' %THEN %GO TO NOPE;
+   %ELSE %GO TO YES;
+   %NOPE: ;
+   PUT SKIP LIST('NOT HERE');
+   %YES: ;
+   %I = 0;
+   %IF 'ABC' < 'ABD' %THEN %I = 1;
+   T = I + NEG; PUT SKIP LIST('T', T);
+ END T110PP;

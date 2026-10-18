@@ -1,0 +1,15 @@
+ T6MISC: PROC OPTIONS(MAIN);
+    /* IMPLICIT I-N DECLARATION, SKIP(3) AND SKIP(4), DEC WITH BIN */
+    DCL S FIXED DEC(5,0) INIT(40);
+    DCL I FIXED BIN(15) INIT(2);
+    K = 0;
+    DO WHILE(K < 3);
+       K = K + 1;
+    END;
+    PUT LIST('K', K);
+    PUT SKIP(3) LIST('AFTER SKIP3');
+    PUT SKIP(4) LIST('AFTER SKIP4');
+    PUT SKIP LIST('S+I', S + I, S * I, I - S);
+    S = S + I;
+    PUT SKIP LIST('S', S);
+ END T6MISC;

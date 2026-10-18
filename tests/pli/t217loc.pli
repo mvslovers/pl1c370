@@ -1,0 +1,38 @@
+ T217LOC: PROC OPTIONS(MAIN);
+   /* the twin of t217loc.opt.pli: each qualifier assigned to a
+      pointer variable first, as PL/I (F) needs it */
+   DCL X FIXED BIN(31) BASED(T);
+   DCL 1 N BASED(T), 2 V FIXED BIN(31), 2 NXT PTR;
+   DCL C CHAR(4) BASED(T);
+   DCL (P, Q, R, T) PTR, A FIXED BIN(31) INIT(42),
+       S CHAR(8) INIT('ABCDEFGH');
+   DCL PV(3) PTR;
+   DCL GETP ENTRY RETURNS(PTR);
+   DCL (X1, X2, X3) FIXED BIN(31);
+   P = ADDR(A);
+   X1 = P -> X;
+   T = ADDR(A); X2 = X;
+   T = GETP; X3 = X;
+   PUT LIST(X1, X2, X3);
+   T = GETP; X = 7;
+   PUT SKIP LIST(A);
+   T = ADDR(S); C = 'WXYZ';
+   PUT SKIP LIST(S);
+   ALLOCATE N SET(Q);
+   Q -> V = 1;
+   ALLOCATE N SET(R);
+   R -> V = 2;
+   Q -> NXT = R;
+   R -> NXT = NULL;
+   T = Q -> NXT;
+   PUT SKIP LIST(T -> V, Q -> V + T -> V);
+   PV(2) = Q;
+   T = PV(2);
+   X1 = T -> V;
+   T = T -> NXT;
+   PUT SKIP LIST(X1, T -> V);
+   FREE Q -> N, R -> N;
+ GETP: PROC RETURNS(PTR);
+   RETURN(P);
+ END GETP;
+ END T217LOC;

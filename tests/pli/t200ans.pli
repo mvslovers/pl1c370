@@ -1,0 +1,46 @@
+ T200ANS: PROC OPTIONS(MAIN);
+   /* the PL/I (F) twin of t200ans.opt.pli: each ANSI function
+      spelled out with INDEX and SUBSTR, as 9.4.4 defines it */
+   DCL S CHAR(8) INIT('ABCDEFCD'), V CHAR(20) VARYING;
+   DCL E CHAR(1) VARYING INIT(''), N FIXED BIN(15) INIT(2);
+   DCL (I, K) FIXED BIN(15), T CHAR(256) VARYING, CH CHAR(1);
+   I = INDEX(S, 'CD');          /* AFTER(S, 'CD') */
+   V = SUBSTR(S, I + 2);  PUT SKIP LIST(V, LENGTH(V));
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = S;                PUT SKIP LIST(V, LENGTH(V));
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = SUBSTR(S, I + 2) || '|';  PUT SKIP LIST(V);
+   V = SUBSTR(S, 1, I - 1);  PUT SKIP LIST(V, LENGTH(V));
+   V = S;                PUT SKIP LIST(V, LENGTH(V));
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = S;                       PUT SKIP LIST(V);
+   V = SUBSTR(S, 1, I - 1);     PUT SKIP LIST(V);
+   V = 'CD';                    PUT SKIP LIST(V);
+   V = SUBSTR(S, I + 2);        PUT SKIP LIST(V);
+   V = SUBSTR(S, 1, I - 1) || SUBSTR(S, I + 2); PUT SKIP LIST(V);
+   V = '';                      PUT SKIP LIST(V, LENGTH(V));
+   V = S;                       PUT SKIP LIST(V);
+   V = '';                      PUT SKIP LIST(V, LENGTH(V));
+   V = S;                       PUT SKIP LIST(V);
+   V = 'CBA';            PUT SKIP LIST(V);
+   V = '';
+   DO K = 8 TO 1 BY -1; V = V || SUBSTR(S, K, 1); END;
+   PUT SKIP LIST(V);
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = REPEAT('12', 2);  PUT SKIP LIST(V);
+   V = '';               PUT SKIP LIST(V, LENGTH(V));
+   V = '';
+   DO K = 1 TO N; V = V || 'XY'; END;
+   PUT SKIP LIST(V);
+   V = '';
+   DO K = 1 TO N + 3; V = V || 'Q'; END;
+   PUT SKIP LIST(V);
+   T = '';
+   DO K = 0 TO 255;
+     UNSPEC(CH) = SUBSTR(UNSPEC(K), 9, 8);
+     T = T || CH;
+   END;
+   PUT SKIP LIST(LENGTH(T), SUBSTR(T, 194, 1),
+     SUBSTR(T, 241, 10), INDEX(T, 'Z'));
+ END T200ANS;

@@ -1,0 +1,17 @@
+ T169RFM: PROC OPTIONS(MAIN);
+   DCL (I, N) FIXED BIN(15), A(6) FLOAT DEC(6), S CHAR(4) INIT('ABCD');
+   DCL (X, Y) FIXED DEC(7,2);
+ F1: FORMAT (F(5));
+ F2: FORMAT (3 F(8,2), X(2), A);
+ F3: FORMAT (COLUMN(10), A(4), R(F1));
+ F4: FORMAT (2 (F(4), X(1)), A);
+   GET EDIT(N) (R(F1));
+   GET EDIT((A(I) DO I = 1 TO N)) (6 F(5,1));
+   PUT SKIP EDIT((A(I) DO I = 1 TO 3), S) (R(F2));
+   PUT SKIP EDIT(S, N) (R(F3));
+   PUT SKIP EDIT(1, 2, 'END') (R(F4));
+   X = 12.5; Y = -3.25;
+   PUT SKIP EDIT(X, Y, X + Y, 'XY') (R(F2));
+   PUT SKIP EDIT(X, Y) (2 F(9,3));
+   PUT SKIP EDIT('A', 'B', 'C') (3 A(2));
+ END T169RFM;

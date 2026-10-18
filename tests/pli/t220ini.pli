@@ -1,0 +1,15 @@
+ T220INI: PROC OPTIONS(MAIN);
+   /* the twin of t220ini.opt.pli: the INITIAL values assigned */
+   DCL P ENTRY(FIXED BIN(15));
+   CALL P(3);
+   CALL P(5);
+ P: PROC(M);
+   DCL M FIXED BIN(15);
+   DCL B FIXED BIN(15), C FIXED BIN(15);
+   DCL V CHAR(6) VARYING;
+   DCL X(3) FLOAT DEC(6);
+   B = M * 2; C = M; V = 'AB' || 'CD'; X(1) = M; X(2) = M + 1;
+   X(3) = 9;
+   PUT SKIP LIST(B, C, V, X);
+ END P;
+ END T220INI;

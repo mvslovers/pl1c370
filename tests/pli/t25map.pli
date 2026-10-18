@@ -1,0 +1,38 @@
+ T25MAP: PROC OPTIONS(MAIN);
+    /* STRUCTURE MAPPING AS PL/I (F) DOES IT, WRITTEN AS RECORDS */
+    DCL REPORT FILE RECORD OUTPUT;
+    DCL 1 S1,
+          2 A CHAR(1) INIT('A'),
+          2 B FIXED BIN(31) INIT(1),
+          2 C FIXED BIN(15) INIT(2),
+          2 D CHAR(3) INIT('DDD');
+    DCL 1 S2,
+          2 X CHAR(1) INIT('X'),
+          2 M,
+            3 H FIXED BIN(15) INIT(3),
+            3 Y CHAR(1) INIT('Y'),
+          2 F FIXED BIN(31) INIT(4);
+    DCL 1 S3,
+          2 T(3) FIXED BIN(15) INIT(5,6,7),
+          2 Z CHAR(1) INIT('Z'),
+          2 W FIXED BIN(31) INIT(8);
+    DCL 1 S4(2),
+          2 P CHAR(1) INIT('P','Q'),
+          2 Q FIXED BIN(31) INIT(9,10);
+    DCL 1 S5,
+          2 V CHAR(5) INIT('VV'),
+          2 N FIXED DEC(5,2) INIT(1.5),
+          2 K CHAR(1) INIT('K');
+    DCL 1 S6,
+          2 E FIXED DEC(4) INIT(-12),
+          2 G FIXED BIN(15) INIT(11),
+          2 I CHAR(2) INIT('II'),
+          2 J FIXED BIN(31) INIT(12);
+    WRITE FILE(REPORT) FROM(S1);
+    WRITE FILE(REPORT) FROM(S2);
+    WRITE FILE(REPORT) FROM(S3);
+    WRITE FILE(REPORT) FROM(S4);
+    WRITE FILE(REPORT) FROM(S5);
+    WRITE FILE(REPORT) FROM(S6);
+    PUT SKIP LIST('WRITTEN');
+ END T25MAP;

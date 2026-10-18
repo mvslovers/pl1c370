@@ -1,0 +1,51 @@
+ T218GEN: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976's GENERIC: member WHEN (descriptions), the
+      first member that matches is taken (CM36 to CM41, 4.4.5.11) */
+   DCL SHOW GENERIC(SAR WHEN((*) FIXED),
+                    SFB WHEN(FIXED BINARY),
+                    SFD WHEN(FIXED DEC(1:5)),
+                    SFL WHEN(FLOAT),
+                    SFE WHEN(DEC),
+                    SCH WHEN(CHAR NONVARYING),
+                    SVA WHEN(VARYING),
+                    SAN WHEN(*),
+                    SNO);
+   DCL TWO GENERIC(T2S WHEN(CHAR, *), T2N WHEN(*, *));
+   DCL I FIXED BIN(15) INIT(3), D FIXED DEC(5,2) INIT(1.25),
+       E FIXED DEC(7) INIT(1234567), F FLOAT DEC(6) INIT(2.5E0),
+       C CHAR(3) INIT('ABC'), V CHAR(5) VARYING INIT('XY'),
+       A(3) FIXED BIN(15) INIT(1, 2, 3), P PTR;
+   CALL SHOW(I);
+   CALL SHOW(D);
+   CALL SHOW(E);
+   CALL SHOW(F);
+   CALL SHOW(C);
+   CALL SHOW(V);
+   CALL SHOW(A);
+   CALL SHOW(P);
+   CALL SHOW;
+   CALL TWO('Q', I);
+   CALL TWO(I, 'Q');
+ SFB: PROC(X); DCL X FIXED BIN(15);
+   PUT SKIP LIST('SFB', X); END SFB;
+ SFD: PROC(X); DCL X FIXED DEC(5,2);
+   PUT SKIP LIST('SFD', X); END SFD;
+ SFE: PROC(X); DCL X FIXED DEC(7);
+   PUT SKIP LIST('SFE', X); END SFE;
+ SVA: PROC(X); DCL X CHAR(*) VARYING;
+   PUT SKIP LIST('SVA', X); END SVA;
+ SFL: PROC(X); DCL X FLOAT DEC(6);
+   PUT SKIP LIST('SFL', X); END SFL;
+ SCH: PROC(X); DCL X CHAR(*);
+   PUT SKIP LIST('SCH', X); END SCH;
+ SAR: PROC(X); DCL X(*) FIXED BIN(15);
+   PUT SKIP LIST('SAR', X(2)); END SAR;
+ SAN: PROC(X); DCL X PTR;
+   PUT SKIP LIST('SAN'); END SAN;
+ SNO: PROC;
+   PUT SKIP LIST('SNO'); END SNO;
+ T2S: PROC(X, Y); DCL X CHAR(*), Y FIXED BIN(15);
+   PUT SKIP LIST('T2S', X, Y); END T2S;
+ T2N: PROC(X, Y); DCL X FIXED BIN(15), Y CHAR(*);
+   PUT SKIP LIST('T2N', X, Y); END T2N;
+ END T218GEN;

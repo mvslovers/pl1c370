@@ -1,0 +1,23 @@
+ P12EDIT: PROC OPTIONS(MAIN);
+    /* PUT EDIT FORMAT ITEMS IN DETAIL */
+    DCL D FIXED DEC(7,3) INIT(12.3456);
+    DCL N FIXED DEC(5,0) INIT(-42);
+    DCL I FIXED BIN(15) INIT(7);
+    DCL K FIXED BIN(31) INIT(123456);
+    DCL C CHAR(5) INIT('ABCDE');
+    PUT EDIT('F(8,2)', D) (A(10), F(8,2));
+    PUT SKIP EDIT('F(8,1)', D) (A(10), F(8,1));
+    PUT SKIP EDIT('F(8)', D) (A(10), F(8));
+    PUT SKIP EDIT('NEG', N, -D) (A(10), F(6), F(9,3));
+    PUT SKIP EDIT('BIN', I, K) (A(10), F(4), F(10));
+    PUT SKIP EDIT('SMALL', K) (A(10), F(3));
+    PUT SKIP EDIT('A(3)', C, C) (A(10), A(3), A(8));
+    PUT SKIP EDIT('X', 'Y') (A, X(5), A);
+    PUT SKIP EDIT('COL', 'Z') (A, COL(20), A);
+    PUT SKIP EDIT('BACK', 'W') (COL(30), A, COL(5), A);
+    PUT SKIP EDIT('SKIPS', 'NEXT') (A, SKIP(2), A);
+    PUT SKIP EDIT('F(5,2)', 0.5, -0.5) (A(10), F(5,2), F(6,2));
+    PUT SKIP EDIT('LIT', 42, 1.5) (A(10), F(5), F(6,2));
+    PUT SKIP EDIT((3)'AB') (A);
+    PUT PAGE EDIT('PAGE') (A);
+ END P12EDIT;

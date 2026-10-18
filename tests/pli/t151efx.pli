@@ -1,0 +1,13 @@
+ T151EFX: PROC OPTIONS(MAIN);
+   /* the E format item with FIXED values */
+   DCL A FIXED DEC(5,2) INIT(-999.96), Z FIXED DEC(3) INIT(0);
+   DCL B FIXED BIN(31) INIT(123456), C FIXED DEC(7,5) INIT(0.00125);
+   DCL D FIXED DEC(9) INIT(987654321);
+   PUT SKIP EDIT('<', A, '>') (A, E(10,2), A);
+   PUT SKIP EDIT('<', Z, '>') (A, E(10,2), A);
+   PUT SKIP EDIT('<', B, '>') (A, E(12,3), A);
+   PUT SKIP EDIT('<', C, '>') (A, E(11,1), A);
+   PUT SKIP EDIT('<', D, '>') (A, E(14,4,6), A);
+   PUT SKIP EDIT('<', D, '>') (A, E(9,0), A);
+   PUT SKIP EDIT('<', 7, '>') (A, E(8,1), A);
+ END T151EFX;

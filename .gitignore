@@ -1,0 +1,16 @@
+build/
+dist/
+.env
+*.o
+*.tmp
+.DS_Store
+internals/research/pls/plscorpus/scan.tsv
+__pycache__/
+.mbt/
+*.xmit
+
+# reference manuals: local only (internals/manuals/README.md)
+internals/manuals/*.pdf
+internals/manuals/*.txt
+# probe programs and their output: local only (CLAUDE.md, "Probes")
+/probes/

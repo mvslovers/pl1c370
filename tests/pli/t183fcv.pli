@@ -1,0 +1,16 @@
+ T183FCV: PROC OPTIONS(MAIN);
+   /* E and F of character strings, B of FIXED values */
+   DCL S CHAR(8) INIT('1.5E2'), T CHAR(6) INIT(' -42.5');
+   DCL U CHAR(10) VARYING INIT('  0.0625 '), W CHAR(4) INIT('7');
+   DCL X FIXED BIN(15) INIT(13), Y FIXED BIN(31) INIT(1000);
+   DCL Z FIXED DEC(5,2) INIT(-19.99), Q FIXED DEC(7) INIT(255);
+   PUT SKIP EDIT(S, T) (E(12,3), E(12,3));
+   PUT SKIP EDIT(S, T) (F(8,1), F(8,2));
+   PUT SKIP EDIT(U, W, '-3E-1') (F(10,4), F(4), F(8,2));
+   PUT SKIP EDIT(U, W) (E(14,5), E(10,2));
+   PUT SKIP EDIT(5, 10, -3) (B(8), B(6), B(4));
+   PUT SKIP EDIT(2.75) (B(8));
+   PUT SKIP EDIT(X, Y) (B(20), B);
+   PUT SKIP EDIT(Z, Q) (B, B(30));
+   PUT SKIP EDIT(X, 'A', Z) (B(5), A(2), B(3));
+ END T183FCV;

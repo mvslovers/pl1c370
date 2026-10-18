@@ -1,0 +1,48 @@
+ T52LIST: PROC OPTIONS(MAIN);
+   /* a sorted list of records read from SYSIN, written to REPORT */
+   DCL REPORT FILE RECORD OUTPUT;
+   DCL (HEAD, P, Q, PREV) POINTER;
+   DCL 1 ITEM BASED(P),
+         2 KEY FIXED DEC(5),
+         2 TEXT CHAR(7),
+         2 AMT FLOAT DEC(6),
+         2 LINK POINTER;
+   DCL (K, N) FIXED DEC(5), T CHAR(7), A FLOAT;
+   DCL COUNT FIXED BIN(15) INIT(0), OUT CHAR(7);
+   ON ENDFILE(SYSIN) GO TO DONE;
+   HEAD = NULL;
+   DO WHILE ('1'B);
+     GET LIST(K, T, A);
+     ALLOCATE ITEM;
+     KEY = K; TEXT = T; AMT = A;
+     PREV = NULL;
+     Q = HEAD;
+     DO WHILE (Q ¬= NULL);
+       IF Q -> KEY > K THEN GO TO INS;
+       PREV = Q;
+       Q = Q -> LINK;
+     END;
+ INS:
+     LINK = Q;
+     IF PREV = NULL THEN HEAD = P;
+     ELSE PREV -> LINK = P;
+     COUNT = COUNT + 1;
+   END;
+ DONE:
+   PUT SKIP LIST('ITEMS', COUNT);
+   P = HEAD;
+   DO WHILE (P ¬= NULL);
+     PUT SKIP LIST(KEY, TEXT, AMT);
+     OUT = TEXT;
+     WRITE FILE(REPORT) FROM(OUT);
+     Q = LINK;
+     FREE ITEM;
+     P = Q;
+   END;
+   BEGIN;
+     DCL W(3) CHAR(2) INIT('AA', 'BB', 'CC');
+     DCL X(3) CHAR(2) BASED(Q);
+     Q = ADDR(W);
+     PUT SKIP LIST(X(2), X(3));
+   END;
+ END T52LIST;

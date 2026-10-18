@@ -1,0 +1,76 @@
+ /* --------------------------------------------------------------------
+  * RXCOMM FOR ENTRY IHESAPB (OPT=0) OR IHESAPD (OPT=1, 2)
+  * THE PROGRAM IS LINKED WITH  ENTRY IHESAPD  (OR IHESAPB FOR OPT=0),
+  * SO REGISTER 1 REACHES THE MAIN PROCEDURE UNCHANGED: THE EFPL OF
+  * TSO/E REXX AND BREXX/370 IS ITS PARAMETER LIST.  THE PROCEDURE
+  * STATEMENT NAMES THE SIX EFPL WORDS:
+  *   NAME: PROCEDURE(EFPLCOM,EFPLBARG,EFPLEARG,EFPLFB,EFPLARG,EFPLEVAL)
+  *         OPTIONS(MAIN);
+  * EFPLCOM .. EFPLFB ARE RESERVED AND NEVER TOUCHED.
+  * ADDR(EFPLARG) IS THE ARGUMENT TABLE, EFPLEVAL THE EVALUATION BLOCK.
+  * MEASURED ON PL/I (F) V5.5, MVS 3.8J (PL1C370 JOB01267).
+  * --------------------------------------------------------------------
+  */
+   DCL (EFPLCOM, EFPLBARG, EFPLEARG, EFPLFB) PTR;
+   DCL EFPLARG  PTR;
+   DCL EFPLEVAL PTR;
+ /* --------------------------------------------------------------------
+  * ARGTABLE ENTRIES AND RELATED DEFINITIONS
+  * --------------------------------------------------------------------
+  */
+   DCL EFPLARG_PTR      PTR;
+   EFPLARG_PTR        = ADDR(EFPLARG);
+   DCL 1 ARGTABLE BASED(EFPLARG_PTR),
+         2 ARGTABLE_ENTRY(15),
+           3 ARGSTRING_PTR    PTR,
+           3 ARGSTRING_LENGTH FIXED BIN(31);
+
+   DCL ARGNUM      BIN FIXED(31);
+   DCL ARG_LEN(15) BIN FIXED(31);
+   DCL ARG(15)     CHAR(255) VARYING;
+
+   DCL ARG_PTR PTR;
+   DCL ARGSTRING CHAR(255) BASED(ARG_PTR);
+ /* --------------------------------------------------------------------
+  * EVALUATION BLOCK: EVALBLOCK
+  * --------------------------------------------------------------------
+  */
+   DCL EFPLEVAL_PTR     PTR;
+   EFPLEVAL_PTR = EFPLEVAL;
+
+   DCL 1 EVALBLOCK BASED(EFPLEVAL_PTR),
+         2 EVALBLOCK_EVPAD1 FIXED BIN(31),
+         2 EVALBLOCK_EVSIZE FIXED BIN(31),
+         2 EVALBLOCK_EVLEN  FIXED BIN(31),
+         2 EVALBLOCK_EVPAD2 FIXED BIN(31),
+         2 EVALBLOCK_EVDATA CHAR(256);
+
+   DCL EVDATA_PTR PTR;
+   DCL EVDATLN_PTR PTR;
+
+   EVDATA_PTR = ADDR(EVALBLOCK_EVDATA);
+   EVDATLN_PTR = ADDR(EVALBLOCK_EVLEN);
+
+   DCL RESULT CHAR(1024) BASED (EVDATA_PTR);
+   DCL RESULT_LEN    BIN FIXED(31) BASED(EVDATLN_PTR);
+
+   RESULT_LEN = 1;
+ /* --------------------------------------------------------------------
+  * COPY BREXX PARMS INTO PL1 STRUCTURE
+  * --------------------------------------------------------------------
+  */
+   DCL AI BIN FIXED(31);
+
+   DO AI=1 TO 15 ;
+      ARG_PTR = ARGSTRING_PTR(AI);
+      ARG_LEN(AI) = ARGSTRING_LENGTH(AI);
+      IF ARG_LEN(AI)<=0 THEN ARG(AI)='';
+      ELSE DO;
+         ARG(AI) = SUBSTR(ARGSTRING,1,ARG_LEN(AI));
+         ARGNUM=AI;
+      END;
+   END;
+ /* --------------------------------------------------------------------
+  * THIS IS THE END OF THE %INCLUDE MODULE
+  * --------------------------------------------------------------------
+  */

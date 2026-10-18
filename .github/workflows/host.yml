@@ -1,0 +1,65 @@
+# The host compiler on Linux (static, in Alpine) and macOS: built, its
+# host tests run, packed as dist/pl1c370-<version>-<os>-<arch>.tar.gz
+# (artifacts pl1c370-<os>-<arch>).
+
+name: Host compiler
+
+on:
+  workflow_call:
+
+jobs:
+  linux:
+    name: linux-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-latest }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build, test and pack in Alpine (static, musl)
+        run: |
+          docker run --rm -v "$PWD":/src -w /src alpine:3.20 sh -euc '
+            apk add --no-cache build-base python3 tar >/dev/null
+            make build/host/pl1c370 CC=gcc LDFLAGS=-static
+            build/host/pl1c370 --version
+            make test CC=gcc
+            make dist PLATFORM=linux-${{ matrix.arch }}
+            chown -R '"$(id -u):$(id -g)"' .
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pl1c370-linux-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  macos:
+    name: darwin-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: arm64, runner: macos-latest,   target: '11.0' }
+          - { arch: amd64, runner: macos-15-intel, target: '10.15' }
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build, test and pack
+        run: |
+          make build/host/pl1c370
+          build/host/pl1c370 --version
+          make test
+          make dist PLATFORM=darwin-${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pl1c370-darwin-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error

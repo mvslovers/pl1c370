@@ -1,0 +1,14 @@
+ T79ERF: PROC OPTIONS(MAIN);
+   DCL X(16) FLOAT DEC(6) INIT(0E0, 1E-6, 0.1E0, 0.3E0, 0.5E0,
+       0.477E0, 0.8E0, 1E0, 1.5E0, 2E0, 2.5E0, 3E0, 3.9E0, 4E0,
+       5E0, 10E0);
+   DCL Y(16) FLOAT DEC(16), Z(16) FLOAT DEC(16);
+   DCL I FIXED BIN(15);
+   DO I = 1 TO 16;
+     Y(I) = X(I); Z(I) = Y(I) * 1.37E0;
+     PUT SKIP LIST(X(I), ERF(X(I)), ERFC(X(I)));
+     PUT SKIP LIST(-X(I), ERF(-X(I)), ERFC(-X(I)));
+     PUT SKIP LIST(ERF(Y(I)), ERFC(Y(I)));
+     PUT SKIP LIST(ERF(-Z(I)), ERFC(-Z(I)), ERFC(Z(I)));
+   END;
+ END T79ERF;

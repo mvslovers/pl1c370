@@ -1,0 +1,3 @@
+   /* DECLS: the program's declarations */
+   DCL (X, Y) FIXED BIN(31), NAME CHAR(8) INIT('INCLUDED');
+   %INCLUDE MORE;

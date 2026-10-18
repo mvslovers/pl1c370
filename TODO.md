@@ -1,0 +1,160 @@
+# TODO — PL1C/370
+
+What is next, in order. `internals/ROADMAP.md` records what is done;
+this file says what comes and where work stopped. Update it after
+every merge.
+
+The language target (CLAUDE.md "Language target"): PL/I for MVS & VM by
+default, without what exists only in Language Environment and without
+DBCS; `-lang=F` is strict PL/I (F). `docs/language-levels.md` marks
+every feature F, OPT, MVS or ISO.
+
+## The plan by block (GitHub milestones, 2026-10-15)
+
+Worked through in this order, a tier per issue; A to C without asking,
+D only after a design note and the maintainer's decision.
+
+- **A -- PL/I (F) complete** (milestone 1)
+  - [x] #215 ENVIRONMENT's record format (Tier 95, PR #259; LIBC/370
+        2.14.0 required, ABI PL1RT002)
+  - [x] #216 small gaps: INDEX of bit strings, UNSPEC of an expression,
+        REDUCIBLE/IRREDUCIBLE, `-lang=F` refusing `GETP -> X` (Tier 92,
+        PR #244)
+  - [x] #217 EXCLUSIVE, UNLOCK, NOLOCK (Tier 93, PR #252)
+  - [x] #218 DISPLAY ... REPLY (Tier 94, PR #254; EVENT waits for #228)
+  - [x] #219 sterling data (Tier 96)
+- **B -- Run time and size** (milestone 2)
+  - [x] #177 start-up and size (`internals/research/pli/startup-measurement.md`):
+        measured, the stack set by the compiler (Tier 97, median VIRT
+        452K to 236K). What is left is LIBC/370's start-up, which links
+        all of stdio (72 KB for an empty `main`): with the maintainer
+  - [x] #220 the LINKed case (Tier 98): IHESARC, a second LINK, no
+        SYSPRINT DD; LIBC/370 2.15.0 (streams opened on first use)
+  - [x] #266 dummy arguments: (X), an internal procedure's parameter
+        attributes (Tier 98, reported from hellocp)
+  - [x] #267 factored names in a structure (Tier 99)
+  - [x] internal functions' RETURNS, `F()`, packed STATIC INITIAL
+        (Tier 100, reported from hellocp)
+  - [x] #273 structure arguments to external procedures, structure
+        parameter descriptors (Tier 101, reported from hellocp)
+  - [ ] #275 the run time without stdio for stream output: on hold
+        until LIBC/370's own size fixes are measured (its
+        internals/size-analysis.md, F1 to F5)
+  - [x] #221 `make test`: the host tests build and pass again
+  - [ ] #255 STORAGE: LIBC/370's malloc writes "Out of memory" and a
+        traceback to the console (t209ans); PL/I (F) does not
+  - [ ] #284 a CHAR(*) parameter of a procedure reached only through an
+        ENTRY variable or parameter: now at least 256 (STAR_EXPR) when
+        the procedure is used as a value; an argument longer than that
+        through the variable still overflows (temporaries sized at run
+        time would fix it)
+- **C -- the rest of the Optimizer's language** (milestone 3)
+  - [x] #222 INITIAL CALL (Tier 102)
+  - [x] #223 CURRENTSTORAGE, CONNECTED (Tier 103; STORAGE too)
+  - [x] #224 preprocessor: COMPILETIME, COUNTER, PARMSET, RESCAN (Tier 104)
+  - [x] #225 PLIDUMP (Tier 105, PR #281)
+  - [x] #226 ATTENTION, and INTERRUPT (Tier 106); a real attention
+        at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
+- **D -- large projects, design first** (milestone 4)
+  - [ ] #227 COMPLEX: tier C1 done (Tier 109); C2 (`*`, `/`, ABS,
+        integer powers) needs the maintainer's Q-3 and Q-4 first
+  - [ ] #228 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
+        done (Tiers 110, 111); tier 2 on needs the maintainer's A, B or
+        C
+  - [ ] #229 VSAM
+  - [ ] #230 COBOL and FORTRAN interlanguage calls
+  - [ ] #231 FETCH of PL/I procedures, FETCHABLE, BYVALUE of external
+        procedures (a run time shared with the fetched module,
+        `internals/research/le-light-study.md` stage 2)
+  - [ ] #232 IRXEXCOM for the book's FCONCAT (to be talked over with
+        the maintainer first)
+  - [x] #233 PLISRTx (Tier 107) and PLICKPT, PLIREST, PLICANC (Tier
+        108); a checkpoint taken and a restart are not testable on
+        m38b (shared disks)
+  - [ ] #179 PL/I (F)'s library (SYS1.PL1LIB) as the run time under
+        `-lang=F`
+
+## PL/I in MBT (no milestone)
+
+Agreed with the MBT session: the run time stays a library, linked by
+autocall; one pin brings compiler and run time. MBT's side is mbt#270.
+
+- [x] #237 `rt/pl1abi.h` and the `V(PL1RT001)` version stamp (on
+      main; suite 244 of 244, JOB01815 to JOB01829)
+- [x] #239 release workflow (PR #247): a tag gives the host compiler
+      (Linux static amd64/arm64, macOS arm64/amd64) and
+      `pl1c370-<version>-lib.tar.gz` (`lib/pl1rt.a`, `include/pl1abi.h`)
+- [x] v0.1.0 released 2026-10-15 (PR #250, tag v0.1.0); main is
+      0.2.0-dev. MBT pins it for mbt#270
+- [x] #238 `-MD`/`-MF` dependency file for `%INCLUDE` (on main)
+- [x] #256 `make install` into the cc370 sysroot (PR #258; MBT's design
+      change for mbt#270, 2026-10-16: compiler and run time in the
+      sysroot, `[toolchain] pl1c370`, no `[dependencies]`); MBT runs it
+- [x] 0.2.0 released 2026-10-16 (PR #261, tag v0.2.0): PL1RT002,
+      LIBC/370 >= 2.14.0; main is 0.3.0-dev. MBT installs it into the
+      sysroot
+
+## To talk over with the maintainer (2026-10-18)
+
+0. **Going public** (maintainer, 2026-10-18): no IBM code and no notes on
+   IBM's modules in the tree (Tier 112). Next: a new public repository
+   with a fresh history from this tree (the private pl1c370 keeps its
+   history); its name and the switch to public are the maintainer's.
+
+Block D stops here until these are decided:
+
+1. **#227 COMPLEX, before tier C2** (`internals/design/complex.md`):
+   - Q-4: is COMPLEX FIXED in scope beyond constants (`*`, `/`, ABS
+     and powers in fixed point)?
+   - (Q-3 is settled: the arithmetic in C, as `rt/pl1m*.c`; no IBM
+     code, 2026-10-18.)
+2. **#228 multitasking, before tier 2** (`internals/design/multitasking.md`):
+   the end state A (real MVS subtasks, a run time per TCB), B
+   (cooperative tasks on one TCB, the note's recommendation, with C as
+   its first step) or C (each task run to completion). PL/I (F)'s
+   tasking modules are in SYS1.PL1LIB; whether they run under MVS 3.8j
+   is not yet tried.
+
+After those come #229's fixture catalog (which volume on m38b), #231's
+F-A or F-B and #230's scope.
+
+Also open, not waiting on the maintainer: #177, the run time's size.
+Re-measured against LIBC/370 2.17.0 (2026-10-17): no gain, the libc
+share stays at 77 KB in every test module (76.8 KB on 2.16.0), because
+the run time always reaches the stream layer and printf (SYSPRINT by
+fopen, messages by snprintf/fprintf). The lever is on our side, #177
+item 3 (output without stdio).
+
+## Now: m38b after the soak
+
+The soak ran 17 times (2026-10-15 16:00 to 21:01, stopped early on the
+maintainer's word): 13 runs 244 of 244, the rest lost to program fetch
+on m38b (106-F twice, IEB139I, a PL/I (F) phase that ran wrong, an mvsMF
+S0C4 at module start), not to
+PL1C/370. Results on m38b carry that caveat until the I/O side is
+understood (httpd session).
+
+Block C is done. Block D goes in the order of `internals/design/README.md`,
+which the maintainer agreed to (2026-10-17): #233 (done), #227 (C1
+done), #228 tiers 0 and 1, #229, #231, #230, #232. The open questions of each note are
+taken with the note's recommendation where they are small, and each
+tier's PR says which it took. The large ones go to the maintainer when
+their tier comes: #227's Q-4 (COMPLEX FIXED beyond constants, before
+C2), #228's end state (A, B or C), #229's fixture catalog on m38b,
+#230's scope, #231's F-A or F-B. The suite runs against LIBC/370
+2.16.0 in the sysroot since 2026-10-17 (264 of 264, JOB02340-02358).
+
+## Parked (no issue)
+
+- #268 calling C functions from PL/I (asked from hellocp): deferred by
+  the maintainer (2026-10-16) until everything else is done -- no
+  extras before that.
+
+- Teleprocessing (TRANSIENT, PENDING): of little use on MVS 3.8j.
+- ANSI: FORMAT variables; an option for where PL/I (F) and ANSI conflict
+  (COPY's character copy, for one).
+- A common run-time core in libc370 for all our compilers
+  (`internals/research/le-light-study.md`): a research result, no plan
+  (maintainer, 2026-10-15); section 6 says where to resume.
+- BREXX/370's RXCOMM for today's calling form lives in `~/repos/mvs/foo`
+  (`ihesap/`); RXPI, RXCUT and FCONCAT are tests t226 to t228.

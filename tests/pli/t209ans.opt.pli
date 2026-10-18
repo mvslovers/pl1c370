@@ -1,0 +1,34 @@
+ (STRINGSIZE): T209ANS: PROC OPTIONS(MAIN);
+   /* the conditions STRINGSIZE (disabled by default, so enabled by
+      the prefix; system action a message, IBM441I) and STORAGE */
+   DCL C3 CHAR(3), V CHAR(3) VARYING, B BIT(4), BL BIT(40);
+   DCL Z CHAR(32000) CONTROLLED, (K, M) FIXED BIN(31) INIT(0);
+   ON STRINGSIZE PUT SKIP LIST('STRINGSIZE', ONCODE);
+   C3 = 'ABCDE';            PUT SKIP LIST(C3);
+   V = 'WXYZ';              PUT SKIP LIST(V);
+   B = '101011'B;           PUT SKIP LIST(B);
+   BL = COPY('1'B, 45);     PUT SKIP LIST(SUBSTR(BL, 36));
+   C3 = 'AB';               PUT SKIP LIST(C3 || '|');
+   (NOSTRZ): BEGIN;
+     C3 = 'LONGER';         PUT SKIP LIST(C3);
+   END;
+   CALL QUIET;
+   SIGNAL STRINGSIZE;
+   REVERT STRINGSIZE;
+   C3 = 'TOOLONG';          PUT SKIP LIST(C3);
+   ON STORAGE PUT SKIP LIST('STORAGE', ONCODE);
+   SIGNAL STORAGE;
+   ON STORAGE GO TO FULL;
+   DO K = 1 TO 100000;
+     ALLOCATE Z;
+   END;
+ FULL:
+   M = K;
+   DO WHILE(ALLOCATION(Z));
+     FREE Z;
+   END;
+   PUT SKIP LIST('STORAGE RAISED', M > 1, M < 100000);
+ (NOSTRINGSIZE): QUIET: PROC;
+   C3 = 'QUIETLY';          PUT SKIP LIST(C3);
+ END QUIET;
+ END T209ANS;

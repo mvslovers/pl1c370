@@ -1,0 +1,16 @@
+ T220INI: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976's INITIAL values: parenthesized expressions and
+      references (CM43 to CM45); PL/I (F) refuses both (IEM0139I,
+      IEM0512I) */
+   DCL P ENTRY(FIXED BIN(15));
+   CALL P(3);
+   CALL P(5);
+ P: PROC(M);
+   DCL M FIXED BIN(15);
+   DCL B FIXED BIN(15) INIT((M * 2)), C FIXED BIN(15) INIT(M);
+   DCL V CHAR(6) VARYING INIT(('AB' || 'CD'));
+   DCL X(3) FLOAT DEC(6) INIT((M), (M + 1), *);
+   X(3) = 9;
+   PUT SKIP LIST(B, C, V, X);
+ END P;
+ END T220INI;

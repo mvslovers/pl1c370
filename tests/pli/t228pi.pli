@@ -1,0 +1,68 @@
+ RXPI:   PROCEDURE(EFPLCOM, EFPLBARG, EFPLEARG, EFPLFB,
+                   EFPLARG, EFPLEVAL) OPTIONS(MAIN);
+   %INCLUDE RXCOMM;
+
+ /* -------------------------------------------------------------------
+  * CALCULATE PI USING THE ALGORITHM OF S. RABINOWICZ AND S. WAGON
+  * CALL FUNCTION IN A REXX SCRIPT WITH PI=RXPI OR SAY RXPI()
+  * -------------------------------------------------------------------
+  */
+ /* -------------------------------------------------------------------
+  * INPUT VARIABLES
+  *   ARGNUM      CONTAINS NUMBER OF PROVIDED ARGUMENTS (MAX 15)
+  *   ARG(I)      CONTAINS CONTENTS OF ARGUMENT I (1 TO 15)
+  *   ARG_LEN(I)  CONTAINS LENGTH   OF ARGUMENT I (1 TO 15)
+  * RETURN VARIABLES
+  *   RESULT      CONTAINS RESULT TO BE RETURNED TO BREXX
+  *               THE RETURN VALUE MUST NOT EXCEED 1024 BYTES
+  *   RESULT_LEN  CONTAINS LENGTH OF RETURNED STRING
+  * -------------------------------------------------------------------
+  */
+  DCL (N, LEN) FIXED BINARY;
+  DCL PI CHAR(512) VARYING;
+  DCL TEMPI CHAR(9);
+  DCL PREDIGIT BIN FIXED(15);
+  N = 500;
+  LEN = 10*N / 3;
+  PI='';
+ BEGIN;
+  DECLARE ( I, J, K, Q, NINES) BIN FIXED(15);
+  DECLARE X FIXED BINARY (31);
+  DECLARE A(LEN) FIXED BINARY (31);
+
+  A = 2; /* START WITH 2S */
+  NINES, PREDIGIT =0; /* FIRST PREDIGIT IS A 0 */
+  DO J = 1 TO N;
+     Q = 0;
+     DO I = LEN TO 1 BY -1; /* WORK BACKWARDS */
+        X = 10*A(I) + Q*I;
+        A(I) = MOD (X, (2*I-1));
+        Q = X / (2*I-1);
+     END;
+     A(1) = MOD(Q, 10); Q = Q / 10;
+     IF Q = 9 THEN NINES = NINES + 1;
+     ELSE IF Q = 10 THEN DO;
+        TEMPI=PREDIGIT+1;
+        PI=PI||SUBSTR(TEMPI,9,1);
+        DO K = 1 TO NINES;
+           PI=PI||'0';
+        END;
+        PREDIGIT=0;
+        NINES = 0;
+     END;
+     ELSE DO;
+        TEMPI=PREDIGIT;
+        PI=PI||SUBSTR(TEMPI,9,1);
+        PREDIGIT = Q;
+        DO K = 1 TO NINES;
+           PI=PI||'9';
+        END;
+        NINES = 0;
+     END;
+   END;
+ END ; /* END BEGIN */
+   TEMPI=PREDIGIT;
+   PI=PI||SUBSTR(TEMPI,9,1);
+ RESULT='3.'||SUBSTR(PI,3);
+ RESULT_LEN=LENGTH(PI);
+ END RXPI;

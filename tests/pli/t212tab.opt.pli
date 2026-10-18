@@ -1,0 +1,13 @@
+ T212TAB: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976: the TAB option of OPEN (8.5.1.2) and the TAB
+      format item (8.7.2.10); PL/I (F) has neither */
+   DCL N FIXED BIN(15) INIT(10);
+   OPEN FILE(SYSPRINT) TAB(N, N * 3, 45) LINESIZE(60) PAGESIZE(40);
+   PUT LIST('A', 'B', 'C', 'D', 'E');
+   PUT SKIP LIST('ABCDEFGHIJKL', 'X');
+   PUT SKIP LIST('ABCDEFGHI', 'Y');
+   PUT SKIP EDIT('P', 'Q', 'R') (A, TAB, A, TAB(2), A);
+   PUT SKIP EDIT('S', 'T') (A, TAB(5), A);
+   PUT SKIP EDIT('U', 'V') (A, TAB(0), A);
+   PUT SKIP EDIT('END') (A);
+ END T212TAB;

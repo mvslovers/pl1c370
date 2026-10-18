@@ -1,0 +1,33 @@
+ P8STRUC: PROC OPTIONS(MAIN);
+    /* STRUCTURES: LEVELS, QUALIFICATION, ARRAYS OF STRUCTURES */
+    DCL 1 S,
+          2 X FIXED BIN(31) INIT(7),
+          2 Y,
+            3 Z CHAR(4) INIT('ZZ'),
+            3 W FIXED DEC(5,2) INIT(1.5),
+          2 T(3) FIXED BIN(15) INIT(10,20,30);
+    DCL 1 U,
+          2 X FIXED BIN(31),
+          2 Y,
+            3 Z CHAR(4),
+            3 W FIXED DEC(5,2),
+          2 T(3) FIXED BIN(15);
+    DCL 1 R(2),
+          2 P FIXED BIN(15),
+          2 Q CHAR(2);
+    DCL K FIXED BIN(15);
+    PUT SKIP LIST('S', S);
+    PUT SKIP LIST('PARTS', S.X, S.Y.Z, S.W, S.T(2));
+    U = S;
+    U.X = U.X + 1;
+    PUT SKIP LIST('U', U);
+    S.T = 5;
+    PUT SKIP LIST('S.T', S.T);
+    R(1).P = 1;
+    R(2).P = 2;
+    R.Q = 'QQ';
+    R(1).Q = 'A1';
+    PUT SKIP LIST('R', R);
+    K = 2;
+    PUT SKIP LIST('R(K)', R(K).P, R.P(K), R(K));
+ END P8STRUC;

@@ -1,0 +1,24 @@
+ T2DEC: PROC OPTIONS(MAIN);
+    /* FIXED DECIMAL: SCALE ALIGNMENT, PRODUCTS, TRUNCATION */
+    DCL (P,Q,R) FIXED DEC(7,2);
+    DCL S FIXED DEC(5,0);
+    DCL T FIXED DEC(15,3);
+    DCL I FIXED BIN(31);
+    P = 123.45;
+    Q = -0.5;
+    R = P + Q;  PUT SKIP LIST('P+Q', R);
+    R = P - Q;  PUT SKIP LIST('P-Q', R);
+    R = P * Q;  PUT SKIP LIST('P*Q', R);
+    S = P;      PUT SKIP LIST('S=P', S);
+    T = P * P * 2;
+    PUT SKIP LIST('T', T);
+    PUT SKIP LIST('EXPR', P + 1, P * Q, -P);
+    S = S + 1;  PUT SKIP LIST('S+1', S);
+    I = 42;
+    S = I;      PUT SKIP LIST('S=I', S);
+    T = I * 1000;
+    PUT SKIP LIST('T=I*1000', T);
+    I = P;      PUT SKIP LIST('I=P', I);
+    R = 0.07 - 0.1;
+    PUT SKIP LIST('SMALL', R);
+ END T2DEC;

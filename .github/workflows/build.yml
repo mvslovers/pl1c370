@@ -1,0 +1,13 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  host:
+    uses: ./.github/workflows/host.yml
+
+  rt:
+    uses: ./.github/workflows/rt.yml

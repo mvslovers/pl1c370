@@ -1,0 +1,21 @@
+ T150FEX: PROC OPTIONS(MAIN);
+   /* format items with widths given by expressions */
+   DCL (N, D, K) FIXED BIN(15), X FIXED DEC(7,3) INIT(12.345);
+   DCL S CHAR(6) INIT('ABCDEF'), B5 BIT(5) INIT('10011'B);
+   DCL (G1, G2) CHAR(5), V FIXED DEC(5);
+   N = 4; D = 1; K = 3;
+   PUT SKIP EDIT('<', S, '>') (A, A(N), A);
+   PUT SKIP EDIT('<', S, '>') (A, A(N + 2), A);
+   PUT SKIP EDIT('<', X, '>') (A, F(N + 4, D), A);
+   PUT SKIP EDIT('<', X, '>') (A, F(8, D + 1), A);
+   PUT SKIP EDIT('<', '>') (A, X(K), A);
+   PUT SKIP EDIT('<', B5, '>') (A, B(N), A);
+   PUT SKIP EDIT('A', 'B') (A, COLUMN(N * 3), A);
+   PUT EDIT('C') (SKIP(K - 1), A);
+   PUT SKIP EDIT('<', X, '>') (A, E(N + 8, D + 1), A);
+   DO K = 1 TO 3;
+     PUT SKIP EDIT(K, K * K) (F(K + 1), X(K), F(K + 2));
+   END;
+   GET EDIT(G1, V) (A(N), F(K));
+   PUT SKIP EDIT('<', G1, '><', V, '>') (A, A, A, F(5), A);
+ END T150FEX;

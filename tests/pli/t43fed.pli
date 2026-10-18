@@ -1,0 +1,16 @@
+ T43FED: PROC OPTIONS(MAIN);
+   DCL A FLOAT DEC(6) INIT(3.14159), B FLOAT DEC(16) INIT(-12345.6789);
+   DCL C CHAR(20);
+   PUT SKIP EDIT(A, B) (E(14,5), X(1), E(20,10));
+   PUT SKIP EDIT(A, B) (E(10,2), X(1), E(12,3,5));
+   PUT SKIP EDIT(A, B) (F(10,3), X(1), F(12,2));
+   PUT SKIP EDIT(A, B, A) (E(8,1), X(1), E(9,1), X(1), F(3));
+   C = A; PUT SKIP LIST(C);
+   C = B; PUT SKIP LIST(C);
+   A = '2.5'; PUT SKIP LIST(A);
+   A = '-1.5E3'; PUT SKIP LIST(A);
+   GET LIST(A, B);
+   PUT SKIP LIST(A, B);
+   GET SKIP EDIT(A, B) (E(10,2), F(6,1));
+   PUT SKIP LIST(A, B);
+ END T43FED;

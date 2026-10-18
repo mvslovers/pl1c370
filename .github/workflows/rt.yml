@@ -1,0 +1,116 @@
+# The run time archive: pl1rt.a with rt/pl1abi.h, built by mbt with the
+# toolchain [toolchain] in mbt.toml pins, packed as
+# dist/pl1c370-<version>-lib.tar.gz (artifact pl1c370-lib).
+#
+# The toolchain steps follow mbt's release3.yml.  Not that workflow
+# itself: it runs mbt package, which links the test modules as well.
+
+name: Run time
+
+on:
+  workflow_call:
+
+jobs:
+  rt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mbt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release list -R mvslovers/mbt --limit 100 --json tagName,isDraft \
+                --jq '[.[] | select(.isDraft | not) | .tagName | select(startswith("v3."))][0]')
+          [ -n "$TAG" ] || { echo "no mbt 3 release on mvslovers/mbt" >&2; exit 3; }
+          VER="${TAG#v}"
+          cd "$RUNNER_TEMP"
+          gh release download "$TAG" -R mvslovers/mbt -p "mbt-$VER-linux-amd64.tar.gz" -p "mbt-$VER-sha256.txt"
+          sha256sum -c --ignore-missing "mbt-$VER-sha256.txt"
+          tar -xzf "mbt-$VER-linux-amd64.tar.gz"
+          install -D "mbt-$VER-linux-amd64/mbt" "$HOME/.mbt-bin/mbt"
+          echo "$HOME/.mbt-bin" >> "$GITHUB_PATH"
+
+      - name: Toolchain refs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mbt ci-info > "$RUNNER_TEMP/ci-info"
+          cat "$RUNNER_TEMP/ci-info"
+          . "$RUNNER_TEMP/ci-info"
+          {
+            echo "CC370_REF=$CC370_REF"
+            echo "LIBC370_REF=$LIBC370_REF"
+          } >> "$GITHUB_ENV"
+
+      - name: Clone cc370 and libc370
+        run: |
+          fetch_at() {   # $1 repo, $2 ref, $3 target dir
+            git init -q "$3"
+            git -C "$3" remote add origin "https://github.com/mvslovers/$1.git"
+            git -C "$3" fetch -q --depth 1 origin "$2" || { echo "$1: no such ref '$2'" >&2; exit 1; }
+            git -C "$3" checkout -q --detach FETCH_HEAD
+          }
+          fetch_at cc370   "$CC370_REF"   /tmp/cc370
+          fetch_at libc370 "$LIBC370_REF" /tmp/libc370
+          echo "TC_KEY=$(git -C /tmp/cc370 rev-parse HEAD)-$(git -C /tmp/libc370 rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Cache toolchain
+        id: tc-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: cc370-${{ runner.os }}-${{ env.TC_KEY }}
+
+      - name: Install maclib370
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(gh release view -R mvslovers/maclib370 --json tagName -q .tagName)
+          d="$HOME/.local/cc370/maclib370"
+          rm -rf "$d" && mkdir -p "$d"
+          cd "$RUNNER_TEMP"
+          gh release download "$v" -R mvslovers/maclib370 -p "maclib370-*.tar.gz" -p SHA256SUMS --clobber
+          sha256sum -c --ignore-missing SHA256SUMS
+          tar -xzf maclib370-*.tar.gz -C "$d"
+          n=$(find "$d/macros" -name '*.macro' | wc -l)
+          [ "$n" -gt 0 ] || { echo "maclib370 $v: no members in $d/macros" >&2; exit 1; }
+
+      - name: Build and install the toolchain
+        if: steps.tc-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bison flex
+          make -C /tmp/cc370 install PREFIX="$HOME/.local"
+          export PATH="$HOME/.local/bin:$PATH"
+          make -C /tmp/libc370 install
+
+      - name: Toolchain on PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build pl1rt.a
+        run: mbt build
+
+      - name: Every run time source is in the archive
+        run: |
+          want=$(find rt -name '*.c' -o -name '*.asm' | wc -l)
+          have=$(ar370 t build/pl1rt.a | grep -c '\.o ')
+          echo "sources $want, members $have"
+          [ "$want" -eq "$have" ]
+          ar370 t build/pl1rt.a | grep -q PL1RT002
+
+      - name: Install into a scratch sysroot
+        run: |
+          make install PREFIX=/tmp/sysroot
+          test -x /tmp/sysroot/bin/pl1c370
+          test -f /tmp/sysroot/cc370/lib/pl1rt.a
+          test -f /tmp/sysroot/cc370/include/pl1abi.h
+
+      - name: Pack
+        run: make dist-lib
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pl1c370-lib
+          path: dist/*-lib.tar.gz
+          if-no-files-found: error

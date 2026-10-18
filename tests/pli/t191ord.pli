@@ -1,0 +1,23 @@
+ T191ORD: PROC OPTIONS(MAIN);
+   /* SUM, PROD and POLY of inexact values: the order of the
+      operations and the precision they are done in */
+   DCL S(10) FLOAT DEC(6), L(10) FLOAT DEC(16), I FIXED BIN(15);
+   DCL D(4) FIXED DEC(5,2) INIT(0.01, 0.07, 0.13, 0.29);
+   DCL A(0:4) FLOAT DEC(6) INIT(0.1, 0.2, 0.3, 0.7, 1.3);
+   DCL X(4) FLOAT DEC(6) INIT(1.1, 0.3, 0.7, 1.9);
+   DCL AL(0:4) FLOAT DEC(16) INIT(0.1, 0.2, 0.3, 0.7, 1.3);
+   DCL XL(4) FLOAT DEC(16) INIT(1.1, 0.3, 0.7, 1.9);
+   DCL B(3) FLOAT BIN(21) INIT(0.1, 0.2, 0.3);
+   DO I = 1 TO 10;
+     S(I) = I / 7.0E0;
+     L(I) = I / 7.0E0;
+   END;
+   PUT SKIP LIST(SUM(S), PROD(S));
+   PUT SKIP LIST(SUM(L), PROD(L));
+   PUT SKIP LIST(SUM(D), PROD(D));
+   PUT SKIP LIST(POLY(A, X), POLY(AL, XL));
+   PUT SKIP LIST(POLY(A, 1.1E0), POLY(AL, 0.3E0));
+   PUT SKIP LIST(SUM(B), PROD(B), SUM(S) / 3);
+   PUT SKIP LIST(UNSPEC(SUM(S)));
+   PUT SKIP LIST(SUM(S * 3.1E0), PROD(S + 1));
+ END T191ORD;

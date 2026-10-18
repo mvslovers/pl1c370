@@ -1,0 +1,17 @@
+ T210RDX: PROC OPTIONS(MAIN);
+   /* the PL/I (F) twin of t210rdx.opt.pli: the bits and digits ANSI
+      4.4.7, 8.7.1.9 and 8.7.2.4 give for the radix factors */
+   DCL B BIT(16) INIT('1111000010100101'B), C BIT(9) INIT('001111'B);
+   DCL D BIT(6) INIT('011110'B), E BIT(3) INIT('101'B);
+   DCL V BIT(32) VARYING, G BIT(12);
+   PUT SKIP LIST(B, C, D, E);
+   PUT SKIP LIST('1'B, '11001'B, LENGTH('101010101010'B));
+   PUT SKIP EDIT('F0A5', '741224', '33002211', '1111000010100101')
+     (A(4), X(1), A(6), X(1), A(8), X(1), A(16));
+   PUT SKIP EDIT('3C0', '170') (A(3), X(1), A);
+   PUT SKIP EDIT('F0') (A(2));
+   PUT SKIP EDIT('F0A5') (A(6));
+   G = '011111100010'B;
+   V = '001011101111'B;
+   PUT SKIP LIST(G, V);
+ END T210RDX;

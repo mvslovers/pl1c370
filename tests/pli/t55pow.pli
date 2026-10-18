@@ -1,0 +1,12 @@
+ T55POW: PROC OPTIONS(MAIN);
+   DCL I FIXED BIN(31) INIT(3), K FIXED BIN(15) INIT(5);
+   DCL D FIXED DEC(5,1) INIT(1.5), N FIXED BIN(15);
+   DCL F FLOAT DEC(6) INIT(1.1), G FLOAT DEC(16) INIT(1.1);
+   PUT SKIP LIST(I ** 2, I ** K, 2 ** 10, K ** 0);
+   PUT SKIP LIST(D ** 2, D ** 3, 10 ** 3);
+   PUT SKIP LIST(F ** 2, F ** 10, G ** 10, G ** 0);
+   PUT SKIP LIST(F ** -2, 2E0 ** -1);
+   N = 3; PUT SKIP LIST(F ** N, G ** N, D ** N);
+   PUT SKIP LIST(-2 ** 2, (-2) ** 3, 2 ** 3 ** 2);
+   PUT SKIP LIST(I ** 2 * 2, 2 * I ** 2);
+ END T55POW;

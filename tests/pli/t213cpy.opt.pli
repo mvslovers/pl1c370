@@ -1,0 +1,11 @@
+ T213CPY: PROC OPTIONS(MAIN);
+   /* ANSI X3.53-1976 COPY(file) (CM112): the fields go to REPORT,
+      each on a line of its own, as PL/I (F)'s COPY writes them */
+   DCL (A, B, D) FIXED BIN(15), C CHAR(3);
+   DCL REPORT FILE STREAM OUTPUT;
+   GET LIST(A, B) COPY(REPORT);
+   GET SKIP EDIT(C) (A(3)) COPY(REPORT);
+   GET SKIP DATA(D) COPY(REPORT);
+   GET SKIP LIST(A) COPY;
+   PUT SKIP LIST(A, B, C, D);
+ END T213CPY;
