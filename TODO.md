@@ -108,7 +108,10 @@ autocall; one pin brings compiler and run time. MBT's side is mbt#270.
 0. ~~**Going public**~~ done 2026-10-18: no IBM code and no notes on
    IBM's modules in the tree (Tier 112); this repository is public with
    a fresh history, the old one is mvslovers/pl1c370-archive (private).
-   Next here: #12, the size of the mathematical functions.
+   #12, the size of the mathematical functions: first step done
+   (Tier 113, SQRT 7,128 to 4,668 bytes). Left: a short SQRT without
+   the extended format (checked over every short argument), MUL128
+   without `@@muldi3`, fewer copies of the 16-byte values.
 
 Block D stops here until this is decided:
 
