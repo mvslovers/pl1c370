@@ -96,9 +96,12 @@ autocall; one pin brings compiler and run time. MBT's side is mbt#270.
 - [x] #256 `make install` into the cc370 sysroot (PR #258; MBT's design
       change for mbt#270, 2026-10-16: compiler and run time in the
       sysroot, `[toolchain] pl1c370`, no `[dependencies]`); MBT runs it
-- [x] 0.2.0 released 2026-10-16 (PR #261, tag v0.2.0): PL1RT002,
-      LIBC/370 >= 2.14.0; main is 0.3.0-dev. MBT installs it into the
-      sysroot
+- [x] 0.2.0 released 2026-10-16 in the archive (PR #261, tag v0.2.0):
+      PL1RT002, LIBC/370 >= 2.14.0
+- [ ] 0.2.0 again as this repository's first release (maintainer,
+      2026-10-18): the same version, now with the mathematical
+      functions in C (Tier 112); installed into the sysroot after the
+      tag, then main 0.3.0-dev
 
 ## To talk over with the maintainer (2026-10-18)
 
