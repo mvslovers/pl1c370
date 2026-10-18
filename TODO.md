@@ -49,11 +49,11 @@ D only after a design note and the maintainer's decision.
   - [x] #221 `make test`: the host tests build and pass again
   - [ ] #9 STORAGE: LIBC/370's malloc writes "Out of memory" and a
         traceback to the console (t209ans); PL/I (F) does not
-  - [ ] #284 a CHAR(*) parameter of a procedure reached only through an
-        ENTRY variable or parameter: now at least 256 (STAR_EXPR) when
-        the procedure is used as a value; an argument longer than that
-        through the variable still overflows (temporaries sized at run
-        time would fix it)
+  - [x] #284 a CHAR(*) parameter of a procedure reached only through an
+        ENTRY variable or parameter: at least 256 (STAR_EXPR) when the
+        procedure is used as a value (PR #290; closed in the archive
+        2026-10-17). Left: an argument longer than that through the
+        variable still overflows (temporaries sized at run time)
 - **C -- the rest of the Optimizer's language** (milestone 3)
   - [x] #222 INITIAL CALL (Tier 102)
   - [x] #223 CURRENTSTORAGE, CONNECTED (Tier 103; STORAGE too)
@@ -110,13 +110,15 @@ autocall; one pin brings compiler and run time. MBT's side is mbt#270.
    a fresh history, the old one is mvslovers/pl1c370-archive (private).
    Next here: #12, the size of the mathematical functions.
 
-Block D stops here until these are decided:
+Block D stops here until this is decided:
 
-1. **#2 COMPLEX, before tier C2** (`internals/design/complex.md`):
-   - Q-4: is COMPLEX FIXED in scope beyond constants (`*`, `/`, ABS
-     and powers in fixed point)?
-   - (Q-3 is settled: the arithmetic in C, as `rt/pl1m*.c`; no IBM
-     code, 2026-10-18.)
+1. ~~**#2 COMPLEX, before tier C2**~~ (`internals/design/complex.md`):
+   settled by the goal of 2026-10-18 (PL/I for MVS & VM first).
+   - Q-4: COMPLEX FIXED is in scope beyond constants: SC26-3114-01
+     defines ABS of a complex fixed-point value and its precision
+     (MIN(N,p+1),q), so `*`, `/`, ABS and powers in fixed point come
+     with C2.
+   - Q-3: the arithmetic in C, as `rt/pl1m*.c`; no IBM code.
 2. **#3 multitasking, before tier 2** (`internals/design/multitasking.md`):
    the end state A (real MVS subtasks, a run time per TCB), B
    (cooperative tasks on one TCB, the note's recommendation, with C as
@@ -131,8 +133,8 @@ Also open, not waiting on the maintainer: #177, the run time's size.
 Re-measured against LIBC/370 2.17.0 (2026-10-17): no gain, the libc
 share stays at 77 KB in every test module (76.8 KB on 2.16.0), because
 the run time always reaches the stream layer and printf (SYSPRINT by
-fopen, messages by snprintf/fprintf). The lever is on our side, #177
-item 3 (output without stdio).
+fopen, messages by snprintf/fprintf). The lever is on our side, #11
+(output without stdio).
 
 ## Now: m38b after the soak
 
@@ -151,7 +153,8 @@ tier's PR says which it took. The large ones go to the maintainer when
 their tier comes: #2's Q-4 (COMPLEX FIXED beyond constants, before
 C2), #3's end state (A, B or C), #4's fixture catalog on m38b,
 #5's scope, #6's F-A or F-B. The suite runs against LIBC/370
-2.16.0 in the sysroot since 2026-10-17 (264 of 264, JOB02340-02358).
+2.19.0 in the sysroot since 2026-10-18 (285 programs: 275 identical,
+the 10 mathematical twins CLOSE, JOB02686-02712).
 
 ## Parked (no issue)
 
