@@ -2,6 +2,9 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const dbl k_invln2 = {{0x41171547, 0x652B82FE}};   /* 1.4426950408889634 */
+#define INVLN2 (k_invln2.d)
+
 static const dbl T_EXP[16] = {
     {{0x33B413C3, 0x1DCBECBC}}, {{0x34CA963B, 0x81856A53}},
     {{0x35D73F9F, 0x399DC0F9}}, {{0x36D73F9F, 0x399DC0F9}},

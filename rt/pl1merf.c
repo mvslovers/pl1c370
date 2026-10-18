@@ -2,6 +2,11 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const xf X_TWOSQPI = {0, 1, 0x906EBA8214DB688DULL};
+static const xf X_INVSQPI = {0, 0, 0x906EBA8214DB688DULL};
+static const xf X_HALF = {0, 0, 0x8000000000000000ULL};
+static const xf X_R10 = {0, -3, 0xCCCCCCCCCCCCCCCDULL};
+
 static const dbl T_ERF[20] = {
     {{0x2E17E6B8, 0x1382CD42}}, {{0xAF22648D, 0x579C37BB}},
     {{0x302F57AE, 0x44B1F6DC}}, {{0xB13E3680, 0xE76694CF}},
@@ -14,6 +19,25 @@ static const dbl T_ERF[20] = {
     {{0x3D700700, 0x70070070}}, {{0xBE31A603, 0x1A6031A6}},
     {{0x3F12F684, 0xBDA12F68}}, {{0xBF618618, 0x61861862}},
 };
+
+/* a*a as hi + lo exactly (the low half of the 128-bit product) */
+static xf xsqr2(xf a, xf *lo)
+{
+    u64 hi, l;
+    int e = 2 * a.e;
+    if (!a.f) {
+        *lo = X_ZERO;
+        return X_ZERO;
+    }
+    mul128(a.f, a.f, &hi, &l);
+    if (!(hi >> 63)) {
+        hi = (hi << 1) | (l >> 63);
+        l <<= 1;
+        e--;
+    }
+    *lo = xnorm(0, e - 64, l);
+    return xnorm(0, e, hi);
+}
 
 /* EXP(-a*a)/SQRT(pi) over Laplace's continued fraction
  * a + (1/2)/(a + 1/(a + (3/2)/(a + ...))), for a >= 1: ERFC(a).  The

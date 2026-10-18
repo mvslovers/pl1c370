@@ -2,6 +2,8 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const xf X_R120 = {0, -6, 0x8888888888888889ULL};
+
 static const dbl T_SNH[9] = {
     {{0x2E2EC368, 0x262C7034}}, {{0x305C6E3B, 0xDB73D5C6}},
     {{0x3297A4DA, 0x340A0AB9}}, {{0x34CA963B, 0x81856A53}},

@@ -2,6 +2,22 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const dbl k_twoopi = {{0x40A2F983, 0x6E4E4415}};   /* 0.6366197723675814 */
+#define TWOOPI (k_twoopi.d)
+static const dbl k_snsmax = {{0x45C90FDA, 0xA22168C2}};   /* 823549.6645826427 */
+#define SNSMAX (k_snsmax.d)
+static const dbl k_snsmaxd = {{0x472D0000, 0x00000000}};   /* 47185920.0 */
+#define SNSMAXD (k_snsmaxd.d)
+static const dbl k_snlmax = {{0x4DC90FDA, 0xA22168C2}};   /* 3537118876014220.0 */
+#define SNLMAX (k_snlmax.d)
+static const dbl k_snlmaxd = {{0x4F2D0000, 0x00000000}};   /* 2.0266198323167232e+17 */
+#define SNLMAXD (k_snlmaxd.d)
+static const xf X_PIO2A = {0, 1, 0xC90FDAA221600000ULL};
+static const xf X_PIO2B = {0, -43, 0x8C234C4C66200000ULL};
+static const xf X_PIO2C = {0, -87, 0x8B80DC1CD129024EULL};
+static const xf X_DEG2RAD = {0, -5, 0x8EFA351294E9C8AEULL};
+static const xf X_R24 = {0, -4, 0xAAAAAAAAAAAAAAABULL};
+
 static const dbl T_SIN[9] = {
     {{0x305C6E3B, 0xDB73D5C6}}, {{0xB297A4DA, 0x340A0AB9}},
     {{0x34CA963B, 0x81856A53}}, {{0xB6D73F9F, 0x399DC0F9}},

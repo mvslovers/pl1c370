@@ -15,104 +15,94 @@ typedef struct { int neg, e; u64 f; } xf;
 #define ENTRY(n) asm("PL1" n)
 #define X_ZERO ((xf){0, 0, 0})
 
-/* the constants (rt/pl1mxf.c): exact System/370 values, decimal in the
- * comments there */
+/* the constants more than one family uses (rt/pl1mk.c): exact
+ * System/370 values, decimal in the comments there; each family keeps
+ * its own others */
 struct pl1mk {
-    dbl invln2;
-    dbl twoopi;
-    dbl tan15;
-    dbl sqrth;
     dbl expmax;
     dbl expmin;
-    dbl snsmax;
-    dbl snsmaxd;
-    dbl snlmax;
-    dbl snlmaxd;
     xf x_ln2a;
     xf x_ln2b;
-    xf x_lg2a;
-    xf x_lg2b;
-    xf x_log2e;
-    xf x_log10e;
-    xf x_pio2a;
-    xf x_pio2b;
-    xf x_pio2c;
-    xf x_pio2;
-    xf x_pio6;
-    xf x_pi;
-    xf x_deg2rad;
-    xf x_rad2deg;
-    xf x_sqrt3;
-    xf x_twosqpi;
-    xf x_invsqpi;
     xf x_one;
     xf x_two;
-    xf x_half;
     xf x_third;
     xf x_sixth;
-    xf x_r24;
-    xf x_r120;
-    xf x_r10;
 };
 extern const struct pl1mk pl1mk asm("PLMK");
-#define INVLN2 (pl1mk.invln2.d)
-#define TWOOPI (pl1mk.twoopi.d)
-#define TAN15 (pl1mk.tan15.d)
-#define SQRTH (pl1mk.sqrth.d)
 #define EXPMAX (pl1mk.expmax.d)
 #define EXPMIN (pl1mk.expmin.d)
-#define SNSMAX (pl1mk.snsmax.d)
-#define SNSMAXD (pl1mk.snsmaxd.d)
-#define SNLMAX (pl1mk.snlmax.d)
-#define SNLMAXD (pl1mk.snlmaxd.d)
 #define X_LN2A (pl1mk.x_ln2a)
 #define X_LN2B (pl1mk.x_ln2b)
-#define X_LG2A (pl1mk.x_lg2a)
-#define X_LG2B (pl1mk.x_lg2b)
-#define X_LOG2E (pl1mk.x_log2e)
-#define X_LOG10E (pl1mk.x_log10e)
-#define X_PIO2A (pl1mk.x_pio2a)
-#define X_PIO2B (pl1mk.x_pio2b)
-#define X_PIO2C (pl1mk.x_pio2c)
-#define X_PIO2 (pl1mk.x_pio2)
-#define X_PIO6 (pl1mk.x_pio6)
-#define X_PI (pl1mk.x_pi)
-#define X_DEG2RAD (pl1mk.x_deg2rad)
-#define X_RAD2DEG (pl1mk.x_rad2deg)
-#define X_SQRT3 (pl1mk.x_sqrt3)
-#define X_TWOSQPI (pl1mk.x_twosqpi)
-#define X_INVSQPI (pl1mk.x_invsqpi)
 #define X_ONE (pl1mk.x_one)
 #define X_TWO (pl1mk.x_two)
-#define X_HALF (pl1mk.x_half)
 #define X_THIRD (pl1mk.x_third)
 #define X_SIXTH (pl1mk.x_sixth)
-#define X_R24 (pl1mk.x_r24)
-#define X_R120 (pl1mk.x_r120)
-#define X_R10 (pl1mk.x_r10)
+
+/* the machine, and the small operations of the extended format:
+ * inline, being shorter than a call */
+/* Mask exponent underflow and significance; returns the old mask. */
+static inline unsigned mask_off(void)
+{
+    unsigned r;
+    __asm__ volatile("BALR %0,0" : "=r"(r));
+    __asm__ volatile("SPM %0" : : "r"(r & 0xFCFFFFFF));
+    return r;
+}
+
+static inline void mask_on(unsigned r)
+{
+    __asm__ volatile("SPM %0" : : "r"(r));
+}
+
+/* The hexadecimal exponent of x (x = 16**e * f, 1/16 <= f < 1). */
+static inline int hexp(double x)
+{
+    dbl u;
+    u.d = x;
+    return (int)((u.w[0] >> 24) & 0x7F) - 64;
+}
+
+/* x with its exponent changed by n (no range check). */
+static inline double add_exp(double x, int n)
+{
+    dbl u;
+    u.d = x;
+    u.w[0] += (unsigned)n << 24;
+    return u.d;
+}
+
+static inline xf xneg(xf a)
+{
+    a.neg = !a.neg;
+    return a;
+}
+
+static inline xf xscale(xf a, int k)
+{
+    if (a.f)
+        a.e += k;
+    return a;
+}
 
 /* rt/pl1mxf.c */
-unsigned mask_off(void) asm("PLMOFF");
-void mask_on(unsigned r) asm("PLMON");
-void overflow(void) asm("PLMOVF");
-int hexp(double x) asm("PLMHXP");
-double add_exp(double x, int n) asm("PLMADE");
-double trunc_d(double x) asm("PLMTRC");
-double nint_d(double x) asm("PLMNIN");
-int mod4(double n) asm("PLMMD4");
-double poly(double z, const dbl *c, int n) asm("PLMPLY");
 xf xnorm(int neg, int e, u64 f) asm("PLMXNR");
 xf xz(double d) asm("PLMXZ");
-xf xi(int n) asm("PLMXI");
-xf xneg(xf a) asm("PLMXNG");
-xf xscale(xf a, int k) asm("PLMXSC");
 xf xadd(xf a, xf b) asm("PLMXAD");
 xf xsub(xf a, xf b) asm("PLMXSB");
+void mul128(u64 a, u64 b, u64 *hi, u64 *lo) asm("PLMMUL");
 xf xmul(xf a, xf b) asm("PLMXML");
-xf xsqr2(xf a, xf *lo) asm("PLMXSQ");
 double xd(xf a) asm("PLMXD");
 float xs(xf a) asm("PLMXS");
 xf xdiv(xf a, xf b) asm("PLMXDV");
+/* rt/pl1movf.c */
+void overflow(void) asm("PLMOVF");
+/* rt/pl1mint.c */
+double trunc_d(double x) asm("PLMTRC");
+double nint_d(double x) asm("PLMNIN");
+int mod4(double n) asm("PLMMD4");
+/* rt/pl1mply.c */
+double poly(double z, const dbl *c, int n) asm("PLMPLY");
+xf xi(int n) asm("PLMXI");
 /* rt/pl1mexp.c, rt/pl1mlog.c */
 xf exp_x(xf t) asm("PLMEXP");
 int exp_ok(double x) asm("PLMEOK");
