@@ -236,6 +236,21 @@ test `<name>.opt.pli` for it: the runner compiles every other test with
    `-lang=F`.
 4. ANSI X3.53-1976 only for the ISO extensions.
 
+**The goal, in this order** (maintainer, 2026-10-18): first compatible
+with PL/I for MVS & VM Release 1.1; only then the others, the
+Optimizer, then PL/I (F), then ISO. So what exists only in PL/I (F)
+(teleprocessing) or only in ANSI (FORMAT variables) waits until the
+MVS & VM gaps are closed.
+
+**Working mode** (maintainer, 2026-10-18): everything that needs no
+important decision of the maintainer is worked off without asking;
+small decisions are taken here, and each is written into the tier's PR
+and TODO.md, so that it can be vetoed. In throwaway containers for TK5
+and MVS/CE of this session's own (`mvs-docker`, `mvsce-target`) the
+work on MVS needs no confirmation; the real stands (m38b and the
+others) keep the root CLAUDE.md's rules, and slots there go through
+MBT.
+
 The maintainer's copy of the standard is licensed to one user: cite its
 sections, never commit it.
 
