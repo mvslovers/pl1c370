@@ -2,6 +2,13 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const dbl k_sqrth = {{0x40B504F3, 0x33F9DE65}};   /* 0.7071067811865476 */
+#define SQRTH (k_sqrth.d)
+static const xf X_LG2A = {0, -1, 0x9A209A84FBCFF600ULL};
+static const xf X_LG2B = {0, -56, 0xCC47C4ACD605BE49ULL};
+static const xf X_LOG2E = {0, 1, 0xB8AA3B295C17F0BCULL};
+static const xf X_LOG10E = {0, -1, 0xDE5BD8A937287195ULL};
+
 static const dbl T_LOG[13] = {
     {{0x3F97B425, 0xED097B42}}, {{0x3FA3D70A, 0x3D70A3D7}},
     {{0x3FB21642, 0xC8590B21}}, {{0x3FC30C30, 0xC30C30C3}},

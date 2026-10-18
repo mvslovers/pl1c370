@@ -2,6 +2,14 @@
  * internals/research/pli/tier14-measurement.md). */
 #include "pl1mth.h"
 
+static const dbl k_tan15 = {{0x40449851, 0x7A7B3559}};   /* 0.2679491924311227 */
+#define TAN15 (k_tan15.d)
+static const xf X_PIO2 = {0, 1, 0xC90FDAA22168C235ULL};
+static const xf X_PIO6 = {0, 0, 0x860A91C16B9B2C23ULL};
+static const xf X_PI = {0, 2, 0xC90FDAA22168C235ULL};
+static const xf X_RAD2DEG = {0, 6, 0xE52EE0D31E0FBDC3ULL};
+static const xf X_SQRT3 = {0, 1, 0xDDB3D742C265539EULL};
+
 static const dbl T_ATN[14] = {
     {{0xBF842108, 0x42108421}}, {{0x3F8D3DCB, 0x08D3DCB1}},
     {{0xBF97B425, 0xED097B42}}, {{0x3FA3D70A, 0x3D70A3D7}},

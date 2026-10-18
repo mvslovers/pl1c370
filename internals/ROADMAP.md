@@ -1331,6 +1331,33 @@ suite: 275 identical, the 10 mathematical twins differing in the last
 digits (JOB02651 to JOB02677); with the `.math` files those 10 CLOSE and
 the other mathematical twins identical (JOB02680).
 
+## Tier 113 -- done 2026-10-18
+
+The size of the mathematical functions (#12, first step). What every
+family needs stays in `rt/pl1mxf.c` (the extended format, its addition,
+multiplication, division and rounding); what only some need moved into
+members of its own: `rt/pl1mk.c` the eight constants more than one
+family uses (each family now keeps its others as static constants),
+`rt/pl1mint.c` the integral parts, `rt/pl1mply.c` the polynomials and
+`xi`, `rt/pl1movf.c` OVERFLOW, and ERF's exact square into
+`rt/pl1merf.c`. The machine helpers and the negation and scaling of the
+extended format are inline in `rt/pl1mth.h`, and the addition is no
+longer inlined into the subtraction. Math code linked, from ld370 maps
+(the families' members, the core and `@@muldi3`):
+
+| Program uses | Before | Now |
+|---|---|---|
+| SQRT | 7,128 | 4,668 |
+| EXP | 7,596 | 6,268 |
+| LOG | 8,664 | 6,672 |
+| SIN, COS, TAN | 11,592 | 10,372 |
+| ATAN | 9,136 | 7,224 |
+| every function | 27,912 | 27,220 |
+
+No arithmetic changed: the 22 tests that use mathematical or complex
+functions print byte for byte what they printed before (a throwaway
+TK5 container, JOB00070 against JOB00073).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**
