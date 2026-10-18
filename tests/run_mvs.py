@@ -7,7 +7,8 @@ For every tests/pli/<name>.pli (or the names given):
   1. compile it with build/host/pl1c370 into build/gen/<name>.asm,
   2. keep the module list between the TESTS markers of mbt.toml current,
   3. mbt build --all; delete PL1C370.DEV.LINKLIB and mbt deploy it anew
-     (target m38b),
+     (target m38b, or the one MBT_TARGET names: env for a throwaway
+     container, with mbt 3's MBT_TARGET_* variables),
   4. one job: per program a PL/I (F) compile-link-go step and a step that
      runs the PL1C/370 module, both printing to data sets,
   5. compare the two print files (ASA byte included, trailing blanks not),
@@ -169,8 +170,8 @@ def replies(n):
 
 
 def console(cmd):
-    r = subprocess.run(["mbt", "target", "console", "m38b", "--", cmd],
-                       env=dict(os.environ, MBT_TARGET="m38b"), capture_output=True,
+    r = subprocess.run(["mbt", "target", "console", submit.TARGET, "--", cmd],
+                       env=dict(os.environ, MBT_TARGET=submit.TARGET), capture_output=True,
                        text=True, timeout=120)
     return r.stdout + r.stderr
 
@@ -298,7 +299,7 @@ def main():
         run(["build/host/pl1c370", f"test/tso/{n}.pli", "-o", f"build/gen/{n}.asm"])
     update_toml(all_names, tso)
     run(["mbt", "build", "--all"])
-    env = dict(os.environ, MBT_TARGET="m38b")
+    env = dict(os.environ, MBT_TARGET=submit.TARGET)
     # A fresh library every run: replaced members leave dead space, and
     # nothing holds this development library.  Not --reallocate: it grows
     # the request with every run (128 tracks, then 32768, IEF257I).
@@ -348,11 +349,11 @@ def main():
         while end < len(names) and end - start < PER_JOB and not alone(names[start]) \
                 and not alone(names[end]):
             steps = [st for i in range(start, end + 1) for st in program_steps(i)]
-            if len(submit.build("PLITEST", steps, "HERC01.PL1C", "tests/pli/inc")[0]) > MAX_JCL:
+            if len(submit.build("PLITEST", steps, submit.PREFIX, "tests/pli/inc")[0]) > MAX_JCL:
                 break
             end += 1
         steps = [st for i in range(start, end) for st in program_steps(i)]
-        jcl, printed = submit.build("PLITEST", steps, "HERC01.PL1C", "tests/pli/inc")
+        jcl, printed = submit.build("PLITEST", steps, submit.PREFIX, "tests/pli/inc")
         reports = {f"{p}{i:02d}" for i in range(start, end) if uses_report(names[i])
                    for p in "OU"}
         op = None
@@ -361,7 +362,7 @@ def main():
             # for the PL1C/370 run
             op = Operator(names[start], replies(names[start]) * 2)
             op.start()
-        jobid = submit.run_job("PLITEST", jcl, printed, "HERC01.PL1C", outdir, reports)
+        jobid = submit.run_job("PLITEST", jcl, printed, submit.PREFIX, outdir, reports)
         if op:
             op.done.set()
             if op.answers:

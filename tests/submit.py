@@ -34,17 +34,29 @@ as a fifth field.
 """
 import base64, http.client, json, os, sys, time, urllib.parse, urllib.request
 
-HOST = "http://mvsdev.lan:8085"
+# MVSTK5-BLD (m38b), or with MBT_TARGET=env the system mbt 3's
+# environment target names (MBT_TARGET_MVSMF_URL, _USER, _PASSWORD), a
+# throwaway container for one.
+TARGET = os.environ.get("MBT_TARGET", "m38b")
+HOST = (os.environ["MBT_TARGET_MVSMF_URL"] if TARGET == "env"
+        else "http://mvsdev.lan:8085")
 ENV = os.path.expanduser("~/repos/mvs/mvs38src/.env")
 DEVLIB = "PL1C370.DEV.LINKLIB"
 PRINT_DCB = "DCB=(RECFM=VBA,LRECL=125,BLKSIZE=129)"
 
 
 def cred():
+    if TARGET == "env":
+        return (os.environ["MBT_TARGET_MVSMF_USER"] + ":" +
+                os.environ["MBT_TARGET_MVSMF_PASSWORD"])
     for l in open(ENV):
         if l.startswith("MVSTK5_BLD_CRED="):
             return l.strip().split("=", 1)[1]
     sys.exit("no MVSTK5_BLD_CRED in " + ENV)
+
+
+# the data sets of a run: under the user's own prefix
+PREFIX = cred().split(":", 1)[0].upper() + ".PL1C"
 
 
 AUTH = {"Authorization": "Basic " + base64.b64encode(cred().encode()).decode(),
