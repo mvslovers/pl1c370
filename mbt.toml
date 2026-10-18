@@ -2,7 +2,7 @@ schema = 3
 
 [project]
 name    = "pl1c370"
-version = "0.3.0"
+version = "0.4.0-dev"
 # A library: a plain mbt build writes only the run time archive
 # (build/pl1rt.a), the release asset.  tests/run_mvs.py builds the test
 # modules with mbt build --all.
