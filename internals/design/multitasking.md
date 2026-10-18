@@ -1,4 +1,4 @@
-# Design note: multitasking (#228)
+# Design note: multitasking (#3)
 
 Status: tier 0 built (Tier 110). P0 found PL/I
 (F)'s tasking modules in SYS1.PL1LIB, so tiers 2 to 4 may have an

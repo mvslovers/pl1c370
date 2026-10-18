@@ -10,7 +10,7 @@
  *   - the whole reply area is set to blanks before the WTOR, and a
  *     VARYING one gets its maximum length: the reply comes padded;
  *   - with EVENT the program goes on, and a WAIT on the event waits for
- *     the reply (#228). */
+ *     the reply (#3). */
 #include <string.h>
 #include "pl1rt.h"
 #include "pl1int.h"

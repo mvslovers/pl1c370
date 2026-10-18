@@ -422,7 +422,7 @@ void lex_file(struct lexer *lx, const char *path)
                 !(j + 1 < lx->n && (isalnum((unsigned char)lx->s[j + 1]) ||
                                     lx->s[j + 1] == '_' || lx->s[j + 1] == '#' ||
                                     lx->s[j + 1] == '@' || lx->s[j + 1] == '$')))
-                j++;                   /* an imaginary constant, 2I (#227) */
+                j++;                   /* an imaginary constant, 2I (#2) */
             if (j < lx->n && toupper((unsigned char)lx->s[j]) == 'B' &&
                 !(j + 1 < lx->n && (isalnum((unsigned char)lx->s[j + 1]) ||
                                     lx->s[j + 1] == '_')))

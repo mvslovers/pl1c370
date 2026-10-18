@@ -249,7 +249,7 @@ both modes is proposed (section 3.1).
     registers: `rt/pl1pie.asm` takes a frame from the NAB at +76 of the
     current save area, chains it, and calls C (`rt/pl1pie.asm:80-103`).
   No PL/I procedure other than main is ever entered from foreign code
-  today. FETCH of PL/I procedures (#231) would be the second such path.
+  today. FETCH of PL/I procedures (#6) would be the second such path.
 - **Calling convention** (what an exit glue has to build): the argument
   list has two words for the run time -- the parent's frame (static
   link) and A(result) -- then one word per argument (`rt/pl1parm.c:73-75`,

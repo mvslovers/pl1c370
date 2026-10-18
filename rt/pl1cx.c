@@ -1,4 +1,4 @@
-/* pl1cx.c -- COMPLEX values as characters (#227).
+/* pl1cx.c -- COMPLEX values as characters (#2).
  *
  * A complex value becomes its real part as an arithmetic value becomes
  * a string (the PUT LIST field, leading blanks kept), then its

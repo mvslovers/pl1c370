@@ -4,6 +4,12 @@ What is next, in order. `internals/ROADMAP.md` records what is done;
 this file says what comes and where work stopped. Update it after
 every merge.
 
+Issue and PR numbers: this repository started with a fresh history on
+2026-10-18. The open issues moved here as #1 to #11 (#1 was #179, #2 to
+#7 were #227 to #232, #8 #236, #9 #255, #10 #268, #11 #275); every other
+number in notes written before that date (#177, PR #254, ...) is one of
+the predecessor repository, mvslovers/pl1c370-archive (private).
+
 The language target (CLAUDE.md "Language target"): PL/I for MVS & VM by
 default, without what exists only in Language Environment and without
 DBCS; `-lang=F` is strict PL/I (F). `docs/language-levels.md` marks
@@ -21,7 +27,7 @@ D only after a design note and the maintainer's decision.
         REDUCIBLE/IRREDUCIBLE, `-lang=F` refusing `GETP -> X` (Tier 92,
         PR #244)
   - [x] #217 EXCLUSIVE, UNLOCK, NOLOCK (Tier 93, PR #252)
-  - [x] #218 DISPLAY ... REPLY (Tier 94, PR #254; EVENT waits for #228)
+  - [x] #218 DISPLAY ... REPLY (Tier 94, PR #254; EVENT waits for #3)
   - [x] #219 sterling data (Tier 96)
 - **B -- Run time and size** (milestone 2)
   - [x] #177 start-up and size (`internals/research/pli/startup-measurement.md`):
@@ -37,11 +43,11 @@ D only after a design note and the maintainer's decision.
         (Tier 100, reported from hellocp)
   - [x] #273 structure arguments to external procedures, structure
         parameter descriptors (Tier 101, reported from hellocp)
-  - [ ] #275 the run time without stdio for stream output: on hold
+  - [ ] #11 the run time without stdio for stream output: on hold
         until LIBC/370's own size fixes are measured (its
         internals/size-analysis.md, F1 to F5)
   - [x] #221 `make test`: the host tests build and pass again
-  - [ ] #255 STORAGE: LIBC/370's malloc writes "Out of memory" and a
+  - [ ] #9 STORAGE: LIBC/370's malloc writes "Out of memory" and a
         traceback to the console (t209ans); PL/I (F) does not
   - [ ] #284 a CHAR(*) parameter of a procedure reached only through an
         ENTRY variable or parameter: now at least 256 (STAR_EXPR) when
@@ -56,22 +62,22 @@ D only after a design note and the maintainer's decision.
   - [x] #226 ATTENTION, and INTERRUPT (Tier 106); a real attention
         at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
 - **D -- large projects, design first** (milestone 4)
-  - [ ] #227 COMPLEX: tier C1 done (Tier 109); C2 (`*`, `/`, ABS,
+  - [ ] #2 COMPLEX: tier C1 done (Tier 109); C2 (`*`, `/`, ABS,
         integer powers) needs the maintainer's Q-3 and Q-4 first
-  - [ ] #228 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
+  - [ ] #3 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
         done (Tiers 110, 111); tier 2 on needs the maintainer's A, B or
         C
-  - [ ] #229 VSAM
-  - [ ] #230 COBOL and FORTRAN interlanguage calls
-  - [ ] #231 FETCH of PL/I procedures, FETCHABLE, BYVALUE of external
+  - [ ] #4 VSAM
+  - [ ] #5 COBOL and FORTRAN interlanguage calls
+  - [ ] #6 FETCH of PL/I procedures, FETCHABLE, BYVALUE of external
         procedures (a run time shared with the fetched module,
         `internals/research/le-light-study.md` stage 2)
-  - [ ] #232 IRXEXCOM for the book's FCONCAT (to be talked over with
+  - [ ] #7 IRXEXCOM for the book's FCONCAT (to be talked over with
         the maintainer first)
   - [x] #233 PLISRTx (Tier 107) and PLICKPT, PLIREST, PLICANC (Tier
         108); a checkpoint taken and a restart are not testable on
         m38b (shared disks)
-  - [ ] #179 PL/I (F)'s library (SYS1.PL1LIB) as the run time under
+  - [ ] #1 PL/I (F)'s library (SYS1.PL1LIB) as the run time under
         `-lang=F`
 
 ## PL/I in MBT (no milestone)
@@ -96,27 +102,27 @@ autocall; one pin brings compiler and run time. MBT's side is mbt#270.
 
 ## To talk over with the maintainer (2026-10-18)
 
-0. **Going public** (maintainer, 2026-10-18): no IBM code and no notes on
-   IBM's modules in the tree (Tier 112). Next: a new public repository
-   with a fresh history from this tree (the private pl1c370 keeps its
-   history); its name and the switch to public are the maintainer's.
+0. ~~**Going public**~~ done 2026-10-18: no IBM code and no notes on
+   IBM's modules in the tree (Tier 112); this repository is public with
+   a fresh history, the old one is mvslovers/pl1c370-archive (private).
+   Next here: #12, the size of the mathematical functions.
 
 Block D stops here until these are decided:
 
-1. **#227 COMPLEX, before tier C2** (`internals/design/complex.md`):
+1. **#2 COMPLEX, before tier C2** (`internals/design/complex.md`):
    - Q-4: is COMPLEX FIXED in scope beyond constants (`*`, `/`, ABS
      and powers in fixed point)?
    - (Q-3 is settled: the arithmetic in C, as `rt/pl1m*.c`; no IBM
      code, 2026-10-18.)
-2. **#228 multitasking, before tier 2** (`internals/design/multitasking.md`):
+2. **#3 multitasking, before tier 2** (`internals/design/multitasking.md`):
    the end state A (real MVS subtasks, a run time per TCB), B
    (cooperative tasks on one TCB, the note's recommendation, with C as
    its first step) or C (each task run to completion). PL/I (F)'s
    tasking modules are in SYS1.PL1LIB; whether they run under MVS 3.8j
    is not yet tried.
 
-After those come #229's fixture catalog (which volume on m38b), #231's
-F-A or F-B and #230's scope.
+After those come #4's fixture catalog (which volume on m38b), #6's
+F-A or F-B and #5's scope.
 
 Also open, not waiting on the maintainer: #177, the run time's size.
 Re-measured against LIBC/370 2.17.0 (2026-10-17): no gain, the libc
@@ -135,18 +141,18 @@ PL1C/370. Results on m38b carry that caveat until the I/O side is
 understood (httpd session).
 
 Block C is done. Block D goes in the order of `internals/design/README.md`,
-which the maintainer agreed to (2026-10-17): #233 (done), #227 (C1
-done), #228 tiers 0 and 1, #229, #231, #230, #232. The open questions of each note are
+which the maintainer agreed to (2026-10-17): #233 (done), #2 (C1
+done), #3 tiers 0 and 1, #4, #6, #5, #7. The open questions of each note are
 taken with the note's recommendation where they are small, and each
 tier's PR says which it took. The large ones go to the maintainer when
-their tier comes: #227's Q-4 (COMPLEX FIXED beyond constants, before
-C2), #228's end state (A, B or C), #229's fixture catalog on m38b,
-#230's scope, #231's F-A or F-B. The suite runs against LIBC/370
+their tier comes: #2's Q-4 (COMPLEX FIXED beyond constants, before
+C2), #3's end state (A, B or C), #4's fixture catalog on m38b,
+#5's scope, #6's F-A or F-B. The suite runs against LIBC/370
 2.16.0 in the sysroot since 2026-10-17 (264 of 264, JOB02340-02358).
 
 ## Parked (no issue)
 
-- #268 calling C functions from PL/I (asked from hellocp): deferred by
+- #10 calling C functions from PL/I (asked from hellocp): deferred by
   the maintainer (2026-10-16) until everything else is done -- no
   extras before that.
 

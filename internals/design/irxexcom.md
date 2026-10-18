@@ -1,4 +1,4 @@
-# Design note: IRXEXCOM for the book's FCONCAT (#232)
+# Design note: IRXEXCOM for the book's FCONCAT (#7)
 
 Status: facts, options and questions only, for a talk with the
 maintainer first (TODO.md, block D). 2026-10-17. Nothing built,
@@ -126,7 +126,7 @@ inferred there).
    - Only useful with a REXX that passes R0 and expects the ENVBLOCK.
      XDRIVER and BREXX/370 pass 0.
    - Beyond every IBM PL/I. A new level mark would be needed, and the
-     maintainer has deferred extras (#268, TODO.md "Parked").
+     maintainer has deferred extras (#10, TODO.md "Parked").
    - Not proposed unless the maintainer wants it.
 
 ## 4. Tiers, tests, probes (if the maintainer agrees)

@@ -16,6 +16,12 @@ for how this project defines a target level and tests against it.
 Latin-1 X'AC', the only form mvsMF delivers to PL/I (F) as NOT; `^` and `~`
 arrive as invalid characters (JOB00070).
 
+Issue and PR numbers: this repository started with a fresh history on
+2026-10-18. The open issues moved here as #1 to #11 (#1 was #179, #2 to
+#7 were #227 to #232, #8 #236, #9 #255, #10 #268, #11 #275); every other
+number in notes written before that date (#177, PR #254, ...) is one of
+the predecessor repository, mvslovers/pl1c370-archive (private).
+
 ## Layout and commands
 
 - `src/` the compiler (host C99, `make` -> `build/host/pl1c370`): lex, pp

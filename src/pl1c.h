@@ -97,11 +97,11 @@ void beyond_f(int line, enum level lv, const char *what);
  * them (rt/pl1area.c); TY_OFFSET: an offset in the area t.area, a word. */
 enum tkind { TY_NONE, TY_FIXBIN, TY_FIXDEC, TY_CHAR, TY_VCHAR, TY_BIT, TY_FLTDEC, TY_FLTBIN, TY_PTR,
              TY_PIC, TY_LABEL, TY_VBIT, TY_ENTRY, TY_FILE, TY_AREA, TY_OFFSET,
-             /* COMPLEX (#227): the real part, then the imaginary part, each
+             /* COMPLEX (#2): the real part, then the imaginary part, each
               * stored as the real kind; arith() is false for them, so code
               * that knows nothing of complex refuses them */
              TY_CFIXBIN, TY_CFIXDEC, TY_CFLTDEC, TY_CFLTBIN,
-             TY_EVENT /* (#228): PL1_EV_... of rt/pl1abi.h */ };
+             TY_EVENT /* (#3): PL1_EV_... of rt/pl1abi.h */ };
 
 #define MAXBITS 4096     /* the longest bit string (frame temporaries) */
 
@@ -317,10 +317,10 @@ enum bfn { B_LENGTH, B_SUBSTR, B_INDEX, B_MOD, B_ABS, B_MAX, B_MIN,
            B_PLISRTA, B_PLISRTB, B_PLISRTC, B_PLISRTD,
            /* checkpoint and restart (Tier 108) */
            B_PLICKPT, B_PLIREST, B_PLICANC,
-           /* COMPLEX (#227); B_CPXSTR, made by check.c, is a complex
+           /* COMPLEX (#2); B_CPXSTR, made by check.c, is a complex
             * value as a character string from its two parts */
            B_REAL, B_IMAG, B_CONJG, B_COMPLEX, B_CPXSTR,
-           /* events (#228) */
+           /* events (#3) */
            B_COMPLETION, B_STATUS };
 
 struct expr {
@@ -353,7 +353,7 @@ struct expr {
     int          picstr;   /* E_VAR of a picture: its character-string value */
     int          bare;     /* E_FCALL: written without an argument list */
     int          entryno;  /* E_FCALL: the secondary entry called, 0 the primary */
-    int          imag;     /* E_NUM: an imaginary constant, 2I (#227) */
+    int          imag;     /* E_NUM: an imaginary constant, 2I (#2) */
     int          part;     /* E_VAR of a complex variable: 1 its real part, 2 its
                             * imaginary part, 0 the whole (check.c, gen_place) */
 };
@@ -368,7 +368,7 @@ enum skind { S_NULL, S_ASSIGN, S_IF, S_GROUP, S_WHILE, S_ITER, S_PUT,
              S_ADJUST, /* the bounds and storage of an adjustable array, sym in target */
              S_FETCH, S_RELEASE, /* the entries in more[] (Tier 91) */
              S_DISPLAY /* e the message, e2 the REPLY target or NULL */,
-             S_WAIT,  /* the events in more[], e the count or NULL (#228) */
+             S_WAIT,  /* the events in more[], e the count or NULL (#3) */
              S_DELAY  /* e the milliseconds */ };
 
 /* Conditions; the numbers are the run time's too (rt/pl1cond.c). */

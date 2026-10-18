@@ -7,7 +7,7 @@
  * procedure (DC V(...)) and the run time defines (rt/pl1cond.c): a
  * compiler and a run time from different levels of this file then fail
  * at the link with an unresolved name.  Change the number with every
- * change of a layout below.  (#236) */
+ * change of a layout below.  (#8) */
 #ifndef PL1ABI_H
 #define PL1ABI_H
 
@@ -71,7 +71,7 @@ enum cond { C_NONE, C_ENDFILE, C_ZERODIVIDE, C_FIXEDOVERFLOW, C_CONVERSION,
  * attention flag (rt/pl1cond.c): with a run time older than the
  * condition the link fails, where a raise would have gone wrong. */
 
-/* An EVENT variable (#228): 32 bytes, fullword aligned, as PL/I (F)'s
+/* An EVENT variable (#3): 32 bytes, fullword aligned, as PL/I (F)'s
  * (its PLM, p. 239), so that a structure holding one has PL/I (F)'s
  * mapping.  A new one is incomplete with status 0: AUTOMATIC ones are
  * cleared at their block's entry, STATIC ones are in zeroed storage. */

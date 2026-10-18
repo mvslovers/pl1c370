@@ -1,4 +1,4 @@
-# Design note: VSAM (issue #229)
+# Design note: VSAM (issue #4)
 
 Status: draft for the maintainer's decision (block D). Nothing here is
 built or measured by this note. File:line references were read from
@@ -88,7 +88,7 @@ KSDS, ESDS, RRDS correspond roughly to INDEXED, CONSECUTIVE, REGIONAL(1)
 
 The statements allowed per type are Fig. 96 (ESDS, pp. 237-238), Fig. 97
 (indexed: KSDS or a path, pp. 240-242) and Fig. 98 (RRDS, pp. 244-246).
-EVENT appears for UNBUFFERED files; it belongs to #228 and stays refused.
+EVENT appears for UNBUFFERED files; it belongs to #3 and stays refused.
 
 ### 1.3 Keys
 
@@ -565,4 +565,4 @@ Memory -- MVS's first constraint:
    KEYLENGTH only for checking.
 10. READ SET on VSAM input: point into VSAM's buffer (LOC, valid until the
     next request) or copy into a buffer of ours (one LRECL per file)?
-11. BKWD is not in #229's list but is OPT: include it (V5)?
+11. BKWD is not in #4's list but is OPT: include it (V5)?

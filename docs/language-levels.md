@@ -315,7 +315,7 @@ Each is described in the measurement of its tier
   statement; the event stays incomplete and the file's conditions wait
   for the WAIT, as PL/I (F) shows them. EVENT on DELETE is not
   supported yet.
-- **Events (#228 tier 0, Tier 110):** a name in WAIT must be declared
+- **Events (#3 tier 0, Tier 110):** a name in WAIT must be declared
   EVENT; PL/I (F) declares it contextually. `IF E THEN` with an event E
   is refused; PL/I (F) compiles it without a message (t228 Q4E7).
   CONTROLLED and BASED events are not cleared at their allocation.
@@ -345,7 +345,7 @@ longest argument the compilation passes it, and by 256 for a procedure
 also called through an ENTRY variable or parameter. A longer argument
 through the variable overflows them (#284).
 
-COMPLEX is in part (#227, Tier 109; `internals/design/complex.md` tier
+COMPLEX is in part (#2, Tier 109; `internals/design/complex.md` tier
 C1). There are:
 - the attribute, imaginary constants, INITIAL with complex constants;
 - assignment with mode conversion, `+`, `-`, prefix `-`, `=` and `¬=`;

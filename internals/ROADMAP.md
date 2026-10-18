@@ -6,6 +6,12 @@ because there is none yet. It is derived from the research in
 `research/pli/report.md` and will be revised when the first measurements on
 PL/I (F) come in.
 
+Issue and PR numbers: this repository started with a fresh history on
+2026-10-18. The open issues moved here as #1 to #11 (#1 was #179, #2 to
+#7 were #227 to #232, #8 #236, #9 #255, #10 #268, #11 #275); every other
+number in notes written before that date (#177, PR #254, ...) is one of
+the predecessor repository, mvslovers/pl1c370-archive (private).
+
 ## Tier 0 -- done 2026-10-12
 
 The first slice through the whole pipeline: source -> `pl1c370` -> S/370

@@ -1,4 +1,4 @@
-# Design note: COBOL and FORTRAN interlanguage calls (#230)
+# Design note: COBOL and FORTRAN interlanguage calls (#5)
 
 Status: draft for the maintainer, 2026-10-17. Nothing built, nothing
 submitted. Marks: **[read]** taken from the named file or manual page;
@@ -107,7 +107,7 @@ These tables are in GC33-0009-4, Fig. 19.2 and 19.4, pp. 298-299
   FORTRAN's normal alignment. UNALIGNED corresponds to COBOL
   unsynchronized; FORTRAN has no equivalent (p. 291).
 - **FORTRAN COMMON** is always byte-aligned (Fig. 19.4, note 1).
-- **COMPLEX** depends on #227. FLOAT DECIMAL(33), the extended
+- **COMPLEX** depends on #2. FLOAT DECIMAL(33), the extended
   precision, is not supported by PL/I (F).
 
 ### 1.3 Language level: a question, not decided here

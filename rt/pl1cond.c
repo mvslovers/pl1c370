@@ -668,7 +668,7 @@ static void raise_cond(int cond, const void *qual, int oncode, char *src, int sr
  * system action, a new page, is rt/pl1io.c's).  Returns 1 if it ran. */
 /* UNDEFINEDFILE, RECORD: the condition for the file; returns after a
  * normal return of an on-unit */
-/* ---- EVENT I/O (#228) ------------------------------------------------- */
+/* ---- EVENT I/O (#3) ------------------------------------------------- */
 
 /* While a READ, WRITE or REWRITE with EVENT runs (PL1EVIO to PL1EVEN),
  * its file conditions go into the event instead of being raised; the

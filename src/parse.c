@@ -547,7 +547,7 @@ static struct expr *init_value1(void);
 /* INITIAL value: a constant, a negative constant, a string, a bit string;
  * '*' (NULL); ANSI's (expression) and references (CM43 to CM45); a
  * complex constant, a real and an imaginary one with a sign between
- * them (#227) */
+ * them (#2) */
 static struct expr *init_value(void)
 {
     struct expr *n = init_value1();
@@ -1238,8 +1238,8 @@ static void declare(void)
             else if (isword("FLOAT")) { flt = 1; pos++; }
             else if (isword2("BIN", "BINARY")) { bin = 1; pos++; }
             else if (isword2("DEC", "DECIMAL")) { dec = 1; pos++; }
-            else if (isword2("COMPLEX", "CPLX")) { cplx = 1; pos++; }   /* #227 */
-            else if (isword("EVENT")) { evt = 1; pos++; }               /* #228 */
+            else if (isword2("COMPLEX", "CPLX")) { cplx = 1; pos++; }   /* #2 */
+            else if (isword("EVENT")) { evt = 1; pos++; }               /* #3 */
             else if (isword("REAL")) pos++;
             else if (isword2("CHAR", "CHARACTER")) {
                 chr = 1; pos++;
@@ -3426,7 +3426,7 @@ static struct stmt *statement(void)
                 st->ignore = expr();
                 expect(T_RP, "')'");
             } else if (isword("EVENT") && !st->nmore) {
-                /* EVENT(e): the transmission's conditions at a WAIT (#228) */
+                /* EVENT(e): the transmission's conditions at a WAIT (#3) */
                 pos++;
                 expect(T_LP, "'('");
                 st->more[st->nmore++] = parse_ref();
@@ -3696,7 +3696,7 @@ static struct stmt *statement(void)
         goto done;
     }
     if (isword("WAIT") && tk(1)->kind == T_LP) {
-        /* WAIT (event, ...) [(count)]; (GC28-8201-4, #228) */
+        /* WAIT (event, ...) [(count)]; (GC28-8201-4, #3) */
         st = new_stmt(S_WAIT, from);
         pos += 2;
         for (;;) {
@@ -3721,7 +3721,7 @@ static struct stmt *statement(void)
         goto done;
     }
     if (isword("DELAY") && tk(1)->kind == T_LP) {
-        /* DELAY (milliseconds); (#228) */
+        /* DELAY (milliseconds); (#3) */
         st = new_stmt(S_DELAY, from);
         pos += 2;
         st->e = expr();

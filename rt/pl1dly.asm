@@ -1,4 +1,4 @@
-* PL1DLAY -- the DELAY statement (#228): STIMER WAIT for the number of
+* PL1DLAY -- the DELAY statement (#3): STIMER WAIT for the number of
 * milliseconds given, in the hundredths of a second STIMER counts;
 * 0 or less does not wait (t228 Q3EVT).
 *

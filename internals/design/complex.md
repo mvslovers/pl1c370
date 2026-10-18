@@ -1,4 +1,4 @@
-# Design note: COMPLEX (#227)
+# Design note: COMPLEX (#2)
 
 Status: tier C1 built (Tier 109). Of the questions in section 7, C1
 took Q-1 (new kinds), Q-2 (the parts are split in check.c, not in a

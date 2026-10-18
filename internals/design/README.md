@@ -1,4 +1,4 @@
-# Block D: design notes (#227 to #233)
+# Block D: design notes (#2 to #233)
 
 Block D (milestone 4) holds the large pieces. Each one gets a design
 note first and is built only after the maintainer decides (TODO.md).
@@ -9,12 +9,12 @@ not check are marked unverified in it.
 
 | Issue | Note | Oracle | Proposed first step | Rough size |
 |---|---|---|---|---|
-| #227 COMPLEX | [complex.md](complex.md) | PL/I (F) | C1: data, constants, + - =, PUT LIST | 5 tiers. Run time about 9 KB if all of it is linked, under 2 KB for a typical FLOAT program |
-| #228 Multitasking | [multitasking.md](multitasking.md) | PL/I (F), if SYS1.PL1LIB has its tasking modules (probe P0) | Tier 0: EVENT, WAIT, COMPLETION, STATUS, DELAY, with no tasks | 5 tiers. A design choice is needed before tier 2 |
-| #229 VSAM | [vsam.md](vsam.md) | none (OPT); the twins spell out the output, and IDCAMS PRINT checks the result | V0: a fixture catalog and runner support | 7 tiers. New back end, ABI stamp to PL1RT003 |
-| #230 COBOL/FORTRAN calls | [ilc.md](ilc.md) | none, except IKFCBL00 for COBOL layouts | a COBOL call with scalar arguments | Depends on the scope: FORTRAN is not on any stand |
-| #231 FETCH of PL/I, BYVALUE | [fetch.md](fetch.md) | none (OPT) | the run-time sharing decision (F-A or F-B) | Architectural. Touches every run-time global |
-| #232 IRXEXCOM | [irxexcom.md](irxexcom.md) | TSO/E REXX is absent | to be talked over: no REXX on MVS 3.8j offers IRXEXCOM today | Small on our side, blocked on rexx370 |
+| #2 COMPLEX | [complex.md](complex.md) | PL/I (F) | C1: data, constants, + - =, PUT LIST | 5 tiers. Run time about 9 KB if all of it is linked, under 2 KB for a typical FLOAT program |
+| #3 Multitasking | [multitasking.md](multitasking.md) | PL/I (F), if SYS1.PL1LIB has its tasking modules (probe P0) | Tier 0: EVENT, WAIT, COMPLETION, STATUS, DELAY, with no tasks | 5 tiers. A design choice is needed before tier 2 |
+| #4 VSAM | [vsam.md](vsam.md) | none (OPT); the twins spell out the output, and IDCAMS PRINT checks the result | V0: a fixture catalog and runner support | 7 tiers. New back end, ABI stamp to PL1RT003 |
+| #5 COBOL/FORTRAN calls | [ilc.md](ilc.md) | none, except IKFCBL00 for COBOL layouts | a COBOL call with scalar arguments | Depends on the scope: FORTRAN is not on any stand |
+| #6 FETCH of PL/I, BYVALUE | [fetch.md](fetch.md) | none (OPT) | the run-time sharing decision (F-A or F-B) | Architectural. Touches every run-time global |
+| #7 IRXEXCOM | [irxexcom.md](irxexcom.md) | TSO/E REXX is absent | to be talked over: no REXX on MVS 3.8j offers IRXEXCOM today | Small on our side, blocked on rexx370 |
 | #233 PLISRTx, checkpoint | [sort-checkpoint.md](sort-checkpoint.md) | PL/I (F) (IHESRTx, IHECKPx) | Q1: which SORT is on TK5, then S1 (PLISRTA) | 4 tiers. Exits are the first foreign callers of a PL/I procedure |
 
 ## The decisions each note asks for, in short
@@ -62,13 +62,13 @@ The order follows oracle first, then risk.
 
 1. **#233 sort and checkpoint.** PL/I (F) is the oracle and the scope is
    small. The exit protocol is new, but it is contained.
-2. **#227 COMPLEX.** PL/I (F) is the oracle. It is large but
+2. **#2 COMPLEX.** PL/I (F) is the oracle. It is large but
    self-contained, and a program without COMPLEX links nothing new.
-3. **#228 tiers 0 and 1.** Events without tasks. Then the A/B/C
+3. **#3 tiers 0 and 1.** Events without tasks. Then the A/B/C
    decision.
-4. **#229 VSAM.** Once a fixture catalog exists.
-5. **#231 FETCH.** Its anchor-block option lays groundwork that #228 A
+4. **#4 VSAM.** Once a fixture catalog exists.
+5. **#6 FETCH.** Its anchor-block option lays groundwork that #3 A
    would reuse.
-6. **#230 COBOL/FORTRAN calls.** No oracle; FORTRAN is missing from the
+6. **#5 COBOL/FORTRAN calls.** No oracle; FORTRAN is missing from the
    stands.
-7. **#232 IRXEXCOM.** Waits for rexx370.
+7. **#7 IRXEXCOM.** Waits for rexx370.

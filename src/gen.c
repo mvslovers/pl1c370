@@ -481,7 +481,7 @@ static struct place gen_place(struct expr *e)
         }
     }
     if (e->part == 2)
-        p.off += type_size(e->sym->t);  /* the imaginary part (#227, check.c cx_sym) */
+        p.off += type_size(e->sym->t);  /* the imaginary part (#2, check.c cx_sym) */
     if (p.off > 4095 || p.off < 0) {
         /* displacement out of range: fold it into the base */
         int r = p.base == 13 ? reg_get() : p.base;
@@ -3288,7 +3288,7 @@ static void gen_assign(struct expr *lhs, struct expr *e)
 {
     struct target t = { TG_REF, lhs, 0 };
     if (lhs->k == E_CALL && (lhs->fn == B_COMPLETION || lhs->fn == B_STATUS)) {
-        /* COMPLETION(e) = bit, STATUS(e) = number (#228) */
+        /* COMPLETION(e) = bit, STATUS(e) = number (#3) */
         int r = lhs->fn == B_STATUS ? gen_bin(e) : gen_bitval(e);
         struct place p = gen_place(lhs->arg[0]);
         if (lhs->fn == B_STATUS)
@@ -6405,7 +6405,7 @@ static void gen_proc(struct proc *p, FILE *f)
         out("         XC    %d(%d,13),%d(13)", ests[i].off, EST_SIZE, ests[i].off);
     /* AUTOMATIC structures start out zero: PL/I (F)'s padding bytes are 0
      * in the records it writes (JOB00123), ours would be what the stack
-     * held; and so do events, incomplete with status 0 (#228) */
+     * held; and so do events, incomplete with status 0 (#3) */
     for (struct sym *x = p->syms; x; x = x->next) {
         int o, n;
         if (x->root != x || !(x->child || x->t.k == TY_EVENT) || x->st != ST_AUTO ||

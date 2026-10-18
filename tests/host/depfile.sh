@@ -1,7 +1,7 @@
 #!/bin/sh
 # -MD / -MF: the dependency file lists the source and the %INCLUDE
 # members the preprocessor read -- not one in a %IF branch not taken --
-# with an empty rule for each member (#236 follow-up, for mbt).
+# with an empty rule for each member (#8 follow-up, for mbt).
 set -e
 cd "$(dirname "$0")/../.."
 T=$(mktemp -d)

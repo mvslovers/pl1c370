@@ -1,4 +1,4 @@
-/* pl1ev.c -- WAIT on event variables (#228, tiers 0 and 1).
+/* pl1ev.c -- WAIT on event variables (#3, tiers 0 and 1).
  *
  * The generated code passes a list of (address, number of events
  * there), an array's elements one after another, and the count: how

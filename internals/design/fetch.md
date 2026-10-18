@@ -1,4 +1,4 @@
-# Design note: FETCH of PL/I procedures, FETCHABLE, BYVALUE of external procedures (#231)
+# Design note: FETCH of PL/I procedures, FETCHABLE, BYVALUE of external procedures (#6)
 
 Status: draft for the maintainer, 2026-10-17. Nothing built, nothing
 submitted. Marks: **[read]** taken from the named file or page;
@@ -40,7 +40,7 @@ Sources: GC33-0009-4 pp. 69-70; SC26-3114-01 pp. 113-114 **[read]**.
      characters (GC33-0009-4 p. 70; SC26-3114-01 omits the 7).
   7. A fetched procedure cannot fetch further procedures.
   8. (MVS & VM only) Rules on sharing a fetched module between a task
-     and its subtasks. These matter only with #228.
+     and its subtasks. These matter only with #3.
   - Violations are not diagnosed: "random errors".
 - **FETCHABLE** (SC26-3114-01 p. 104; level MVS):
   - The option on an external PROCEDURE names the procedure that gets
@@ -267,7 +267,7 @@ something references it.
   - FETCH is used to *save* storage (SC26-3114-01 p. 113).
 - **Side benefit**: the same refactor is the reentrancy prerequisite
   costed in le-light-study.md 3.6 (stage 4) and the multitasking state
-  split for #228.
+  split for #3.
 
 ### F-B: a run-time vector (the shared-library model, in-process)
 
@@ -359,10 +359,10 @@ Both sides are PL1C/370's, so the convention is ours to choose.
     **[inf: cc370's list holds values and returns an int in R15;
     check against cc370 internals]**. A BYVALUE external procedure
     would then be callable from C, and a BYVALUE ENTRY could call C.
-  - That is #268, which the maintainer has deferred (TODO.md "Parked").
+  - That is #10, which the maintainer has deferred (TODO.md "Parked").
   - B2 is the bigger change: the procedure no longer has the PL/I
     header, so internal calls of it need the B2 form too.
-- **Recommendation**: B1 for #231. Mention B2 only as the hook for #268.
+- **Recommendation**: B1 for #6. Mention B2 only as the hook for #10.
 - **Rules to check** (SC26-3114-01 p. 103):
   - not on internal procedures or ENTRY statements;
   - scalars POINTER or FIXED BIN(31,0), parameters and RETURNS;
@@ -429,11 +429,11 @@ Both sides are PL1C/370's, so the convention is ours to choose.
    take the slot.
 3. **The atexit hazard** exists today for any future separately linked
    PL/I code. Should `finish_all` move to a fixed registration point
-   now, independent of #231?
+   now, independent of #6?
 4. **libc370 WSA leak** per FETCH/RELEASE cycle (if any libc370
    member in the fetched module uses `__wsaget`): accept, or ask
    libc370 for a release-by-key call?
-5. **BYVALUE convention**: B1 now, B2 only with #268?
+5. **BYVALUE convention**: B1 now, B2 only with #10?
 6. **MAIN in a fetched module**: refuse (proposed), unlike LE's "MAIN
    wins"?
 7. **Risk**: recovery paths. The SPIE exit and ESTAE live in the main

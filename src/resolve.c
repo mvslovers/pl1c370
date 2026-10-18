@@ -253,10 +253,10 @@ builtins[] = {
      * ddname, check-id, organization, code */
     {"PLICKPT", B_PLICKPT, 0, 4, L_OPT}, {"PLIREST", B_PLIREST, 0, 0, L_OPT},
     {"PLICANC", B_PLICANC, 0, 0, L_OPT},
-    /* COMPLEX (GC28-8201-4; #227) */
+    /* COMPLEX (GC28-8201-4; #2) */
     {"REAL", B_REAL, 1, 1, L_F}, {"IMAG", B_IMAG, 1, 1, L_F}, {"CONJG", B_CONJG, 1, 1, L_F},
     {"COMPLEX", B_COMPLEX, 2, 2, L_F}, {"CPLX", B_COMPLEX, 2, 2, L_F},
-    /* events (GC28-8201-4; #228) */
+    /* events (GC28-8201-4; #3) */
     {"COMPLETION", B_COMPLETION, 1, 1, L_F}, {"STATUS", B_STATUS, 1, 1, L_F},
 };
 

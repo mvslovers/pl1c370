@@ -2288,7 +2288,7 @@ static struct expr *iter_bin(int op, struct expr *l, struct expr *r, int line)
     return e;
 }
 
-/* ---- COMPLEX (#227, tier C1) ------------------------------------------ */
+/* ---- COMPLEX (#2, tier C1) ------------------------------------------ */
 
 /* A complex value is split into its two parts before it is typed: an
  * assignment to a complex variable becomes one to its real part and
@@ -2834,7 +2834,7 @@ static void check_stmts(struct stmt *s)
                 break;
             }
             if (s->lhs->k == E_CALL && (s->lhs->fn == B_COMPLETION || s->lhs->fn == B_STATUS)) {
-                /* COMPLETION(e) = bit, STATUS(e) = number (#228) */
+                /* COMPLETION(e) = bit, STATUS(e) = number (#3) */
                 struct type it;
                 memset(&it, 0, sizeof it);
                 it.k = s->lhs->fn == B_STATUS ? TY_FIXBIN : TY_BIT;
@@ -3058,7 +3058,7 @@ static void check_stmts(struct stmt *s)
             }
             if (s->e3) {
                 /* EVENT: the WTOR is answered while the program goes on;
-                 * a WAIT on the event waits for the reply (#228) */
+                 * a WAIT on the event waits for the reply (#3) */
                 type_of(s->e3);
                 if (s->e3->k != E_VAR || s->e3->t.k != TY_EVENT ||
                     cum_dims(s->e3->sym) > s->e3->nsubs)
@@ -3126,7 +3126,7 @@ static void check_stmts(struct stmt *s)
         case S_WRITE:
         case S_REWRITE:
             if (s->nmore) {
-                /* EVENT(e) (#228) */
+                /* EVENT(e) (#3) */
                 struct expr *x = s->more[0];
                 type_of(x);
                 if (x->k != E_VAR || x->t.k != TY_EVENT || cum_dims(x->sym) > x->nsubs)
