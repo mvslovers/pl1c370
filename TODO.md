@@ -71,11 +71,9 @@ D only after a design note and the maintainer's decision.
         complex constant into a real target gives its real part only in
         a source with COMPLEX data, its imaginary part checked as in
         PL/I (F); ABS of COMPLEX FIXED truncated exactly, MULTIPLY of
-        COMPLEX FIXED BINARY right where PL/I (F) is wrong. Found on the
-        way: ROUND of FIXED BINARY is not supported yet, and ROUND of
-        FIXED DECIMAL keeps PL/I (F)'s precision (p+1,q) where PL/I for
-        MVS & VM gives (MAX(1,MIN(p-q+1+y,N)),y) -- a default-level
-        difference to settle (SC26-3114-01, ROUND) Decided in Tier 114: ABS of COMPLEX FIXED is
+        COMPLEX FIXED BINARY right where PL/I (F) is wrong. ROUND of FIXED
+        BINARY, and the default's ROUND precision of PL/I for MVS & VM,
+        done in Tier 118 Decided in Tier 114: ABS of COMPLEX FIXED is
         truncated exactly, where PL/I (F) is sometimes one unit high;
         MULTIPLY of COMPLEX FIXED BINARY computes the right value
         where PL/I (F) gives a wrong one (2-14I for (3+4I)*(1-2I));

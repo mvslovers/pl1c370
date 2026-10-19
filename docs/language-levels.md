@@ -186,6 +186,12 @@ They are part of the default language; which of them PL1C/370 has is in
 Where the later IBM rules differ from PL/I (F), the default follows them
 (Tier 84); `-lang=F` keeps PL/I (F)'s:
 
+- **ROUND(x,y) of FIXED values** has the precision
+  (MAX(1,MIN(p-q+1+y,N)),y) of SC26-3114-01 ("ROUND"): `ROUND(X,2)` of a
+  FIXED DEC(5,4) 6.6666 prints 6.67. PL/I (F) gives (p+1,q) for FIXED
+  DECIMAL, 6.6700, and (16,q) for FIXED BINARY whatever p (JOB00184,
+  JOB00334, JOB00335) (Tier 118).
+
 - **STRINGSIZE is disabled by default,** enabled by a STRINGSIZE prefix
   (GC33-0009-4, Part II, Section H; SC26-3114-01, chapter 15). Its
   system action writes a message and the program goes on: the

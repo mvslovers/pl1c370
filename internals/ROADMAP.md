@@ -1454,6 +1454,17 @@ array descriptors `(*)` in `DECLARE ... ENTRY(...)` (as GENERIC had
 them). `t297cbf` and `t298car` identical in JOB00332; the full suite
 before those two 286 identical and 13 CLOSE (JOB00303 to JOB00329).
 
+## Tier 118 -- done 2026-10-19
+
+ROUND: of FIXED BINARY, rounded half away from zero at binary digit y
+(PL/I (F) measured, JOB00334); and the result's precision of PL/I for
+MVS & VM in the default language, (MAX(1,MIN(p-q+1+y,N)),y), PL/I
+(F)'s under `-lang=F`: (p+1,q) for FIXED DECIMAL, (16,q) for FIXED
+BINARY whatever p (JOB00335). `t299rnd` and `t301rnb` (PL/I (F)'s
+rules) and `t300rnm` (the default's, a `.opt.pli` with `.sem`)
+identical in JOB00348; the full suite 289 identical and 13 CLOSE
+(JOB00351 to JOB00377).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

@@ -985,6 +985,34 @@ static int gen_bin_at(struct expr *e, int qs)
         gen_cxop(e);
         e = e->l;
     }
+    if (e->k == E_CALL && e->fn == B_ROUND && e->t.k == TY_FIXBIN) {
+        /* ROUND of FIXED BINARY: the magnitude plus half a unit of binary
+         * digit n, cut there; then to the result's scale (check.c) */
+        struct expr *a = e->arg[1];
+        int n = 0, q = e->arg[0]->t.q, neg = a->k == E_NEG, l1 = new_label(), l2 = new_label();
+        for (const char *d = (neg ? a->l : a)->num; *d; d++)
+            n = n * 10 + (*d - '0');
+        if (neg)
+            n = -n;
+        r = gen_bin(e->arg[0]);
+        if (n < q) {
+            int k = q - n;
+            unsigned half = 1u << (k - 1), mask = ~((1u << k) - 1u);
+            ins(NULL, "LTR", "%d,%d", r, r);
+            ins(NULL, "BC", "4,@L%d", l1);
+            ins(NULL, "A", "%d,=F'%d'", r, (int)half);
+            ins(NULL, "N", "%d,=F'%d'", r, (int)mask);
+            ins(NULL, "B", "@L%d", l2);
+            here(l1);
+            ins(NULL, "LCR", "%d,%d", r, r);
+            ins(NULL, "A", "%d,=F'%d'", r, (int)half);
+            ins(NULL, "N", "%d,=F'%d'", r, (int)mask);
+            ins(NULL, "LCR", "%d,%d", r, r);
+            here(l2);
+        }
+        bin_rescale(r, q, qs);
+        return r;
+    }
     if (e->k == E_CALL && e->fn == B_CXABS && e->t.k == TY_FIXBIN) {
         /* ABS of COMPLEX FIXED BINARY: the parts' values, A(result) */
         int a = gen_bin(e->arg[0]), b = gen_bin(e->arg[1]), t = tmp(4, 4);
@@ -1642,8 +1670,13 @@ static int gen_dec(struct expr *e)
             ins(NULL, "ZAP", "%s,%s", tss(t, 8), tss(c, 8));
             if (n < q) {
                 ins(NULL, "SRP", "%s,%d,5", tss(t, 8), 64 - (q - n));
-                ins(NULL, "SRP", "%s,%d,0", tss(t, 8), q - n);
+                q = n;                      /* now at scale n */
             }
+            /* to the result's scale: q (PL/I (F)) or n (check.c) */
+            if (e->t.q > q)
+                ins(NULL, "SRP", "%s,%d,0", tss(t, 8), e->t.q - q);
+            else if (e->t.q < q)
+                ins(NULL, "SRP", "%s,%d,0", tss(t, 8), 64 - (q - e->t.q));
             return t;
         }
         case B_ABS: {

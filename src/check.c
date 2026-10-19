@@ -1392,13 +1392,27 @@ static void type_call(struct expr *e)
             e->t = a;
             return;
         }
-        if (a.k != TY_FIXDEC) {
-            error_at(e->line, "ROUND of FIXED BINARY is not supported yet");
+        if (a.k == TY_PIC) {
+            a.k = TY_FIXDEC;
+            a.pic = NULL;
+        }
+        if (a.k != TY_FIXDEC && a.k != TY_FIXBIN) {
+            error_at(e->line, "ROUND needs an arithmetic argument");
             return;
         }
-        /* (p+1, q), rounded half away from zero (JOB00184) */
+        /* rounded half away from zero at digit n (binary digit for
+         * FIXED BINARY, JOB00334); PL/I (F): (p+1,q) (JOB00184), (16,q)
+         * for FIXED BINARY; PL/I for
+         * MVS & VM: (MAX(1,MIN(p-q+1+n,N)),n) (SC26-3114-01, ROUND) */
         e->t = a;
-        e->t.p = min(15, a.p + 1);
+        if (opt_lang_f) {
+            /* FIXED BINARY: 16 whatever p, (31,8), (25,8), (20,3), (15,4)
+             * alike (JOB00334, JOB00335) */
+            e->t.p = a.k == TY_FIXBIN ? min(31, max(16, a.q + 1)) : min(15, a.p + 1);
+        } else {
+            e->t.p = max(1, min(a.p - a.q + 1 + n, a.k == TY_FIXBIN ? 31 : 15));
+            e->t.q = n;
+        }
         return;
     }
     case B_FIXED:
