@@ -800,7 +800,8 @@ static void gen_cxop(struct expr *e)
     struct expr v;
     struct place p;
     for (int i = 0; i < n; i++)
-        a[i] = fx ? fix_arg(e->arg[i]) : e->op == T_POWER && i == 2 ? gen_int(e->arg[i]) :
+        a[i] = fx ? fix_arg(e->arg[i]) :
+               e->fn == B_CXOP && e->op == T_POWER && n == 3 && i == 2 ? gen_int(e->arg[i]) :
                flt_arg_addr(e->arg[i], e->t);
     for (int i = 0; i < n; i++) {
         arg_reg(a[i]);
@@ -816,6 +817,23 @@ static void gen_cxop(struct expr *e)
     p_free_except(&p, r);
     arg_reg(r);
     reg_free(r);
+    if (e->fn == B_CXFN) {
+        static const struct { enum bfn f; const char *s, *l; } fns[] = {
+            { B_SQRT, "PL1CXQS", "PL1CXQL" }, { B_EXP, "PL1CXES", "PL1CXEL" },
+            { B_LOG, "PL1CXLS", "PL1CXLL" }, { B_SIN, "PL1CXSS", "PL1CXSL" },
+            { B_COS, "PL1CXCS", "PL1CXCL" }, { B_SINH, "PL1CXYS", "PL1CXYL" },
+            { B_COSH, "PL1CXKS", "PL1CXKL" }, { B_TAN, "PL1CXTS", "PL1CXTL" },
+            { B_TANH, "PL1CXHS", "PL1CXHL" }, { B_ATAN, "PL1CXNS", "PL1CXNL" },
+            { B_ATANH, "PL1CXZS", "PL1CXZL" },
+        };
+        arg_const(0);
+        for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++)
+            if ((int)fns[i].f == e->op) {
+                call(lo ? fns[i].l : fns[i].s);
+                return;
+            }
+        fatal("internal: no routine for this complex function");
+    }
     if (fx) {
         int dec = e->t.k == TY_FIXDEC;
         arg_const(cx_fixed_desc(e->arg[0]->t.q, e->arg[2]->t.q, e->t));
@@ -824,7 +842,8 @@ static void gen_cxop(struct expr *e)
     }
     arg_const(cur_mask & EN_UFL ? 1 : 0);
     call(e->op == T_STAR ? (lo ? "PL1CXML" : "PL1CXMS") :
-         e->op == T_SLASH ? (lo ? "PL1CXDL" : "PL1CXDS") : (lo ? "PL1CXPL" : "PL1CXPS"));
+         e->op == T_SLASH ? (lo ? "PL1CXDL" : "PL1CXDS") :
+         n == 4 ? (lo ? "PL1CXXL" : "PL1CXXS") : (lo ? "PL1CXPL" : "PL1CXPS"));
 }
 
 /* ---- constants ------------------------------------------------------ */
@@ -923,7 +942,7 @@ static int gen_bin_at(struct expr *e, int qs)
 {
     int r, v;
 
-    if (e->k == E_CALL && e->fn == B_CXOP) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1345,7 +1364,7 @@ static int gen_bin_at(struct expr *e, int qs)
         case B_PLICKPT: case B_PLIREST: case B_PLICANC:
         case B_COMPLETION:
         case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-        case B_CXABS:
+        case B_CXABS: case B_CXFN:
             break;
         }
         break;
@@ -1396,7 +1415,7 @@ static int gen_dec(struct expr *e)
 {
     int t;
 
-    if (e->k == E_CALL && e->fn == B_CXOP) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1778,7 +1797,7 @@ static int gen_flt(struct expr *e, struct type tt)
 {
     int L = flt_long(tt), t;
 
-    if (e->k == E_CALL && e->fn == B_CXOP) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1999,7 +2018,7 @@ static int gen_flt(struct expr *e, struct type tt)
  * strings live in temporaries of the frame. */
 static void gen_string(struct expr *e, int *ra, int *rl)
 {
-    if (e->k == E_CALL && e->fn == B_CXOP) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -3106,7 +3125,7 @@ static void gen_sort(struct expr *e)
 
 static void gen_store(struct target *tg, struct type tt, struct expr *e)
 {
-    if (e && e->k == E_CALL && e->fn == B_CXOP) {
+    if (e && e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -5568,9 +5587,14 @@ static void gen_stmt1(struct stmt *s)
         {
             if (s->owner_io && s->owner_io->data)
                 data_name(s->e);
+            if (s->cxpair == 1) {
+                /* a complex value's parts follow (rt/pl1ioed.c) */
+                ins(NULL, "L", "15,=V(PL1ECPX)");
+                ins(NULL, "BALR", "14,15");
+            }
             gen_put_item(s->e);
         }
-        if (uses_count) {
+        if (uses_count && s->cxpair != 2) {
             /* COUNT: one more item of this GET or PUT (rt/pl1io.c) */
             ins(NULL, "L", "15,=V(PL1ICNT)");
             ins(NULL, "LA", "0,1");

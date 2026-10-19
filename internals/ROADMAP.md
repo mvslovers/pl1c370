@@ -1393,6 +1393,34 @@ throwaway TK5 container, as did the twins: `t285cml` to `t290cfa` and
 the C1 twins identical in JOB00146 there; the full suite 281
 identical and the 10 mathematical twins CLOSE (JOB00117 to JOB00143).
 
+## Tier 115 -- done 2026-10-19
+
+COMPLEX, tier C3 (#2, `design/complex.md`): SQRT, EXP, LOG, SIN, COS,
+SINH, COSH, TAN, TANH, ATAN and ATANH of complex values, and the
+general `z1**z2` (a complex exponent, or a real one that is not an
+integer). The run time computes them by the methods of C28-6590-0 in
+long precision on its own real functions (`rt/pl1cxq.c` SQRT,
+`pl1cxe.c` EXP, `pl1cxl.c` LOG, `pl1cxs.c` SIN, COS, SINH, COSH,
+`pl1cxt.c` TAN, TANH, `pl1cxh.c` ATAN, ATANH, `pl1cxx.c` `**`), the
+short entries rounding the long result; the errors are PL/I (F)'s,
+with its messages and ONCODEs (1506 to 1511 from the real routines,
+1556 to 1559). check.c makes one B_CXFN call per function (`cx_fn`).
+LOG10, LOG2, ATAND, SIND, COSD, TAND, ERF, ERFC and ATAN(y,x) of a
+complex value are refused, as in PL/I (F). Measured in
+`research/pli/c3-measurement.md`; the twins `t291cmf`, `t292cml` and
+`t293cxx` CLOSE to PL/I (F) (at most 4 units of the last digit, in the
+worst cases PL1C/370's value the exact one) in JOB00153.
+
+And the first part of C4: PUT EDIT of complex values with the C format
+item (`C(item[,item])`, the format kind K_C followed by its two items;
+a complex value's parts are two items of the statement, announced to
+the run time by PL1ECPX, `rt/pl1ioed.c`), with PL/I (F)'s rules for a
+real value meeting C and a complex value meeting another item
+(`research/pli/c4-measurement.md`); `t294ced` identical in JOB00217.
+GET EDIT with C, GET of complex targets and character to complex
+remain for C4b. The full suite 282 identical and 13 CLOSE (JOB00220 to
+JOB00246).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

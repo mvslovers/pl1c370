@@ -2746,6 +2746,27 @@ static void format_list(struct fmt *out, int *n)
                 f.k = F_P;
                 f.pic = pt.pic;
                 pos++;
+            } else if (isword("C") && tk(1)->kind == T_LP) {
+                /* C(item[,item]): a complex value's parts, each an F, E or P
+                 * item, the second the first again if not given (GC28-8201-4,
+                 * "The C Format Item"); F_C, then its two items */
+                int c0;
+                pos++;
+                if (*n >= MAXFMT - 3)
+                    fatal("%s(%d): format list too long", src_name, tk(0)->line);
+                f.k = F_C;
+                out[(*n)++] = f;
+                c0 = *n;
+                format_list(out, n);
+                if (*n - c0 < 1 || *n - c0 > 2)
+                    fatal("%s(%d): C takes one or two format items", src_name, tk(0)->line);
+                for (int i = c0; i < *n; i++)
+                    if (out[i].k != F_F && out[i].k != F_E && out[i].k != F_P)
+                        fatal("%s(%d): C takes F, E and P format items", src_name,
+                              tk(0)->line);
+                if (*n - c0 == 1)
+                    out[(*n)++] = out[c0];
+                goto c_done;
             } else if (isword("X")) {
                 pos++; f.k = F_X; f.w = format_number_v(&f.ws); expect(T_RP, "')'");
             } else if (isword("COLUMN") || isword("COL")) {
@@ -2770,6 +2791,7 @@ static void format_list(struct fmt *out, int *n)
                 fatal("%s(%d): format list too long", src_name, tk(0)->line);
             out[(*n)++] = f;
         }
+    c_done:
         {
             int len = *n - start;
             for (int r = 1; r < rep; r++)
