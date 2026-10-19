@@ -193,6 +193,43 @@ static struct expr *primary(void)
         pos += 2;
         return e;
     }
+    if (is(T_NUM) && strchr(t->text, 'B')) {
+        /* a binary constant: FIXED BINARY(p,q), p the digits and q those
+         * after the point, or FLOAT BINARY(p) with the decimal exponent
+         * of 2 (Q1BINC, JOB00349) */
+        const char *s = t->text;
+        int p = 0, q = 0, point = 0;
+        unsigned long long m = 0;
+        char *b;
+        e = new_expr(E_NUM, t->line);
+        e->bin = 1;
+        e->imag = s[strlen(s) - 1] == 'I';
+        for (; *s && *s != 'E' && *s != 'B'; s++) {
+            if (*s == '.') { point = 1; continue; }
+            if (p < 64)
+                m = 2 * m + (unsigned)(*s - '0');
+            p++;
+            if (point) q++;
+        }
+        b = xmalloc(24);
+        snprintf(b, 24, "%llu", m);
+        e->num = b;
+        if (*s == 'E') {
+            e->e10 = atoi(s + 1) - q;
+            e->t.k = e->imag ? TY_CFLTBIN : TY_FLTBIN;
+            e->t.p = p;
+            if (p > 53)
+                error_at(t->line, "constant %s has more than 53 digits", t->text);
+        } else {
+            e->t.k = e->imag ? TY_CFIXBIN : TY_FIXBIN;
+            e->t.p = p;
+            e->t.q = q;
+            if (p > 31)
+                error_at(t->line, "constant %s has more than 31 digits", t->text);
+        }
+        pos++;
+        return e;
+    }
     if (is(T_NUM)) {
         const char *s = t->text;
         int p = 0, q = 0, point = 0;

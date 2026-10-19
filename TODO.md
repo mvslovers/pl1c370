@@ -66,7 +66,8 @@ D only after a design note and the maintainer's decision.
         for PICTURE COMPLEX and complex binary constants: both are PL/I
         for MVS & VM's language, so they stay in the plan (Q-6 settled
         by the goal of 2026-10-18, maintainer 2026-10-19); binary
-        constants in general come first (lex.c refuses them). Decided on the way (each in its PR): the format kinds
+        constants are done (Tier 119, with complex ones); PICTURE
+        COMPLEX is left. Decided on the way (each in its PR): the format kinds
         stay where they are, K_C added, the ABI stamp kept (Q-8); a
         complex constant into a real target gives its real part only in
         a source with COMPLEX data, its imaginary part checked as in

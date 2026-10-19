@@ -418,15 +418,23 @@ void lex_file(struct lexer *lx, const char *path)
                     j = k;
                 }
             }
+            if (j < lx->n && toupper((unsigned char)lx->s[j]) == 'B' &&
+                (!(j + 1 < lx->n && isidch((unsigned char)lx->s[j + 1])) ||
+                 (toupper((unsigned char)lx->s[j + 1]) == 'I' &&
+                  !(j + 2 < lx->n && isidch((unsigned char)lx->s[j + 2]))))) {
+                /* a binary constant, 101.1B, 1.1E5B, 11BI (GC28-8201-4,
+                 * "Binary Fixed-Point" and "Binary Floating-Point Data");
+                 * its digits 0 and 1 (the exponent is decimal) */
+                for (int k = i; k < j && toupper((unsigned char)lx->s[k]) != 'E'; k++)
+                    if (lx->s[k] != '0' && lx->s[k] != '1' && lx->s[k] != '.')
+                        error_at(t.line, "a binary constant has the digits 0 and 1 only");
+                j++;
+            }
             if (j < lx->n && toupper((unsigned char)lx->s[j]) == 'I' &&
                 !(j + 1 < lx->n && (isalnum((unsigned char)lx->s[j + 1]) ||
                                     lx->s[j + 1] == '_' || lx->s[j + 1] == '#' ||
                                     lx->s[j + 1] == '@' || lx->s[j + 1] == '$')))
                 j++;                   /* an imaginary constant, 2I (#2) */
-            if (j < lx->n && toupper((unsigned char)lx->s[j]) == 'B' &&
-                !(j + 1 < lx->n && (isalnum((unsigned char)lx->s[j + 1]) ||
-                                    lx->s[j + 1] == '_')))
-                error_at(t.line, "only decimal constants are supported");
             /* any other letter: PL/I (F) assumes a blank before it
                (IEM0009I), as in gauss.pli's 2F(10,3) and iSUB */
             t.kind = T_NUM;
