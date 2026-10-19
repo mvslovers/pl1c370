@@ -1,0 +1,32 @@
+ T312BI: PROC OPTIONS(MAIN);
+   /* INITIAL ON BASED VARIABLES: APPLIED AT ALLOCATE AND LOCATE,
+      THROUGH THE POINTER SET OR THE BASED ATTRIBUTE'S OWN */
+   DCL (P, Q, R) POINTER;
+   DCL X FIXED BIN(31) BASED(P);
+   DCL A(4) FIXED DEC(5,1) BASED(P);
+   DCL 1 S BASED(P),
+         2 N CHAR(4),
+         2 V(4) FIXED BIN(15),
+         2 W FLOAT DEC(6);
+   DCL REPORT FILE RECORD OUTPUT;
+   ALLOCATE X;
+   X = 42;
+   PUT SKIP LIST(X);
+   X = 1;
+   ALLOCATE X SET(Q);
+   Q -> X = 42;
+   PUT SKIP LIST(X, Q -> X);
+   ALLOCATE A SET(R);
+   R -> A(1) = 1.5; R -> A(2) = 2.5; R -> A(3) = 2.5; R -> A(4) = 9;
+   PUT SKIP LIST(R -> A);
+   ALLOCATE S SET(Q);
+   Q -> N = 'ABCD'; Q -> V = 7;
+   Q -> W = 0;
+   PUT SKIP LIST(Q -> N, Q -> V, Q -> W);
+   OPEN FILE(REPORT);
+   LOCATE S FILE(REPORT) SET(R);
+   R -> N = 'ABCD'; R -> V = 7;
+   R -> W = 1;
+   PUT SKIP LIST(R -> N, R -> V);
+   CLOSE FILE(REPORT);
+ END T312BI;

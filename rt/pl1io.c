@@ -673,12 +673,15 @@ void pl1_skip(int n)
     case 2:  f->asa = '0'; break;
     case 3:  f->asa = '-'; break;
     default:
-        /* SKIP(4) measured (JOB00067): an empty record with '-', then ' '.
-         * More than four lines: assumed to continue that pattern. */
-        f->asa = '-';
-        for (n -= 3; n > 0; n--)
+        /* as many empty records with '-' as leave at most three lines,
+         * then the rest on the next record: SKIP(4) '-' ' ' (JOB00067),
+         * SKIP(5) '-' '0', (6) '-' '-', (7) '-' '-' ' ', (10) '-' '-' '-' ' '
+         * (Q4SKIP, JOB00232) */
+        for (; n > 3; n -= 3) {
+            f->asa = '-';
             emit(f);
-        f->asa = ' ';
+        }
+        f->asa = n == 1 ? ' ' : n == 2 ? '0' : '-';
         break;
     }
     {
@@ -692,6 +695,32 @@ void pl1_skip(int n)
                 f->pgdone = 0;
         }
     }
+}
+
+/* LINE(n) of a PRINT file (the option and the format item): the n-th
+ * line of the page; n <= 0 is 1.  The current line itself: as SKIP(0),
+ * written over, data on it or not.  A line already passed, or one past
+ * the page: lines skipped until the next would be past the page, then
+ * ENDPAGE as SKIP raises it (Q3LINE, Q4SKIP, JOB00229, JOB00232). */
+void pl1_line(int n)
+{
+    struct pfile *f = out_file();
+    int adv, ps, cur;
+    if (!is_print(f)) {
+        pl1_skip(1);
+        return;
+    }
+    if (n <= 0)
+        n = 1;
+    adv = f->asa == '0' ? 2 : f->asa == '-' ? 3 : f->asa == '+' ? 0 : 1;
+    ps = f->pagesize > 0 ? f->pagesize : PAGESIZE;
+    cur = f->asa == '1' ? 1 : f->lineno + adv;
+    if (n == cur)
+        pl1_skip(0);
+    else if (n > cur && n <= ps)
+        pl1_skip(n - cur);
+    else
+        pl1_skip(ps + 1 - cur);
 }
 
 void pl1_page(void)

@@ -637,8 +637,15 @@ static void resolve_stmts(struct stmt *s, struct label *labels)
         }
         if (s->k == S_RETURN && RCUR->is_unit)
             error_at(s->line, "RETURN cannot end an on-unit");
-        if (s->k == S_RETURN && RCUR->is_block)
-            error_at(s->line, "RETURN out of a BEGIN block is not supported yet");
+        if (s->k == S_RETURN && RCUR->is_block) {
+            /* out of a BEGIN block: from the procedure containing it,
+             * which an on-unit cannot be */
+            struct proc *b = RCUR;
+            while (b->is_block)
+                b = b->parent;
+            if (b->is_unit)
+                error_at(s->line, "RETURN cannot end an on-unit");
+        }
         resolve_stmts(s->body, labels);
         resolve_stmts(s->els, labels);
     }
@@ -707,10 +714,12 @@ static void copy_members(struct sym *d, struct sym *t)
     struct sym **tail = &d->child;
     for (struct sym *c = t->child; c; c = c->sibling) {
         struct sym *n = xmalloc(sizeof *n);
-        if (c->init || c->ninits)
-            fatal("%s(%d): %s: LIKE of a member with INITIAL is not supported yet", src_name,
-                  d->line, c->name);
         memset(n, 0, sizeof *n);
+        /* the attributes of the elementary names, INITIAL among them
+         * (SC26-3114-01, LIKE) */
+        n->init = c->init;
+        n->inits = c->inits;
+        n->ninits = c->ninits;
         n->name = c->name;
         n->t = c->t;
         n->line = d->line;
@@ -790,6 +799,9 @@ static void resolve_proc(struct proc *p)
     RCUR = p;
     expand_like(p);
     bind_params(p);
+    /* the labels first: a label variable's INITIAL names them */
+    collect_labels(p->body, &labels);
+    p->labels = labels;
     for (struct sym *s = p->syms; s; s = s->next) {
         for (int i = 0; i < s->ninits; i++) {
             resolve_expr(s->inits[i].e);
@@ -817,8 +829,6 @@ static void resolve_proc(struct proc *p)
             m->gen_entryno = k;
         }
     }
-    collect_labels(p->body, &labels);
-    p->labels = labels;
     resolve_stmts(p->body, labels);
     for (struct proc *c = p->child; c; c = c->sibling)
         resolve_proc(c);

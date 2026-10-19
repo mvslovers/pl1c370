@@ -42,6 +42,8 @@ against SC26-3114-01.
 | Item | Level | Since | Notes |
 |---|---|---|---|
 | Preprocessor: INDEX, LENGTH, COUNTER, COMPILETIME, PARMSET; omitted arguments; `%ACTIVATE x NORESCAN`/`RESCAN`; `%DECLARE f BUILTIN` | OPT | Tier 104 | GC33-0009-4, chapter 16; PL/I (F)'s preprocessor has SUBSTR only (IEM4130I) and no RESCAN option (IEM4265I) |
+| Listing control statements `%PAGE;`, `%SKIP [(n)];`, `%PRINT;`, `%NOPRINT;`, `%CONTROL(FORMAT\|NOFORMAT);` | OPT | Tier 124 | GC33-0009-4, "Listing Control Statements"; no effect: PL1C/370 prints no source listing. Not in GC28-8201 |
+| `%NOTE(message [, code]);` (and NOTE in a preprocessor procedure) | OPT | Tier 124 | GC33-0009-4, SC26-3114-01 "%NOTE Statement": the message on stderr with its severity I, W, E, S or U (code 0, 4, 8, 12, 16; another code the next lower, beyond 0 to 16 U); E and S fail the compilation, U ends it at once |
 | SELECT, WHEN, OTHERWISE | OPT | Tier 33 | |
 | LEAVE | OPT | Tier 33 | |
 | DO ... UNTIL(e), DO ... REPEAT(e) | OPT | Tier 33 | |
@@ -98,6 +100,8 @@ against SC26-3114-01.
 |---|---|---|---|
 | ENVIRONMENT: F, FB, FS, FBS, V, VB, VS, VBS, U without sizes, with RECSIZE(n) and BLKSIZE(n); SCALARVARYING; TOTAL, REREAD, ADDBUFF, KEYLENGTH(n), KEYLOC(n), BUFND(n), BUFNI(n), BUFSP(n) | OPT | Tier 122 | SC26-3113-01, "ENVIRONMENT": the record format letters and the two sizes give the DCB, a size not given is the DD's; SCALARVARYING writes a VARYING string with its 2-byte prefix (current length + 2) and reads it with it; the others are accepted without effect (the DD gives KEYLEN and RKP). D, DB, ASCII and BUFOFF (ASCII data sets) are refused |
 | CONNECTED (CONN) | OPT | Tier 103 | taken on a parameter and in a descriptor, no effect: a cross section is passed as a copy anyway |
+| INITIAL on a BASED variable | OPT | Tier 124 | GC33-0009-4 and SC26-3114-01: the values assigned at each ALLOCATE and LOCATE, to the generation the SET pointer (or the BASED attribute's own) designates; never to a based variable that is not allocated explicitly. PL/I (F): "Based variables cannot have the INITIAL attribute" (GC28-8201) |
+| A BASED variable in a data-directed list: `PUT DATA(X)`, `GET DATA(X)` | OPT | Tier 124 | GC33-0009-4 (storage class rule g) and SC26-3114-01: through the pointer of the BASED attribute, which must be a simple POINTER variable (not based, defined, a parameter or a member of an array or structure); never locator-qualified. PL/I (F): "PUT DATA cannot be used with BASED variables" (GC28-8201) |
 | INITIAL CALL p(args) | OPT | Tier 102 | GC33-0009-4 and SC26-3114-01, INITIAL attribute: p called when the variable is allocated -- AUTOMATIC at the block's entry, CONTROLLED at each ALLOCATE; not for STATIC (the rule) nor, here, BASED or factored names. The order among the block's AUTOMATIC initializations is that of the declarations |
 | ENTRY ... VARIABLE, FILE VARIABLE | OPT | Tier 75 | AUTOMATIC scalars; assigned, invoked, used in FILE(...); not compared |
 | CONDITION, COND | OPT | Tier 74 | declares a condition name; see the deviations |
@@ -292,6 +296,13 @@ Where the later IBM rules differ from PL/I (F), the default follows them
 
 Each is described in the measurement of its tier
 (`internals/research/pli/tierNN-measurement.md`):
+
+- **A bit string as the base of `x ** n`** is FIXED BINARY(15), which
+  gives PL/I (F)'s value and print width for n = 2 (`'1010'B ** 2` is
+  100, T317BIT); for n = 3 PL/I (F) still gives a FIXED result
+  (`'1010'B ** 3` is 1000) where PL1C/370 gives FLOAT, 1.0000E+03
+  (JOB00318). As any other arithmetic operand a bit string is FIXED
+  BINARY(31,0) in both (Tier 124).
 
 - **The mathematical built-in functions and `x ** y` with a FLOAT
   exponent** are correctly rounded, or within a fraction of a unit of

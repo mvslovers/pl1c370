@@ -1523,6 +1523,37 @@ procedure is unchanged and the caller's variables keep their values.
 (F)) identical in JOB00188; the full suite 295 identical and 13 CLOSE
 (JOB00191 to JOB00219).
 
+## Tier 124 -- done 2026-10-19
+
+The compiler's own refusals, first pass (`mvsvm-inventory.md`, section
+3a). PL/I (F): RETURN out of a BEGIN block (the result into the
+procedure's frame, the blocks above it ended as for a GO TO); the LINE
+option and format item, and SKIP(n) for n > 3 written as PL/I (F)
+writes it (`-`, `-`, then the rest; LINE back or past the page ends the
+page); array expressions in PUT LIST, element by element; `||` of a bit
+and a character string (the bits as characters); BIT of a FLOAT or
+scaled value (the integer part, in the bits its digits before the point
+need, 31 at most); MOD of FLOAT and of scaled values; FLOAT subscripts
+(truncated); STATIC INITIAL of a numeric picture (edited at compile
+time); INITIAL of AUTOMATIC label variables (a STATIC one refused, as
+GC28-8201 says); LIKE carrying the members' INITIAL. INITIAL strings are
+written in cards of at most 71 columns now: one longer than about 50
+characters ran past column 71 and became a continuation (t313lik, 'BACC'
+for 'BACK'), so a long STATIC INITIAL string was wrong before this tier.
+Bit strings as arithmetic operands and in comparisons: FIXED
+BINARY(31,0) in `+ - * /`, prefix `+` and `-`, ABS, MAX, MIN, MOD, and
+against a number; a bit and a character string compare as characters
+(JOB00303); as the base of `**`, FIXED BINARY(15) (a deviation for
+n = 3, `docs/language-levels.md`). Prefix plus now converts a string or
+bit string to a number instead of vanishing. Beyond F (OPT): INITIAL on
+a BASED variable, applied at each ALLOCATE and LOCATE through the SET
+pointer; a BASED variable in a data-directed list, through its BASED
+attribute's pointer; the listing control statements %PAGE, %SKIP,
+%PRINT, %NOPRINT, %CONTROL (no effect; PL/I (F) refuses them,
+IEM4136I, JOB00303) and %NOTE. Tests t308mod to t317bit (t312bin,
+t315bdt, t316lst `.opt.pli`), identical in JOB00224, JOB00233,
+JOB00267, JOB00270, JOB00306, JOB00315; the full suite 305 identical and 13 CLOSE (JOB00321 to JOB00349).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

@@ -1227,8 +1227,58 @@ sources = ["build/gen/t307byv_0.asm", "build/gen/t307byv_1.asm", "build/gen/t307
 rent    = false
 reus    = false
 
+[module.TT308MOD]
+sources = ["build/gen/t308mod.asm"]
+rent    = false
+reus    = false
+
+[module.TT309LIN]
+sources = ["build/gen/t309lin.asm"]
+rent    = false
+reus    = false
+
 [module.TT30ERR]
 sources = ["build/gen/t30err.asm"]
+rent    = false
+reus    = false
+
+[module.TT310SKP]
+sources = ["build/gen/t310skp.asm"]
+rent    = false
+reus    = false
+
+[module.TT311MSC]
+sources = ["build/gen/t311msc.asm"]
+rent    = false
+reus    = false
+
+[module.TT312BIN]
+sources = ["build/gen/t312bin.asm"]
+rent    = false
+reus    = false
+
+[module.TT313LIK]
+sources = ["build/gen/t313lik.asm"]
+rent    = false
+reus    = false
+
+[module.TT314LAB]
+sources = ["build/gen/t314lab.asm"]
+rent    = false
+reus    = false
+
+[module.TT315BDT]
+sources = ["build/gen/t315bdt.asm"]
+rent    = false
+reus    = false
+
+[module.TT316LST]
+sources = ["build/gen/t316lst.asm"]
+rent    = false
+reus    = false
+
+[module.TT317BIT]
+sources = ["build/gen/t317bit.asm"]
 rent    = false
 reus    = false
 

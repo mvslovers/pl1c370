@@ -320,8 +320,18 @@ static struct expr *unary(void)
         return e;
     }
     if (is(T_PLUS)) {
+        /* prefix plus: only the conversion to arithmetic (a string, a bit
+         * string); check.c drops the node */
+        int line = tk(0)->line;
+        struct expr *e, *x;
         pos++;
-        return unary();
+        x = unary();
+        if (x->k == E_NUM)
+            return x;
+        e = new_expr(E_NEG, line);
+        e->op = T_PLUS;
+        e->l = x;
+        return e;
     }
     if (is(T_NOT)) {
         int line = tk(0)->line;
@@ -580,6 +590,7 @@ static void dims(struct sym *s)
 }
 
 static struct expr *init_value1(void);
+static int init_ref_line;       /* the first reference in this INITIAL */
 
 /* INITIAL value: a constant, a negative constant, a string, a bit string;
  * '*' (NULL); ANSI's (expression) and references (CM43 to CM45); a
@@ -621,8 +632,11 @@ static struct expr *init_value1(void)
     if (is(T_PLUS))
         pos++;
     if (is(T_IDENT)) {
-        beyond_f(tk(0)->line, L_OPT, "a reference in INITIAL");
-        return parse_ref();        /* ANSI: a reference (Tier 78) */
+        /* ANSI: a reference (Tier 78); beyond PL/I (F) unless a label
+         * constant for a label variable (declare, below) */
+        if (!init_ref_line)
+            init_ref_line = tk(0)->line;
+        return parse_ref();
     }
     if (is(T_MINUS)) {
         int line = tk(0)->line;
@@ -1249,6 +1263,7 @@ static void declare(void)
         struct expr *offarea = NULL;
 
         memset(&tmpl, 0, sizeof tmpl);
+        init_ref_line = 0;
         memset(&pict, 0, sizeof pict);
         if (is(T_NUM)) {
             level = atoi(tk(0)->text);
@@ -1718,6 +1733,8 @@ static void declare(void)
             else
                 fatal("%s(%d): attribute expected", src_name, tk(0)->line);
         }
+        if (init_ref_line && !islabel)
+            beyond_f(init_ref_line, L_OPT, "a reference in INITIAL");
         data = fixed || flt || bin || dec || chr || bit || var || ptr || haspic || islabel ||
                area || offs || cplx || evt;
         if (fixed && flt)
@@ -1890,16 +1907,14 @@ static void declare(void)
             } else if (islabel) {
                 if (fixed || flt || bin || dec || chr || bit || var || ptr || haspic)
                     error_at(line, "%s: LABEL and other data attributes", names[i]);
-                if (tmpl.init || tmpl.ninits)
-                    error_at(line, "%s: INITIAL of a label is not supported yet", names[i]);
+                if ((tmpl.init || tmpl.ninits) && s->st == ST_STATIC)
+                    error_at(line, "%s: a STATIC label variable cannot have INITIAL",
+                             names[i]);
                 s->t.k = TY_LABEL;
                 s->t.p = 8;
             } else if (haspic) {
                 if (fixed || flt || bin || dec || chr || bit || var || ptr)
                     error_at(line, "%s: PICTURE and other data attributes", names[i]);
-                if (stat && (tmpl.init || tmpl.ninits) && pict.k == TY_PIC)
-                    error_at(line, "%s: STATIC INITIAL of a numeric picture is not supported "
-                             "yet", names[i]);
                 s->t = pict;
             } else if (area || offs) {
                 if (fixed || flt || bin || dec || chr || bit || var || ptr || (area && offs))
@@ -3150,7 +3165,11 @@ static struct stmt *put_stmt(int from)
             s->string = parse_ref();
             expect(T_RP, "')'");
         } else if (isword("LINE")) {
-            fatal("%s(%d): PUT LINE is not supported yet", src_name, tk(0)->line);
+            /* LINE(n): the n-th line of the page (rt/pl1io.c pl1_line) */
+            pos++;
+            expect(T_LP, "'('");
+            s->e2 = expr();
+            expect(T_RP, "')'");
         } else {
             fatal("%s(%d): PUT option expected", src_name, tk(0)->line);
         }

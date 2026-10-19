@@ -23,6 +23,7 @@
 
 #include "pl1c.h"
 #include "../rt/pl1flt.h"
+#include "../rt/pl1pic.h"
 
 /* the frame's words: rt/pl1abi.h */
 #define ARGS     PL1_FR_ARGS
@@ -1342,6 +1343,7 @@ static int gen_bin_at(struct expr *e, int qs)
             here(l);
             ins(NULL, "LR", "%d,0", x);
             reg_free(y);
+            bin_rescale(x, e->t.q, qs);
             return x;
         }
         case B_MAX:
@@ -3022,7 +3024,7 @@ static int gen_bitval(struct expr *e)
 /* Where an assignment goes: a reference, a temporary of this frame (a
  * dummy argument), or the result area of this function (RETURN). */
 enum tkind2 { TG_REF, TG_TEMP, TG_RESULT };
-struct target { enum tkind2 k; struct expr *lhs; int off; };
+struct target { enum tkind2 k; struct expr *lhs; int off; struct proc *fp; };
 
 static struct place target_place(struct target *t)
 {
@@ -3037,9 +3039,11 @@ static struct place target_place(struct target *t)
         p.base = 13;
         p.off = t->off;
     } else {
-        p.base = reg_get();
+        /* fp: the function a RETURN in a BEGIN block leaves */
+        int f = t->fp ? frame_reg(t->fp) : 13;
+        p.base = f == 13 ? reg_get() : f;
         p.off = t->off;
-        ins(NULL, "L", "%d,%d(,13)", p.base, ALIST);
+        ins(NULL, "L", "%d,%d(,%d)", p.base, ALIST, f);
         ins(NULL, "L", "%d,4(,%d)", p.base, p.base);
     }
     return p;
@@ -3532,7 +3536,7 @@ static int gen_cast(struct expr *e)
 {
     int n = type_size(e->t);
     int t = tmp(n < 8 ? 8 : n, 8);
-    struct target tg = { TG_TEMP, NULL, t };
+    struct target tg = { TG_TEMP, NULL, t, NULL };
     gen_store(&tg, e->t, e->l);
     return t;
 }
@@ -3544,7 +3548,7 @@ static int unspec_tmp(struct expr *x)
 {
     int n = type_size(x->t);
     int t = tmp(n < 8 ? 8 : n, 8);
-    struct target tg = { TG_TEMP, NULL, t };
+    struct target tg = { TG_TEMP, NULL, t, NULL };
     gen_store(&tg, x->t, x);
     return t;
 }
@@ -3578,7 +3582,7 @@ static int is_in_place(struct expr *lhs, struct expr *e)
 
 static void gen_assign(struct expr *lhs, struct expr *e)
 {
-    struct target t = { TG_REF, lhs, 0 };
+    struct target t = { TG_REF, lhs, 0, NULL };
     if (lhs->k == E_CALL && (lhs->fn == B_COMPLETION || lhs->fn == B_STATUS)) {
         /* COMPLETION(e) = bit, STATUS(e) = number (#3) */
         int r = lhs->fn == B_STATUS ? gen_bin(e) : gen_bitval(e);
@@ -3787,6 +3791,7 @@ static void gen_asmcall(struct expr *e)
             t.k = TG_TEMP;
             t.lhs = NULL;
             t.off = d;
+            t.fp = NULL;
             gen_store(&t, e->argt[i], a);
             r = reg_get();
             ins(NULL, "LA", "%d,%d(,13)", r, d);
@@ -3958,6 +3963,7 @@ static int gen_fcall(struct expr *e)
             t.k = TG_TEMP;
             t.lhs = NULL;
             t.off = d;
+            t.fp = NULL;
             gen_store(&t, e->argt[i], a);
             r = reg_get();
             ins(NULL, "LA", "%d,%d(,13)", r, d);
@@ -5159,6 +5165,8 @@ static int rt_flags(int mask)
 
 /* A statement with the conditions enabled in it; NOCONVERSION and
  * NOOVERFLOW set the run time's flags for its duration. */
+static void return_out(struct proc *R);
+
 static void gen_stmt(struct stmt *s)
 {
     int saved = cur_mask;
@@ -5441,6 +5449,13 @@ static void gen_stmt1(struct stmt *s)
         if (s->skip >= 0) {
             arg_const(s->skip);
             call("PL1SKIP");
+        }
+        if (s->e2) {
+            /* LINE(n), after PAGE (SC26-3114-01, LINE option) */
+            int r = gen_int(s->e2);
+            arg_reg(r);
+            reg_free(r);
+            call("PL1PLIN");
         }
         if (s->edit)
             format_begin(s);
@@ -6147,29 +6162,44 @@ static void gen_stmt1(struct stmt *s)
         }
         gen_fcall(s->e);
         break;
-    case S_RETURN:
+    case S_RETURN: {
+        /* out of a BEGIN block: the result into the procedure's frame,
+         * and the blocks above it end as for a GO TO (gen_stmt S_GOTO) */
+        struct proc *R = CURP;
+        while (R->is_block)
+            R = R->parent;
         comment(s);
-        if (s->e && CURP->ret_multi) {
+        if (s->e && R->ret_multi) {
             /* the attributes of the entry point entered: its number at
              * entoff (gen_proc) */
-            for (int k = 0; k <= CURP->nentries; k++) {
-                struct target t = { TG_RESULT, NULL, 0 };
-                int next = new_label();
+            for (int k = 0; k <= R->nentries; k++) {
+                struct target t = { TG_RESULT, NULL, 0, R };
+                int next = new_label(), f;
                 if (!s->rets[k])
                     continue;
-                ins(NULL, "CLC", "%d(4,13),=F'%d'", CURP->entoff, k);
+                f = frame_reg(R);
+                ins(NULL, "CLC", "%d(4,%d),=F'%d'", R->entoff, f, k);
+                if (f != 13)
+                    reg_free(f);
                 ins(NULL, "BC", "7,@L%d", next);
                 tmp_top = tmp_base;
-                gen_store(&t, k ? CURP->entries[k - 1].ret : CURP->ret, s->rets[k]);
-                ins(NULL, "B", "@R%d", CURP->id);
+                gen_store(&t, k ? R->entries[k - 1].ret : R->ret, s->rets[k]);
+                if (R == CURP)
+                    ins(NULL, "B", "@R%d", R->id);
+                else
+                    return_out(R);
                 here(next);
             }
         } else if (s->e) {
-            struct target t = { TG_RESULT, NULL, 0 };
-            gen_store(&t, CURP->ret, s->e);
+            struct target t = { TG_RESULT, NULL, 0, R };
+            gen_store(&t, R->ret, s->e);
         }
-        ins(NULL, "B", "@R%d", CURP->id);
+        if (R == CURP)
+            ins(NULL, "B", "@R%d", R->id);
+        else
+            return_out(R);
         break;
+    }
     case S_ENTRY:
         comment(s);
         here(CURP->entries[s->goto_id - 1].label);
@@ -6208,6 +6238,24 @@ static void gen_stmt1(struct stmt *s)
         }
         break;
     }
+}
+
+/* RETURN out of a BEGIN block: the blocks above procedure R end, then
+ * R's epilogue runs with its frame and bases */
+static void return_out(struct proc *R)
+{
+    int f = frame_reg(R);
+    arg_reg(f);
+    call("PL1GOTO");
+    ins(NULL, "L", "15,=A(@R%d)", R->id);
+    ins(NULL, "L", "12,=A(@@FEN%d+2)", R->id);
+    ins(NULL, "LA", "11,4095(,12)");
+    ins(NULL, "LA", "11,1(,11)");
+    ins(NULL, "LA", "10,4095(,11)");
+    ins(NULL, "LA", "10,1(,10)");
+    ins(NULL, "LR", "13,%d", f);
+    ins(NULL, "BR", "15");
+    reg_free(f);
 }
 
 static void gen_stmts(struct stmt *s)
@@ -6440,22 +6488,43 @@ static void dc_value(struct type t, struct expr *v)
     case TY_CHAR:
     case TY_VCHAR: {
         int n = v->len < t.p ? v->len : t.p;
-        char text[600];
-        int k = 0;
         if (t.k == TY_VCHAR)
             out("         DC    H'%d'", n);
-        if (t.p > 256)
-            fatal("%s: INITIAL strings over 256 characters are not supported yet", src_name);
-        for (int i = 0; i < n; i++) {
-            if (v->str[i] == '\'' || v->str[i] == '&')
-                text[k++] = v->str[i];
-            text[k++] = v->str[i];
+        /* in cards of at most 71 columns (dc_chars), then the blanks */
+        if (n)
+            dc_chars(NULL, v->str, n);
+        if (t.p > n)
+            out("         DC    CL%d' '", t.p - n);
+        break;
+    }
+    case TY_PIC: {
+        /* a numeric picture: the constant edited by the picture, now
+         * (rt/pl1pic.c, as the assignment edits it at run time) */
+        struct expr *n = v->k == E_NEG ? v->l : v;
+        int np = (int)strlen(t.pic), q = pl1_pic_scale(t.pic, np), nd = 0, len;
+        char d[40], ed[300], text[600];
+        int k = 0;
+        if (n->k != E_NUM || is_float(n->t) || n->bin) {
+            error_at(n->line, "a numeric picture's INITIAL takes a decimal constant");
+            break;
+        }
+        for (const char *c = n->num; *c && nd < 31; c++)
+            d[nd++] = *c;
+        /* to the picture's scale: digits dropped or zeros added */
+        for (int sh = q - n->t.q; sh > 0 && nd < 31; sh--)
+            d[nd++] = '0';
+        if (q < n->t.q)
+            nd = nd - (n->t.q - q) > 0 ? nd - (n->t.q - q) : 0;
+        if (nd == 0)
+            d[nd++] = '0';
+        len = pl1_pic_edit_digits(d, nd, q, v->k == E_NEG, t.pic, np, ed);
+        for (int i = 0; i < len; i++) {
+            if (ed[i] == '\'' || ed[i] == '&')
+                text[k++] = ed[i];
+            text[k++] = ed[i];
         }
         text[k] = '\0';
-        if (n == 0)
-            out("         DC    CL%d' '", t.p);
-        else
-            out("         DC    CL%d'%s'", t.p, text);
+        out("         DC    CL%d'%s'", len, text);
         break;
     }
     case TY_FLTDEC:

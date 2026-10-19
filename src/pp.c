@@ -875,6 +875,43 @@ static void assign(struct ppvar *v, struct val x)
     v->hasval = 1;
 }
 
+/* NOTE(message [, code]): a diagnostic of the program's own, severity
+ * I, W, E, S or U for 0, 4, 8, 12, 16 (another code: the next lower,
+ * U beyond 0 to 16); E and S fail the compilation, U ends it now
+ * (GC33-0009-4, SC26-3114-01 "%NOTE Statement") */
+static int note(int q)
+{
+    static const char sev[] = "IWESU";
+    char *msg;
+    long code = 0;
+    int k;
+    beyond_f(curline, L_OPT, "%NOTE");
+    q = skipb(q + 4);
+    if (L->s[q] != '(')
+        pp_error("%s", "'(' expected after NOTE");
+    ep = q + 1;
+    msg = to_char(expr_or());
+    ep = skipb(ep);
+    if (L->s[ep] == ',') {
+        ep++;
+        code = to_fix(expr_or());
+        ep = skipb(ep);
+    }
+    if (L->s[ep] != ')')
+        pp_error("%s", "')' expected");
+    k = code < 0 || code > 16 ? 4 : (int)code / 4;
+    if (code >= 0 && code <= 16 && code % 4)
+        fprintf(stderr, "%s(%d): %%NOTE code %ld is not 0, 4, 8, 12 or 16: %c taken\n",
+                src_name, curline, code, sev[k]);
+    if (k >= 2)
+        error_at(curline, "%c %s", sev[k], msg);
+    else
+        fprintf(stderr, "%s(%d): %c %s\n", src_name, curline, sev[k], msg);
+    if (k == 4)
+        exit(8);
+    return past_semi(ep);
+}
+
 /* the % statement at p: executed; returns where the scan goes on */
 static int exec(int p)
 {
@@ -893,6 +930,15 @@ static int exec(int p)
         return q + 1;
     if (is_word(q, "INCLUDE"))
         return pp_include(L, p, curline);    /* the members are scanned */
+    if (is_word(q, "PAGE") || is_word(q, "SKIP") || is_word(q, "PRINT") ||
+        is_word(q, "NOPRINT") || is_word(q, "CONTROL")) {
+        /* the listing control statements: no source listing here, so no
+         * effect (GC33-0009-4, "Listing Control Statements") */
+        beyond_f(curline, L_OPT, "a listing control statement");
+        return past_semi(q);
+    }
+    if (is_word(q, "NOTE"))
+        return note(q);
     if (is_word(q, "PROCESS")) {
         /* %PROCESS, PL/I for MVS & VM's synonym of *PROCESS: the text
          * from PROCESS on goes on, as *PROCESS leaves it (parse.c) */
@@ -1146,6 +1192,8 @@ static int pstmt(int p, int end, struct val *ret, int *done)
         declare(q + (is_word(q, "DCL") ? 3 : 7));
         return past_semi(q);
     }
+    if (is_word(q, "NOTE"))
+        return note(q);
     if (is_word(q, "RETURN")) {
         ep = skipb(q + 6);
         *ret = expr_or();
