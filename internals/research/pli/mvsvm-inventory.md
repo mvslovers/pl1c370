@@ -31,9 +31,9 @@ PL1C/370, by keyword, made on 2026-10-15.
 | X constants: `'C1'X` | constant | done (Tier 86) |
 | BX | constant | done (Tier 86) |
 | NOEXECOPS | procedure option | done (Tier 82) |
-| BYVALUE, BYADDR | procedure and entry options | done for ASSEMBLER entries and MAIN procedures (Tier 90) |
+| BYVALUE, BYADDR | procedure and entry options | done for ASSEMBLER entries and MAIN procedures (Tier 90), external PL/I procedures (Tier 123) |
 | OPTIONAL | parameter attribute | done (Tier 90) |
-| FETCHABLE | procedure option | needs FETCH (section 2) |
+| FETCHABLE | procedure option | needs FETCH of PL/I procedures (section 2, #6) |
 | EXTERNAL(name) | attribute | done (Tier 89) |
 | %PROCESS | compiler statement | done (Tier 86) |
 | SYSNULL | built-in function | done (Tier 86) |
@@ -47,21 +47,21 @@ PL1C/370, by keyword, made on 2026-10-15.
 
 | Item | Kind | Notes |
 |---|---|---|
-| FETCH, RELEASE | statements | done for assembler entries (Tier 91); PL/I procedures need a shared run time |
+| FETCH, RELEASE | statements | done for assembler entries (Tier 91); PL/I procedures wait for #6 (F-A or F-B) |
 | ATTENTION | condition | done (Tier 106; a real attention not yet measured) |
-| CONNECTED | attribute | a parameter in connected storage |
-| CURRENTSTORAGE | built-in function | storage of a VARYING item's current length |
+| CONNECTED | attribute | done (Tier 103, no effect) |
+| CURRENTSTORAGE | built-in function | done (Tier 103) |
 | PLIRETC, PLIRETV | subroutine, built-in function | done (Tier 87) |
 | PLIDUMP | subroutine | done (Tier 105) |
 | PLISRTA to PLISRTD | subroutines | done (Tier 107) |
 | PLICKPT, PLIREST, PLICANC | subroutines | done (Tier 108; a checkpoint taken and a restart not tested) |
-| SAMEKEY | built-in function | VSAM: the next record has the same key |
-| VSAM, KEYLOC, REUSE, BUFND, BUFNI, BUFSP, PASSWORD, SIS, SKIP | ENVIRONMENT options | VSAM data sets (MVS 3.8j has VSAM) |
+| SAMEKEY | built-in function | VSAM (#4, waits for libc370#623 to #625) |
+| VSAM, KEYLOC, REUSE, BUFND, BUFNI, BUFSP, PASSWORD, SIS, SKIP | ENVIRONMENT options | VSAM data sets (#4); KEYLOC, BUFND, BUFNI, BUFSP accepted without effect (Tier 122) |
 | REREAD, LEAVE, SCALARVARYING, BUFOFF, ASCII, ADDBUFF | ENVIRONMENT options | done (Tier 122): SCALARVARYING with effect, REREAD, LEAVE, ADDBUFF without; BUFOFF and ASCII (ASCII tapes) refused. Also the record format letters with RECSIZE and BLKSIZE |
 | ASSEMBLER (with RETCODE, INTER) | entry option | done (Tier 89) |
-| COBOL, FORTRAN; NOMAP, NOMAPIN, NOMAPOUT | procedure and entry options | interlanguage calls |
-| PARMSET, COMPILETIME, COUNTER | preprocessor built-in functions | |
-| RESCAN, NORESCAN | options of %ACTIVATE | |
+| COBOL, FORTRAN; NOMAP, NOMAPIN, NOMAPOUT | procedure and entry options | interlanguage calls (#5) |
+| PARMSET, COMPILETIME, COUNTER | preprocessor built-in functions | done (Tier 104) |
+| RESCAN, NORESCAN | options of %ACTIVATE | done (Tier 104) |
 
 ## 3. In PL/I (F) already (level F, missing)
 
@@ -69,13 +69,38 @@ These are gaps against the oracle itself (TODO.md, section 3, has most):
 
 | Item | Kind | Notes |
 |---|---|---|
-| COMPLEX, REAL, IMAG, CONJG, COMPLEX() | attribute, built-ins | complex arithmetic |
-| TASK, EVENT, WAIT, PRIORITY, COMPLETION, STATUS, DELAY | multitasking | |
-| DISPLAY ... REPLY | statement | the operator console |
+| COMPLEX, REAL, IMAG, CONJG, COMPLEX() | attribute, built-ins | done (Tiers 113 to 120, #2) |
+| TASK, EVENT, WAIT, PRIORITY, COMPLETION, STATUS, DELAY | multitasking | EVENT, WAIT, COMPLETION, STATUS, DELAY done; TASK and PRIORITY wait for #3 (A, B or C) |
+| DISPLAY ... REPLY | statement | done (Tier 94) |
 | TRANSIENT, PENDING | file attribute, condition | teleprocessing |
-| EXCLUSIVE, UNLOCK, NOLOCK | record I/O | locking in DIRECT UPDATE files |
-| REDUCIBLE, IRREDUCIBLE | attributes | optimization hints |
-| ENVIRONMENT options other than REGIONAL(n) and INDEXED | | PL1C/370 refuses them all: CONSECUTIVE, the record formats F, FB, V, VB, U with sizes, CTLASA, CTL360, GENKEY, INDEXAREA, NCP, TRKOFL, TOTAL, BACKWARDS and the rest |
+| EXCLUSIVE, UNLOCK, NOLOCK | record I/O | done (Tier 93) |
+| REDUCIBLE, IRREDUCIBLE | attributes | done (Tier 92) |
+| ENVIRONMENT options other than REGIONAL(n) and INDEXED | | done (Tiers 95 and 122): the record formats with sizes, CONSECUTIVE, CTLASA, CTL360 and the rest; ASCII and BUFOFF refused |
+
+## 3a. Refused by the compiler, 2026-10-19
+
+The keyword count above cannot see an option or a use the compiler
+knows the keyword for and still refuses. Those are the compiler's own
+"not supported" messages, 95 of them on 2026-10-19 before Tier 124.
+Tier 124 took RETURN out of a BEGIN block, PUT LINE (and the SKIP
+pattern behind it), array expressions in PUT LIST, `||` of a bit and a
+character string, BIT of a FLOAT or scaled value, MOD of FLOAT and of
+scaled values, FLOAT subscripts, STATIC INITIAL of a numeric picture,
+INITIAL of more than 256 characters, INITIAL of label variables, LIKE
+of members with INITIAL, bit strings as arithmetic operands, and
+INITIAL on BASED variables, BASED variables in data-directed lists, the
+listing control statements and %NOTE (OPT). What is left, by size:
+
+- **Waiting for a decision:** TASK, PRIORITY (#3); FETCH of PL/I
+  procedures, FETCHABLE (#6); COBOL and FORTRAN (#5); VSAM (#4).
+- **Small:** GET DATA of a picture or a BASED variable; a picture as a
+  DO control variable or SUBSTR target; keyed record I/O of a VARYING
+  string; PUT DATA of more than 3 dimensions; GET DATA of an array of
+  structures; DEFINED with packed bit strings; a scalar DEFINED on a
+  subscripted base; INITIAL CALL for factored names.
+- **Limits of the implementation:** a frame over 4095 bytes, 12 KB of
+  code per procedure, more than 16 events in a WAIT, a structure with
+  REFER in an area or in INTO/FROM/LOCATE.
 
 ## 4. Excluded from the default
 

@@ -120,6 +120,8 @@ static int cx_compare(struct expr *e);
 static void cx_stmt(struct stmt *s);
 static struct expr *cx_put(struct expr *e);
 static struct expr *cx_picchars(struct expr *e);
+static struct expr *cx_copy(const struct expr *e);
+static struct expr *iter_bin(int op, struct expr *l, struct expr *r, int line);
 static void type_cplxfn(struct expr *e);
 static void type_cpxstr(struct expr *e);
 static void cx_abs(struct expr *e);
@@ -857,6 +859,18 @@ static struct expr *cast_of(struct expr *l, struct type t)
     c->l = l;
     c->t = t;
     return c;
+}
+
+/* A bit string as an arithmetic operand: FIXED BINARY(31,0), whatever
+ * its length (T317BIT, JOB00303: B/3 is 3, B+1 printed as BIN(31));
+ * GC28-8201, "Bit-string to Arithmetic" */
+static struct expr *bit_arith(struct expr *l)
+{
+    struct type t;
+    memset(&t, 0, sizeof t);
+    t.k = TY_FIXBIN;
+    t.p = 31;
+    return cast_of(l, t);
 }
 
 static int locator(struct type t)
@@ -1651,8 +1665,23 @@ static void type_call(struct expr *e)
             e->t.p = n ? n : is_string(a) || is_bit(a) ? a.p : is_float(a) ? flt_digits(a) + 6 :
                      dec_prec(a) + 3;
         } else {
-            if (is_float(a) || (arith(a) && a.q))
-                error_at(e->line, "BIT of a FLOAT or scaled value is not supported yet");
+            if (is_float(a) || (arith(a) && a.q)) {
+                /* the integer part, in as many bits as the digits before
+                 * the point need (BIT(FLOAT DEC(6)) has 20, BIT(FIXED
+                 * DEC(5,2)) 10, Q2MISC) */
+                struct type it;
+                int bits = a.k == TY_FLTBIN ? a.p : a.k == TY_FLTDEC ? ceil_mul332(a.p) :
+                           a.k == TY_FIXBIN ? a.p - a.q : ceil_mul332(a.p - a.q);
+                if (bits < 1)
+                    bits = 1;
+                if (bits > 31)
+                    error_at(e->line, "BIT of a value of more than 31 bits is not supported yet");
+                memset(&it, 0, sizeof it);
+                it.k = TY_FIXBIN;
+                it.p = bits > 31 ? 31 : bits;
+                e->arg[0] = cast_of(e->arg[0], it);
+                a = it;
+            }
             e->t.k = TY_BIT;
             e->t.p = n ? n : is_bit(a) || is_string(a) ? a.p : a.k == TY_FIXBIN ? a.p :
                      ceil_mul332(a.p);
@@ -1840,28 +1869,64 @@ static void type_call(struct expr *e)
         }
         return;
     case B_ABS:
+        if (is_bit(e->arg[0]->t))
+            e->arg[0] = bit_arith(e->arg[0]);   /* GC28-8201: as a number */
         if (!arith(e->arg[0]->t))
             error_at(e->line, "ABS needs an arithmetic argument");
         e->t = e->arg[0]->t;
         return;
     case B_MOD: {
-        struct type a = e->arg[0]->t, b = e->arg[1]->t;
+        struct type a, b;
+        for (int i = 0; i < 2; i++)
+            if (is_bit(e->arg[i]->t))
+                e->arg[i] = bit_arith(e->arg[i]);
+        a = e->arg[0]->t;
+        b = e->arg[1]->t;
         if (!arith(a) || !arith(b)) {
             error_at(e->line, "MOD needs arithmetic arguments");
             e->t.k = TY_FIXBIN; e->t.p = 31;
             return;
         }
         if (is_float(a) || is_float(b)) {
-            error_at(e->line, "MOD of FLOAT values is not supported yet");
-            e->t = float_common(a, b);
+            /* FLOAT: x - ABS(y)*FLOOR(x/ABS(y)), the smallest nonnegative
+             * R with (x-R)/y an integer (SC26-3114-01, MOD; Q1MOD) */
+            struct type t = float_common(a, b);
+            struct expr *x = e->arg[0], *y = e->arg[1], *ay, *ay2, *fl, *r;
+            ay = new_node(E_CALL, e->line);
+            ay->fn = B_ABS;
+            ay->nargs = 1;
+            ay->arg[0] = cx_copy(y);
+            ay2 = cx_copy(ay);
+            ay2->arg[0] = cx_copy(y);
+            fl = new_node(E_CALL, e->line);
+            fl->fn = B_FLOOR;
+            fl->nargs = 1;
+            fl->arg[0] = iter_bin(T_SLASH, cast_of(cx_copy(x), t), cast_of(ay, t), e->line);
+            r = iter_bin(T_MINUS, cast_of(x, t),
+                         iter_bin(T_STAR, cast_of(ay2, t), fl, e->line), e->line);
+            *e = *cast_of(r, t);
+            type_of(ay);
+            type_of(ay2);
             return;
         }
         common(&a, &b);
-        if (a.q != 0 || b.q != 0)
-            error_at(e->line, "MOD with fractions is not supported yet");
         e->t.k = a.k;
         e->t.q = max(a.q, b.q);
         e->t.p = min(a.k == TY_FIXBIN ? 31 : 15, b.p - b.q + e->t.q);
+        if (a.q != b.q) {
+            /* scaled values: both at the greater scale, then the remainder
+             * of the integers they are (gen.c) */
+            struct type ta = a, tb = b;
+            int lim = a.k == TY_FIXBIN ? 31 : 15;
+            ta.q = tb.q = e->t.q;
+            ta.p = min(lim, a.p - a.q + e->t.q);
+            tb.p = min(lim, b.p - b.q + e->t.q);
+            e->arg[0] = cast_of(e->arg[0], ta);
+            e->arg[1] = cast_of(e->arg[1], tb);
+        } else if (a.k != e->arg[0]->t.k || b.k != e->arg[1]->t.k) {
+            e->arg[0] = cast_of(e->arg[0], a);
+            e->arg[1] = cast_of(e->arg[1], b);
+        }
         return;
     }
     case B_DIM:
@@ -1885,6 +1950,8 @@ static void type_call(struct expr *e)
     case B_MIN: {
         int anybin = 0, anyflt = 0, ip = 0, q = 0;
         for (int i = 0; i < e->nargs; i++) {
+            if (is_bit(e->arg[i]->t))
+                e->arg[i] = bit_arith(e->arg[i]);
             if (!arith(e->arg[i]->t)) {
                 error_at(e->line, "MAX and MIN need arithmetic arguments");
                 return;
@@ -1928,6 +1995,18 @@ static void type_power(struct expr *e)
         e->l = conv(e->l, 0);
         a = e->l->t;
     }
+    if (is_bit(a)) {
+        /* here FIXED BINARY(15): B**2 with B BIT(4) is FIXED, 100, in
+         * BIN(31)'s width (T317BIT, JOB00303), where BIN(31) would give
+         * FLOAT and BIN(4) a narrower field; not measured beyond n = 2 */
+        e->l = bit_arith(e->l);
+        e->l->t.p = 15;
+        a = e->l->t;
+    }
+    if (is_bit(b)) {
+        e->r = bit_arith(e->r);
+        b = e->r->t;
+    }
     if (!arith(a) || !arith(b)) {
         error_at(e->line, "** needs arithmetic operands");
         e->t = b;
@@ -1941,12 +2020,14 @@ static void type_power(struct expr *e)
     }
     if (!is_float(a) && int_arg(e->r, &n) && n >= 1 && e->r->k == E_NUM &&
         (a.p + 1) * n - 1 <= (a.k == TY_FIXBIN ? 31 : 15)) {
-        struct expr *x = e->l, *m;
-        if (x->k != E_VAR && x->k != E_NUM && !(x->k == E_NEG && x->l->k == E_NUM))
+        struct expr *x = e->l, *m, *xv = x->k == E_CAST ? x->l : x;
+        if (x->k == E_CAST && xv->k != E_VAR)
             error_at(e->line, "** of this FIXED expression is not supported yet");
-        if (x->k == E_VAR && x->nsubs)
-            for (int i = 0; i < x->nsubs; i++)
-                if (x->sub[i]->k != E_NUM)
+        if (xv->k != E_VAR && xv->k != E_NUM && !(xv->k == E_NEG && xv->l->k == E_NUM))
+            error_at(e->line, "** of this FIXED expression is not supported yet");
+        if (xv->k == E_VAR && xv->nsubs)
+            for (int i = 0; i < xv->nsubs; i++)
+                if (xv->sub[i]->k != E_NUM)
                     error_at(e->line, "** of this FIXED expression is not supported yet");
         m = x;
         for (int i = 1; i < n; i++) {
@@ -1991,8 +2072,14 @@ static void type_of(struct expr *e)
             type_of(e->sub[i]);
             if (!arith(e->sub[i]->t))
                 error_at(e->line, "a subscript must be arithmetic");
-            else if (is_float(e->sub[i]->t))
-                error_at(e->line, "a FLOAT subscript is not supported yet");
+            else if (is_float(e->sub[i]->t)) {
+                /* converted to an integer, truncated (A(2.7) is A(2), Q1MOD) */
+                struct type it;
+                memset(&it, 0, sizeof it);
+                it.k = TY_FIXBIN;
+                it.p = 31;
+                e->sub[i] = cast_of(e->sub[i], it);
+            }
         }
         check_based(e);
         if (e->sym->child)
@@ -2025,9 +2112,14 @@ static void type_of(struct expr *e)
         type_of(e->l);
         if (is_string(e->l->t))
             e->l = conv(e->l, 0);
+        else if (is_bit(e->l->t))
+            e->l = bit_arith(e->l);
         if (!arith(e->l->t))
-            error_at(e->line, "prefix minus needs an arithmetic operand");
+            error_at(e->line, "prefix %s needs an arithmetic operand",
+                     e->op == T_PLUS ? "plus" : "minus");
         e->t = e->l->t;
+        if (e->op == T_PLUS)
+            *e = *e->l;                     /* the operand, converted */
         return;
     case E_NOT:
         type_of(e->l);
@@ -2075,9 +2167,16 @@ static void type_of(struct expr *e)
                     error_at(e->line, "a bit string of more than %d bits", MAXBITS);
                 return;
             }
-            if (is_bit(a) || is_bit(b))
-                error_at(e->line, "|| of a bit string and a character string is not supported "
-                         "yet");
+            if (is_bit(a) || is_bit(b)) {
+                /* the bit string as characters, '1' and '0' (Q2MISC) */
+                struct expr **x = is_bit(a) ? &e->l : &e->r;
+                *x = new_call1(B_CHAR, *x);
+                type_of(*x);
+                if (is_bit(a))
+                    a = (*x)->t;
+                else
+                    b = (*x)->t;
+            }
             e->t.k = TY_CHAR;
             e->t.p = string_len(a) + string_len(b);
             return;
@@ -2148,6 +2247,16 @@ static void type_of(struct expr *e)
                     e->r = offset_ptr(e->r);
             } else if ((is_string(a) && is_string(b)) || (is_bit(a) && is_bit(b))) {
                 /* compared as characters or as bits */
+            } else if ((is_bit(a) && is_string(b)) || (is_string(a) && is_bit(b))) {
+                /* a bit string and a character string: as characters */
+                struct expr **x = is_bit(a) ? &e->l : &e->r;
+                *x = new_call1(B_CHAR, *x);
+                type_of(*x);
+            } else if ((is_bit(a) && arith(b)) || (arith(a) && is_bit(b))) {
+                /* a bit string and a number: as numbers, the bits an
+                 * unsigned integer (GC28-8201, "Bit-string to Arithmetic") */
+                struct expr **x = is_bit(a) ? &e->l : &e->r;
+                *x = bit_arith(*x);
             } else if (arith(a) && is_string(b)) {
                 e->r = conv_with(e->r, a);      /* compared as numbers */
             } else if (is_string(a) && arith(b)) {
@@ -2158,6 +2267,14 @@ static void type_of(struct expr *e)
             e->t.k = TY_BIT;
             e->t.p = 1;
             return;
+        }
+        if (is_bit(a) && (arith(b) || is_bit(b) || is_string(b))) {
+            e->l = bit_arith(e->l);
+            a = e->l->t;
+        }
+        if (is_bit(b) && (arith(a) || is_string(a))) {
+            e->r = bit_arith(e->r);
+            b = e->r->t;
         }
         if (is_string(a) && arith(b)) {
             e->l = conv_with(e->l, b);
@@ -2310,8 +2427,17 @@ static void check_get_data(struct expr *e, int line)
         error_at(line, "GET DATA takes names");
         return;
     }
-    if (e->sym->root->st == ST_BASED)
-        error_at(line, "GET DATA of a BASED variable is not supported yet");
+    if (e->sym->root->st == ST_BASED) {
+        /* through the pointer of its BASED attribute, a simple variable
+         * (GC33-0009-4; lower.c data_based for PUT DATA) */
+        struct expr *p = e->sym->root->based;
+        beyond_f(line, L_OPT, "a BASED variable in a data-directed list");
+        if (!p || p->k != E_VAR || p->nsubs || p->qual || !p->sym ||
+            p->sym->root != p->sym || p->sym->ndims || p->sym->param ||
+            p->sym->defined || p->sym->st == ST_BASED || p->sym->t.k != TY_PTR)
+            error_at(line, "%s: in a data-directed list, a BASED variable needs a pointer "
+                     "that is a simple variable", e->sym->name);
+    }
     check_data_sym(e->sym, line);
 }
 
@@ -2873,6 +2999,7 @@ static struct expr *cx_part(struct expr *e, int part)
         return c;
     case E_NEG:
         c = new_node(E_NEG, e->line);
+        c->op = e->op;                      /* T_PLUS: prefix plus */
         c->l = cx_part(e->l, part);
         return c;
     case E_BIN:
@@ -3487,6 +3614,13 @@ static void check_stmts(struct stmt *s)
             break;
         case S_PUT:
         case S_GET:
+            if (s->k == S_PUT && s->e2) {
+                type_of(s->e2);              /* LINE(n) */
+                if (!arith(s->e2->t))
+                    error_at(s->line, "LINE needs an arithmetic value");
+                if (s->string)
+                    error_at(s->line, "STRING takes no SKIP, PAGE or LINE");
+            }
             if (s->string) {
                 type_of(s->string);
                 if (!is_string(s->string->t))
@@ -3791,34 +3925,38 @@ static void check_stmts(struct stmt *s)
             else
                 type_fcall(s->e, 0);
             break;
-        case S_RETURN:
-            if (s->e && !CUR->has_ret)
-                error_at(s->line, "RETURN with a value in %s, which has no RETURNS", CUR->name);
-            else if (!s->e && CUR->ret_all)
-                error_at(s->line, "RETURN in %s needs a value", CUR->name);
-            else if (s->e && (is_cplx(CUR->ret) || cx_expr(s->e))) {
+        case S_RETURN: {
+            /* out of a BEGIN block: the procedure that contains it */
+            struct proc *R = CUR;
+            while (R->is_block)
+                R = R->parent;
+            if (s->e && !R->has_ret)
+                error_at(s->line, "RETURN with a value in %s, which has no RETURNS", R->name);
+            else if (!s->e && R->ret_all)
+                error_at(s->line, "RETURN in %s needs a value", R->name);
+            else if (s->e && (is_cplx(R->ret) || cx_expr(s->e))) {
                 /* COMPLEX: the value's parts into the result (cx_pair); a
                  * complex value for a real result, its real part */
-                if (CUR->ret_multi)
+                if (R->ret_multi)
                     error_at(s->line, "RETURN of a complex value in a procedure with entry "
                              "points of other attributes is not supported yet");
-                else if (is_cplx(CUR->ret))
-                    s->e = cx_pair(s->e, CUR->ret);
+                else if (is_cplx(R->ret))
+                    s->e = cx_pair(s->e, R->ret);
                 else {
                     s->e = cx_part(s->e, 1);
-                    check_assign(CUR->ret, &s->e, s->line);
+                    check_assign(R->ret, &s->e, s->line);
                 }
-            } else if (s->e && CUR->ret_multi) {
+            } else if (s->e && R->ret_multi) {
                 /* the value for each entry's attributes (gen.c); one of
                  * another kind, a bit string for an arithmetic entry,
                  * say, is not converted: that entry's value is left
                  * unset, as the RETURN is not meant for it */
                 type_of(s->e);
-                s->rets = xmalloc((size_t)(CUR->nentries + 1) * sizeof *s->rets);
-                for (int k = 0; k <= CUR->nentries; k++) {
-                    struct type rt = k ? CUR->entries[k - 1].ret : CUR->ret;
+                s->rets = xmalloc((size_t)(R->nentries + 1) * sizeof *s->rets);
+                for (int k = 0; k <= R->nentries; k++) {
+                    struct type rt = k ? R->entries[k - 1].ret : R->ret;
                     s->rets[k] = NULL;
-                    if (k ? !CUR->entries[k - 1].has_ret : !CUR->ret_main)
+                    if (k ? !R->entries[k - 1].has_ret : !R->ret_main)
                         continue;
                     if (arith(rt) != arith(s->e->t) || is_bit(rt) != is_bit(s->e->t))
                         continue;
@@ -3826,8 +3964,9 @@ static void check_stmts(struct stmt *s)
                     check_assign(rt, &s->rets[k], s->line);
                 }
             } else if (s->e)
-                check_assign(CUR->ret, &s->e, s->line);
+                check_assign(R->ret, &s->e, s->line);
             break;
+        }
         case S_ENTRY:
             break;
         case S_GOTO:

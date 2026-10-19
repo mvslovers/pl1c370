@@ -16,6 +16,7 @@ void pl1_page(void)                                   asm("PL1PAGE");
 void pl1_list_char(const char *p, int len)            asm("PL1LCHR");
 void pl1_list_varchar(const void *v)                  asm("PL1LVCH");
 void pl1_list_number(const char *p, int len)          asm("PL1LNUM");
+void pl1_line(int n)                                  asm("PL1PLIN");
 /* a complex value's characters from its parts' (rt/pl1cx.c) */
 int  pl1_cpx_join(char *dst, const char *re, int rl, const char *im, int il)
                                                       asm("PL1CPXJ");

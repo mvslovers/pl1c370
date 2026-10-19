@@ -1292,8 +1292,20 @@ static struct stmt *expand_put(struct sym *sym, struct expr **subs, int nsubs,
     int cum = cum_dims(sym);
 
     if (item && !(item->k == E_VAR && is_aggregate(item))) {
+        if (has_aggregate(item) && !expanding_get) {
+            /* an array expression: its elements in row-major order, as
+             * the elements of an array (Q2MISC, JOB00226) */
+            struct expr *sh = shape_of(item);
+            struct shape z;
+            if (!sh)
+                fatal("%s(%d): a structure expression in PUT LIST is not supported yet",
+                      src_name, like->line);
+            open_shape(sh, &z);
+            return shape_loops(&z, put_one(subst(item, z.vars, z.nv, z.lb, z.hb), like),
+                               like);
+        }
         if (has_aggregate(item))
-            fatal("%s(%d): an array expression in PUT LIST is not supported yet", src_name,
+            fatal("%s(%d): an array expression cannot be a target of GET", src_name,
                   like->line);
         return put_one(subst(item, NULL, 0, NULL, NULL), like);
     }
@@ -1324,6 +1336,7 @@ static struct stmt *expand_put(struct sym *sym, struct expr **subs, int nsubs,
 
 static struct stmt *lower_list(struct stmt *s);
 static struct stmt *ctl_inits(struct sym *s);
+static struct stmt *based_inits(struct sym *s, struct expr *q);
 
 static void check_scalar(struct expr *e, int line)
 {
@@ -1650,16 +1663,23 @@ static struct stmt *lower_one(struct stmt *s)
     case S_STOP:
     case S_ALLOC: {
         /* each ALLOCATE of a CONTROLLED variable applies its INITIAL
-         * values again (JOB00320) */
+         * values again (JOB00320); of a BASED one too, through the
+         * pointer SET names (GC33-0009-4, SC26-3114-01) */
         struct stmt *list = s;
         for (struct put_item *it = s->items; it; it = it->next)
             if (it->e->k == E_VAR && it->e->sym->st == ST_CTL) {
                 no_check++;
                 list = append(list, lower_list(ctl_inits(it->e->sym)));
                 no_check--;
+            } else if (it->e->k == E_VAR && it->e->sym->st == ST_BASED) {
+                list = append(list, based_inits(it->e->sym, it->e->qual));
             }
         return list;
     }
+    case S_LOCATE:
+        if (s->lhs && s->lhs->k == E_VAR && s->lhs->sym->st == ST_BASED)
+            return append(s, based_inits(s->lhs->sym, s->e3));
+        return s;
     case S_FREE:
     case S_ENTRY:
         return s;
@@ -1670,7 +1690,6 @@ static struct stmt *lower_one(struct stmt *s)
     case S_WRITE:
     case S_REWRITE:
     case S_DELETE:
-    case S_LOCATE:
     case S_FORMAT:
         return s;                         /* INTO/FROM take the whole item */
     case S_WAIT:
@@ -2076,6 +2095,25 @@ static void undef_item(struct put_item *it)
     }
 }
 
+/* A BASED variable in a data-directed list: through the pointer of its
+ * BASED attribute, never locator-qualified; the pointer a simple
+ * variable (GC33-0009-4, storage class rule g; SC26-3114-01,
+ * "Data-Directed Data Specification"). PL/I (F): "PUT DATA cannot be
+ * used with BASED variables" (GC28-8201) */
+static void data_based(struct expr *e, int line)
+{
+    struct expr *p = e->sym->root->based;
+    beyond_f(line, L_OPT, "a BASED variable in a data-directed list");
+    if (e->qual)
+        error_at(line, "%s: a BASED variable in a data-directed list cannot be "
+                 "locator-qualified", e->sym->name);
+    else if (!p || p->k != E_VAR || p->nsubs || p->qual || !p->sym ||
+             p->sym->root != p->sym || p->sym->ndims || p->sym->param ||
+             p->sym->defined || p->sym->st == ST_BASED || p->sym->t.k != TY_PTR)
+        error_at(line, "%s: in a data-directed list, a BASED variable needs a pointer "
+                 "that is a simple variable", e->sym->name);
+}
+
 static void undef_stmts(struct stmt *s)
 {
     for (; s; s = s->next) {
@@ -2084,6 +2122,9 @@ static void undef_stmts(struct stmt *s)
             /* PL/I (F) refuses it too (IEM0692I, JOB00274) */
             fatal("%s(%d): %s is DEFINED: not in a data-directed list", src_name, s->line,
                   s->e->sym->name);
+        if (s->k == S_ITEM && s->owner_io && s->owner_io->data && s->e && s->e->k == E_VAR &&
+            s->e->sym && s->e->sym->root->st == ST_BASED)
+            data_based(s->e, s->line);
         undef_expr(s->lhs);
         undef_expr(s->e);
         undef_expr(s->e2);
@@ -2254,6 +2295,33 @@ static void pic_stmts(struct stmt *s)
     }
 }
 
+/* The INITIAL assignments of a BASED variable after its ALLOCATE or
+ * LOCATE: each target qualified by the pointer set (q, NULL for the
+ * BASED attribute's own) */
+static void qualify_inits(struct stmt *s, struct sym *root, struct expr *q)
+{
+    for (; s; s = s->next) {
+        if (s->k == S_ASSIGN && s->lhs->k == E_VAR && s->lhs->sym->root == root &&
+            !s->lhs->qual)
+            s->lhs->qual = q;
+        qualify_inits(s->body, root, q);
+        qualify_inits(s->els, root, q);
+    }
+}
+
+static struct stmt *based_inits(struct sym *s, struct expr *q)
+{
+    struct stmt *l = ctl_inits(s);
+    if (!l)
+        return NULL;
+    if (q)
+        qualify_inits(l, s, q);
+    no_check++;
+    l = lower_list(l);
+    no_check--;
+    return l;
+}
+
 /* The INITIAL assignments of a CONTROLLED variable and its members, in
  * the order they are declared. */
 static struct stmt *ctl_inits(struct sym *s)
@@ -2324,8 +2392,7 @@ static void lower_proc(struct proc *p)
                 error_at(s->line, "%s: INITIAL CALL is for AUTOMATIC and CONTROLLED "
                          "variables", s->name);
             else if (s->root->st == ST_BASED && (s->init || s->ninits))
-                error_at(s->line, "%s: INITIAL on a BASED variable is not supported yet",
-                         s->name);
+                beyond_f(s->line, L_OPT, "INITIAL on a BASED variable");
         }
     }
     {

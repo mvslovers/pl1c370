@@ -94,6 +94,27 @@ D only after a design note and the maintainer's decision.
   - [ ] #1 PL/I (F)'s library (SYS1.PL1LIB) as the run time under
         `-lang=F`
 
+## The compiler's refusals (2026-10-19)
+
+The "not supported" messages of the compiler, worked off where no
+decision is needed (`internals/research/pli/mvsvm-inventory.md`,
+section 3a, has the list).
+
+- [x] Tier 124: RETURN out of BEGIN, PUT LINE and SKIP(n), array
+      expressions in PUT LIST, bit || char, BIT of FLOAT, MOD of FLOAT,
+      FLOAT subscripts, STATIC picture INITIAL, label INITIAL, LIKE with
+      INITIAL, long INITIAL strings, bit strings as numbers; INITIAL on
+      BASED, BASED in data lists, listing control statements, %NOTE
+      (OPT). Small decisions taken: BIT of a value needing more than 31
+      bits stays refused (BIT(FLOAT DEC(16)) would need 54); a bit
+      string as the base of `**` is FIXED BIN(15), matching PL/I (F)
+      for n = 2 and not for n = 3 (documented deviation)
+- [ ] GET DATA of a picture (the name table needs the picture: an ABI
+      change), a picture as DO control variable or SUBSTR target (all
+      three PL/I (F), JOB00303), keyed
+      record I/O of a VARYING string, PUT DATA beyond 3 dimensions, GET
+      DATA of an array of structures, DEFINED with packed bit strings
+
 ## PL/I in MBT (no milestone)
 
 Agreed with the MBT session: the run time stays a library, linked by

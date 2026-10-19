@@ -128,7 +128,7 @@ int next_data(int wrap)
             pl1_page();
             break;
         case K_LINE:
-            pl1_skip(1);
+            pl1_line(it[1]);
             break;
         }
         fi++;
