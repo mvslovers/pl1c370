@@ -1172,6 +1172,11 @@ sources = ["build/gen/t298car.asm"]
 rent    = false
 reus    = false
 
+[module.TT299RND]
+sources = ["build/gen/t299rnd.asm"]
+rent    = false
+reus    = false
+
 [module.TT29FOFL]
 sources = ["build/gen/t29fofl.asm"]
 rent    = false
@@ -1179,6 +1184,16 @@ reus    = false
 
 [module.TT2DEC]
 sources = ["build/gen/t2dec.asm"]
+rent    = false
+reus    = false
+
+[module.TT300RNM]
+sources = ["build/gen/t300rnm.asm"]
+rent    = false
+reus    = false
+
+[module.TT301RNB]
+sources = ["build/gen/t301rnb.asm"]
 rent    = false
 reus    = false
 
