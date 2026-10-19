@@ -63,7 +63,9 @@ issues is at the top of `TODO.md` and `internals/ROADMAP.md`.
   `*`, `/` and ABS, exact in a wide integer; `pl1cxq.c`, `pl1cxe.c`,
   `pl1cxl.c`, `pl1cxs.c`, `pl1cxt.c`, `pl1cxh.c`, `pl1cxx.c` the
   mathematical functions of complex values and `z1**z2`, in long
-  precision on the real ones,
+  precision on the real ones, `pl1cxsp.c` the reader of complex constants
+  (reached through a pointer PL1CXON sets), `pl1cxcv.c` character to
+  complex,
   `pl1pic.c` PICTURE editing, sterling pictures included (compiled
   into the compiler too, for a picture's attributes), `pl1qsam.asm` QSAM in update mode for UPDATE
   files (LIBC/370 has no record update), `pl1date.c` and `pl1time.asm`

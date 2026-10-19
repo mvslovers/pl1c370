@@ -570,9 +570,9 @@ and its ERROR cases).
 
 ### C4: edit-directed I/O, GET, character to complex
 
-*PUT EDIT with C done (Tier 115, `t294ced`,
-`research/pli/c4-measurement.md`); GET and character to complex
-next (C4b). Q-8 decided: the format kinds stay in `rt/pl1iof.h` and
+*Done: PUT EDIT with C (Tier 115, `t294ced`), GET and character to
+complex (Tier 116, `t295cgt`, `t296ccv`;
+`research/pli/c4-measurement.md`). Q-8 decided: the format kinds stay in `rt/pl1iof.h` and
 `src/pl1c.h`, K_C added at the end of both; the ABI stamp is not
 changed, since no existing format table changes.*
 

@@ -696,6 +696,7 @@ static void poll(void)
     here(l);
 }
 
+static int uses_complex;          /* the source has COMPLEX data (gen_program) */
 static int need_zd, need_fofl, need_ufl;  /* the raise stubs the procedure needs */
 
 /* ZERODIVIDE or FIXEDOVERFLOW at this point: through a stub of the
@@ -793,12 +794,37 @@ static int fix_arg(struct expr *x)
     return r;
 }
 
+static void gen_string(struct expr *e, int *ra, int *rl);
+
 static void gen_cxop(struct expr *e)
 {
     int a[4], n = e->nargs, r;
     int lo = flt_long(e->t), fx = !is_float(e->t);
     struct expr v;
     struct place p;
+    if (e->fn == B_CXCVT) {
+        /* a string to the complex temporary (rt/pl1cxsp.c): A(string),
+         * its length, A(temporary), FLOAT 256 (+1 long) or the scale */
+        int ra, rl;
+        gen_string(e->arg[0], &ra, &rl);
+        arg_reg(ra);
+        arg_reg(rl);
+        reg_free(ra);
+        reg_free(rl);
+        memset(&v, 0, sizeof v);
+        v.k = E_VAR;
+        v.sym = e->cxt;
+        v.t = e->cxt->t;
+        p = gen_place(&v);
+        r = p_take(&p);
+        ins(NULL, "LA", "%d,%s", r, p_rx(&p, 0));
+        p_free_except(&p, r);
+        arg_reg(r);
+        reg_free(r);
+        arg_const(is_float(e->t) ? 256 + lo : e->t.q & 255);
+        call("PL1CXCV");
+        return;
+    }
     for (int i = 0; i < n; i++)
         a[i] = fx ? fix_arg(e->arg[i]) :
                e->fn == B_CXOP && e->op == T_POWER && n == 3 && i == 2 ? gen_int(e->arg[i]) :
@@ -942,7 +968,7 @@ static int gen_bin_at(struct expr *e, int qs)
 {
     int r, v;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1364,7 +1390,7 @@ static int gen_bin_at(struct expr *e, int qs)
         case B_PLICKPT: case B_PLIREST: case B_PLICANC:
         case B_COMPLETION:
         case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-        case B_CXABS: case B_CXFN:
+        case B_CXABS: case B_CXFN: case B_CXCVT:
             break;
         }
         break;
@@ -1415,7 +1441,7 @@ static int gen_dec(struct expr *e)
 {
     int t;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1797,7 +1823,7 @@ static int gen_flt(struct expr *e, struct type tt)
 {
     int L = flt_long(tt), t;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -2018,7 +2044,7 @@ static int gen_flt(struct expr *e, struct type tt)
  * strings live in temporaries of the frame. */
 static void gen_string(struct expr *e, int *ra, int *rl)
 {
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -3125,7 +3151,7 @@ static void gen_sort(struct expr *e)
 
 static void gen_store(struct target *tg, struct type tt, struct expr *e)
 {
-    if (e && e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN)) {
+    if (e && e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -5352,6 +5378,12 @@ static void gen_stmt1(struct stmt *s)
             }
             call("PL1GCPY");
         }
+        if (s->skip >= 0) {
+            /* SKIP first, for DATA too (it was left out there: noticed
+             * after a GET EDIT that read part of a record, t295cgt) */
+            arg_const(s->skip);
+            call("PL1GSKP");
+        }
         if (s->data) {
             gen_get_data(s);
             ins(NULL, "LTR", "15,15");
@@ -5360,10 +5392,6 @@ static void gen_stmt1(struct stmt *s)
             eof_dispatch(s->file, lafter);
             here(lafter);
             break;
-        }
-        if (s->skip >= 0) {
-            arg_const(s->skip);
-            call("PL1GSKP");
         }
         if (s->edit)
             format_begin(s);
@@ -5581,6 +5609,14 @@ static void gen_stmt1(struct stmt *s)
         break;
     }
     case S_ITEM:
+        if (s->get && s->cxpair == 1) {
+            /* a complex target's parts follow (rt/pl1ioget.c); the reader
+             * of complex constants on (rt/pl1cxsp.c) */
+            ins(NULL, "L", "15,=V(PL1CXON)");
+            ins(NULL, "BALR", "14,15");
+            ins(NULL, "L", "15,=V(PL1GCPX)");
+            ins(NULL, "BALR", "14,15");
+        }
         if (s->get)
             gen_get_item(s->lhs);
         else
@@ -6728,6 +6764,12 @@ static void gen_proc(struct proc *p, FILE *f)
         fprintf(f, "         BALR  14,15\n");
         fprintf(f, "         L     15,=V(PL1STON)\n");
         fprintf(f, "         BALR  14,15\n");
+        if (uses_complex) {
+            /* a complex constant read or converted into a real target
+             * gives its real part (rt/pl1cxsp.c) */
+            fprintf(f, "         L     15,=V(PL1CXON)\n");
+            fprintf(f, "         BALR  14,15\n");
+        }
     }
     if (p->is_main && p->nparams &&
         (opt_plist || p->byvalue || (p->noexecops && !(p->nparams == 1 &&
@@ -6869,10 +6911,25 @@ static void gen_pinfo(struct proc *p)
         gen_pinfo(c);
 }
 
+/* does block b, or a block in it, have COMPLEX data */
+static int any_complex(const struct proc *b)
+{
+    for (const struct sym *x = b->syms; x; x = x->next)
+        if (is_cplx(x->t))
+            return 1;
+    for (const struct proc *c = b->child; c; c = c->sibling)
+        if (any_complex(c))
+            return 1;
+    return 0;
+}
+
 void gen_program(struct proc *p, FILE *f)
 {
-    for (struct proc *u = p; u; u = u->next_ext)
+    for (struct proc *u = p; u; u = u->next_ext) {
         label_statics(u);
+        if (any_complex(u))
+            uses_complex = 1;
+    }
     fprintf(f, "* %s -- generated by PL1C/370 from %s\n", p->name, src_name);
     fprintf(f, "         COPY  PDPTOP\n");
     fprintf(f, "         CSECT\n");

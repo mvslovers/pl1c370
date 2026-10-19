@@ -1421,6 +1421,22 @@ GET EDIT with C, GET of complex targets and character to complex
 remain for C4b. The full suite 282 identical and 13 CLOSE (JOB00220 to
 JOB00246).
 
+## Tier 116 -- done 2026-10-19
+
+COMPLEX, tier C4b (#2, `design/complex.md`): GET LIST, GET EDIT (with
+C or another item) and GET DATA of complex targets, a complex constant
+read into a real target, and character to complex conversion
+(`research/pli/c4-measurement.md`). A complex target's parts are two
+targets of the statement, announced by PL1GCPX (`rt/pl1ioget.c`); the
+complex constant is split by `rt/pl1cxsp.c`, a string converted to a
+complex temporary by `rt/pl1cxcv.c` (check.c B_CXCVT). The reader is
+reached through a pointer that PL1CXON sets, from the main procedure
+of a source with COMPLEX data and before each GET of a complex target,
+so a program without complex values links none of it (1.2 KB).
+`GET SKIP DATA` now skips (SKIP was left out for DATA). `t295cgt` and
+`t296ccv` identical in JOB00263; the full suite 284 identical and 13
+CLOSE (JOB00266 to JOB00292).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

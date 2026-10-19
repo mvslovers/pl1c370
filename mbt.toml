@@ -1152,6 +1152,16 @@ sources = ["build/gen/t294ced.asm"]
 rent    = false
 reus    = false
 
+[module.TT295CGT]
+sources = ["build/gen/t295cgt.asm"]
+rent    = false
+reus    = false
+
+[module.TT296CCV]
+sources = ["build/gen/t296ccv.asm"]
+rent    = false
+reus    = false
+
 [module.TT29FOFL]
 sources = ["build/gen/t29fofl.asm"]
 rent    = false

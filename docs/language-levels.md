@@ -302,6 +302,11 @@ Each is described in the measurement of its tier
   in PL/I (F), but after the routine's other operations: where an
   OVERFLOW or ZERODIVIDE comes later in the same operation, the
   on-units run in another order.
+- **A complex constant read by GET, or a string holding one, into a
+  real target** gives its real part only in a program whose source has
+  COMPLEX data; elsewhere it raises CONVERSION at the central sign. The
+  imaginary part is checked, as in PL/I (F); PL/I for MVS & VM does not
+  check it (SC26-3114-01, "Character to Arithmetic") (Tier 116).
 - **A VARYING argument to an external CHAR(\*) parameter** gets its
   current length. PL/I (F) passes the maximum length and reads storage
   beyond the value (Tier 55).

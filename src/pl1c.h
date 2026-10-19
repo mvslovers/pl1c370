@@ -325,6 +325,8 @@ enum bfn { B_LENGTH, B_SUBSTR, B_INDEX, B_MOD, B_ABS, B_MAX, B_MIN,
             * a complex value, op the function (check.c cx_call, cx_fn,
             * gen.c gen_cxop) */
            B_CXOP, B_CXABS, B_CXFN,
+           /* ... B_CXCVT a string as a complex value (cx_stmt, rt PL1CXCV) */
+           B_CXCVT,
            /* events (#3) */
            B_COMPLETION, B_STATUS };
 
@@ -483,8 +485,8 @@ struct stmt {
     struct expr *ignore;     /* S_READ: IGNORE(n), records skipped */
     int          copy;       /* S_GET: COPY, the fields to SYSPRINT */
     struct expr *copyfile;   /* ... or to this file: ANSI's COPY(file) */
-    int          cxpair;     /* S_ITEM of PUT EDIT: 1 a complex value's real part,
-                                2 its imaginary part (check.c, rt PL1ECPX) */
+    int          cxpair;     /* S_ITEM: 1 a complex value's (target's) real part,
+                                2 its imaginary part (check.c; rt PL1ECPX, PL1GCPX) */
 };
 
 #define MAXPARAMS MAXCALLARGS
