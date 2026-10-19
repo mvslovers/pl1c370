@@ -4791,9 +4791,9 @@ static void gen_get_data(struct stmt *s)
         n = data_entries(it->e->sym, list, n);
     t = tmp(24 * n, 4);
     for (int i = 0; i < n; i++)
-        if (list[i]->t.k == TY_PIC || list[i]->t.pic)
-            fatal("%s(%d): GET DATA of a picture (%s) is not supported yet", src_name, s->line,
-                  list[i]->name);
+        if (list[i]->t.k == TY_PIC && cum_dims(list[i]))
+            fatal("%s(%d): GET DATA of an array of pictures (%s) is not supported yet",
+                  src_name, s->line, list[i]->name);
     for (int i = 0; i < n; i++) {
         struct sym *x = list[i];
         struct expr *ref = xmalloc(sizeof *ref);
@@ -4818,6 +4818,19 @@ static void gen_get_data(struct stmt *s)
         }
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 8, (x->t.k << 16) | x->t.p);
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 12, ((x->t.q & 0xFFFF) << 16) | x->ndims);
+        if (x->t.k == TY_PIC) {
+            /* a numeric picture: its length << 24 | A(its characters), and
+             * the editing routine, called through the table so that GET
+             * DATA alone does not bring it (rt/pl1ioget.c) */
+            int a = reg_get();
+            pic_literal(a, x->t.pic);
+            ins(NULL, "ST", "%d,%d(,13)", a, o + 16);
+            ins(NULL, "MVI", "%d(13),%d", o + 16, (int)strlen(x->t.pic));
+            ins(NULL, "L", "%d,=V(PL1PEDT)", a);
+            ins(NULL, "ST", "%d,%d(,13)", a, o + 20);
+            reg_free(a);
+            continue;
+        }
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 16,
             x->ndims ? (int)(((unsigned)x->lb[0] << 16) | ((unsigned)x->hb[0] & 0xFFFF)) : 0);
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 20, x->size);

@@ -109,9 +109,13 @@ section 3a, has the list).
       bits stays refused (BIT(FLOAT DEC(16)) would need 54); a bit
       string as the base of `**` is FIXED BIN(15), matching PL/I (F)
       for n = 2 and not for n = 3 (documented deviation)
-- [ ] GET DATA of a picture (the name table needs the picture: an ABI
-      change), a picture as DO control variable or SUBSTR target (all
-      three PL/I (F), JOB00303), keyed
+- [x] Tier 125: a picture as DO control variable, SUBSTR of a character
+      picture as a target, GET DATA of a scalar numeric picture
+      (JOB00303); SUBSTR of a numeric picture stays refused, as in
+      PL/I (F) (IEM1622I, JOB00354)
+- [ ] GET DATA of arrays of more than one dimension, of arrays of
+      structures and of arrays of pictures (the name table holds one
+      dimension), keyed
       record I/O of a VARYING string, PUT DATA beyond 3 dimensions, GET
       DATA of an array of structures, DEFINED with packed bit strings
 

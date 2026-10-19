@@ -2417,8 +2417,11 @@ static void check_data_sym(struct sym *x, int line)
     }
     if (x->ndims > 1 || cum_dims(x) > x->ndims)
         error_at(line, "GET DATA of %s: one dimension at most here", x->name);
-    if (!arith(x->t) && !is_cplx(x->t) && !is_string(x->t) && x->t.k != TY_BIT)
+    if (!arith(x->t) && !is_cplx(x->t) && !is_string(x->t) && x->t.k != TY_BIT &&
+        x->t.k != TY_PIC)
         error_at(line, "GET DATA of %s is not supported", x->name);
+    if (x->t.k == TY_PIC && strlen(x->t.pic) > 255)
+        error_at(line, "GET DATA of %s: a picture of more than 255 characters", x->name);
 }
 
 static void check_get_data(struct expr *e, int line)
@@ -2534,6 +2537,17 @@ static struct expr *iter_var(struct sym *v, int line)
 {
     struct expr *e = new_node(E_VAR, line);
     e->sym = v;
+    if (v->t.k == TY_PIC) {
+        /* a picture: its value, as lower.c pic_expr makes it (Q8PIC) */
+        struct expr *c = new_node(E_CALL, line);
+        e->picstr = 1;
+        e->t = v->t;
+        c->fn = B_PICVAL;
+        c->nargs = 1;
+        c->arg[0] = e;
+        type_of(c);
+        return c;
+    }
     return e;
 }
 
@@ -3419,8 +3433,6 @@ static void prepare_iter(struct stmt *s)
             return;
         }
     }
-    if (ct.k == TY_PIC)
-        error_at(line, "a picture as control variable is not supported");
     for (; d; d = d->next) {
         check_assign(ct, &d->e1, line);
         if (d->e2) {
@@ -3481,8 +3493,10 @@ static void check_stmts(struct stmt *s)
             if (s->lhs->k == E_CALL && s->lhs->fn == B_SUBSTR) {
                 /* SUBSTR as a pseudovariable: that part of the string */
                 struct type tt = s->lhs->arg[0]->t;
-                if (tt.k == TY_PIC || tt.pic)
-                    error_at(s->line, "SUBSTR of a picture as a target is not supported");
+                if (tt.k == TY_PIC)
+                    /* PL/I (F) refuses it too (IEM1622I, Q9PIC) */
+                    error_at(s->line, "the first argument of the pseudovariable SUBSTR "
+                             "must be a string variable, not a numeric picture");
                 if (s->lhs->arg[0]->k == E_VAR && s->lhs->arg[0]->sym->packed)
                     error_at(s->line, "SUBSTR of an unaligned bit string at a bit offset as a "
                              "target is not supported yet");

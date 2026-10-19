@@ -2265,9 +2265,6 @@ static void pic_stmts(struct stmt *s)
             }
             break;
         case S_ITER:
-            if (s->target && s->target->t.k == TY_PIC)
-                fatal("%s(%d): a picture as control variable is not supported", src_name,
-                      s->line);
             pic_expr(s->e, 0);
             pic_expr(s->e2, 0);
             pic_expr(s->e3, 0);

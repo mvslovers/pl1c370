@@ -1282,6 +1282,11 @@ sources = ["build/gen/t317bit.asm"]
 rent    = false
 reus    = false
 
+[module.TT318PIC]
+sources = ["build/gen/t318pic.asm"]
+rent    = false
+reus    = false
+
 [module.TT31SIG]
 sources = ["build/gen/t31sig.asm"]
 rent    = false
