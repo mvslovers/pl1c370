@@ -456,6 +456,26 @@ void pl1_list_pic(const char *chars, int len, const unsigned char *packed, int q
     if (mode == M_PUTEDIT) {
         char d[32];
         int neg, nd = pl1i_dec_digits(d, packed, 15, &neg);
+        static char both[512];
+        static int bn;
+        if (cpair == 1) {
+            /* a PICTURE COMPLEX value meeting A: its two fields as one
+             * string (Q13CPIC, JOB00073) */
+            int k = next_data(1);
+            if (k >= 0 && (fmt[3 * k] == K_A || fmt[3 * k] == K_AW) && len <= 256) {
+                memcpy(both, chars, (size_t)len);
+                bn = len;
+                cpair = 6;
+                return;
+            }
+        } else if (cpair == 6) {
+            cpair = 0;
+            if (len > 256)
+                len = 256;
+            memcpy(both + bn, chars, (size_t)len);
+            edit_at(fi, both, bn + len, NULL, 0, 0, 0, 0);
+            return;
+        }
         edit_value(chars, len, d, nd, q, neg, 1);
         return;
     }

@@ -62,24 +62,15 @@ D only after a design note and the maintainer's decision.
   - [x] #226 ATTENTION, and INTERRUPT (Tier 106); a real attention
         at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
 - **D -- large projects, design first** (milestone 4)
-  - [ ] #2 COMPLEX: tiers C1 to C5 done (Tiers 109, 114 to 117) but
-        for PICTURE COMPLEX and complex binary constants: both are PL/I
-        for MVS & VM's language, so they stay in the plan (Q-6 settled
-        by the goal of 2026-10-18, maintainer 2026-10-19); binary
-        constants are done (Tier 119, with complex ones); PICTURE
-        COMPLEX is left. Decided on the way (each in its PR): the format kinds
-        stay where they are, K_C added, the ABI stamp kept (Q-8); a
+  - [x] #2 COMPLEX: complete (Tiers 109, 114 to 117, 119 binary
+        constants, 120 PICTURE COMPLEX). Decided on the way (each in
+        its PR): the format kinds stay where they are, K_C added, the
+        ABI stamp kept (Q-8); Q-6 settled by the goal (2026-10-19); a
         complex constant into a real target gives its real part only in
         a source with COMPLEX data, its imaginary part checked as in
         PL/I (F); ABS of COMPLEX FIXED truncated exactly, MULTIPLY of
-        COMPLEX FIXED BINARY right where PL/I (F) is wrong. ROUND of FIXED
-        BINARY, and the default's ROUND precision of PL/I for MVS & VM,
-        done in Tier 118 Decided in Tier 114: ABS of COMPLEX FIXED is
-        truncated exactly, where PL/I (F) is sometimes one unit high;
-        MULTIPLY of COMPLEX FIXED BINARY computes the right value
-        where PL/I (F) gives a wrong one (2-14I for (3+4I)*(1-2I));
-        both kept out of the twins (`research/pli/c2-measurement.md`).
-        Left: `rt/pl1cxf.c` links 7.2 KB, PL/I (F)'s modules 1.6 KB
+        COMPLEX FIXED BINARY right where PL/I (F) is wrong; ROUND's
+        precision in the default PL/I for MVS & VM's (Tier 118)
   - [ ] #3 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
         done (Tiers 110, 111); tier 2 on needs the maintainer's A, B or
         C

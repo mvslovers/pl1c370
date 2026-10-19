@@ -41,7 +41,7 @@ static int elem_size(struct type t)
     case TY_LABEL:  return 8;
     case TY_AREA:   return 16 + t.p;
     case TY_OFFSET: return 4;
-    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN:
+    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN: case TY_CPIC:
         return 2 * elem_size(part_type(t));     /* real part, imaginary part */
     case TY_EVENT:  return PL1_EV_SIZE;
     default:        return 0;
@@ -60,7 +60,7 @@ static int elem_align(struct type t)
     case TY_LABEL:  return 4;
     case TY_AREA:   return 8;
     case TY_OFFSET: return 4;
-    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN:
+    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN: case TY_CPIC:
         return elem_align(part_type(t));
     case TY_EVENT:  return 4;
     default:        return 1;

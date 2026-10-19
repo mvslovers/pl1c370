@@ -30,3 +30,12 @@ int pl1_cpx_join(char *dst, const char *re, int rl, const char *im, int il)
         dst[n++] = ' ';          /* PL/I (F)'s length: the two fields and I */
     return n;
 }
+
+/* A PICTURE COMPLEX value as characters: its two fields, nothing
+ * between them (Q13CPIC, JOB00073) */
+int pl1_cpx_cat(char *dst, const char *re, int rl, const char *im, int il)
+{
+    memmove(dst, re, (size_t)rl);
+    memmove(dst + rl, im, (size_t)il);
+    return rl + il;
+}
