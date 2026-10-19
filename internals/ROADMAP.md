@@ -1577,6 +1577,14 @@ and packed bit arrays stay refused. Beyond F (OPT): a scalar DEFINED
 on a subscripted base, `X DEF A(L,M,N)`, the element the subscripts name
 at each reference. `t319gda` identical in JOB00391, `t320dfe` (`.opt.pli`) in JOB00425; the full suite 307 identical and 13 CLOSE (JOB00394 to JOB00422).
 
+## Tier 127 -- done 2026-10-19
+
+Two of the Optimizer's declarations (OPT): a cross section as the base
+of DEFINED, `X(4) DEF A(2,*)` (the k-th asterisk the defined array's
+k-th dimension, as kSUB), and INITIAL CALL for factored names (a call
+for each name). `t321dfx` identical in JOB00428, `t322icf` in JOB00431
+(both `.opt.pli`); the full suite 310 identical and 13 CLOSE (JOB00434 to JOB00462).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

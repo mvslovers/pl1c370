@@ -94,9 +94,9 @@ listing control statements and %NOTE (OPT). What is left, by size:
 - **Waiting for a decision:** TASK, PRIORITY (#3); FETCH of PL/I
   procedures, FETCHABLE (#6); COBOL and FORTRAN (#5); VSAM (#4).
 - **Small:** keyed record I/O of a VARYING string; PUT DATA of more
-  than 3 dimensions; DEFINED with packed bit strings; INITIAL CALL for
-  factored names. (Done since: a scalar DEFINED on a subscripted base,
-  Tier 126;
+  than 3 dimensions; DEFINED with packed bit strings. (Done since: a
+  scalar DEFINED on a subscripted base, Tier 126; a cross section as a
+  DEFINED base and INITIAL CALL for factored names, Tier 127;
   pictures in GET DATA and DO, SUBSTR of a character picture, Tier 125;
   GET DATA of arrays and of arrays of structures, Tier 126.)
 - **Limits of the implementation:** a frame over 4095 bytes, 12 KB of
