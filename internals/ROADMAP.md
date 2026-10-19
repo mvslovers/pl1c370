@@ -1565,6 +1565,18 @@ alone does not link it). SUBSTR of a numeric picture as a target stays
 refused, as PL/I (F) refuses it (IEM1622I, JOB00354), with its wording
 now. `t318pic` identical in JOB00352; the full suite 306 identical and 13 CLOSE (JOB00357 to JOB00385).
 
+## Tier 126 -- done 2026-10-19
+
+GET DATA of arrays of any number of dimensions (8 at most), of members
+of arrays of structures and of arrays of numeric pictures, PL/I (F)'s:
+the name table points at a block in the frame with each dimension's
+bounds and stride, and the run time reads several subscripts. The names
+in the stream are fully qualified, subscripts at the end (`S.T.U(1,2)`;
+`S.U(1,1)` raises NAME in both). Arrays with bounds known at run time
+and packed bit arrays stay refused. Beyond F (OPT): a scalar DEFINED
+on a subscripted base, `X DEF A(L,M,N)`, the element the subscripts name
+at each reference. `t319gda` identical in JOB00391, `t320dfe` (`.opt.pli`) in JOB00425; the full suite 307 identical and 13 CLOSE (JOB00394 to JOB00422).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

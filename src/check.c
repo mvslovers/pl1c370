@@ -2409,14 +2409,16 @@ static void check_assign(struct type tt, struct expr **pe, int line)
 static void check_data_sym(struct sym *x, int line)
 {
     if (x->child) {
-        if (x->ndims)
-            error_at(line, "GET DATA of an array of structures is not supported yet");
         for (struct sym *c = x->child; c; c = c->sibling)
             check_data_sym(c, line);
         return;
     }
-    if (x->ndims > 1 || cum_dims(x) > x->ndims)
-        error_at(line, "GET DATA of %s: one dimension at most here", x->name);
+    if (cum_dims(x) > 8)
+        error_at(line, "GET DATA of %s: more than 8 dimensions", x->name);
+    if (cum_dims(x) && (x->root->stardims || x->root->adjust || x->packed ||
+                        (x->root->child && x->root->tbits)))
+        error_at(line, "GET DATA of %s: an array of bounds known at run time or of packed "
+                 "bits is not supported yet", x->name);
     if (!arith(x->t) && !is_cplx(x->t) && !is_string(x->t) && x->t.k != TY_BIT &&
         x->t.k != TY_PIC)
         error_at(line, "GET DATA of %s is not supported", x->name);

@@ -4790,16 +4790,12 @@ static void gen_get_data(struct stmt *s)
     for (struct put_item *it = s->items; it; it = it->next)
         n = data_entries(it->e->sym, list, n);
     t = tmp(24 * n, 4);
-    for (int i = 0; i < n; i++)
-        if (list[i]->t.k == TY_PIC && cum_dims(list[i]))
-            fatal("%s(%d): GET DATA of an array of pictures (%s) is not supported yet",
-                  src_name, s->line, list[i]->name);
     for (int i = 0; i < n; i++) {
         struct sym *x = list[i];
         struct expr *ref = xmalloc(sizeof *ref);
         struct place p;
         char name[300];
-        int o = t + 24 * i;
+        int o = t + 24 * i, nd = cum_dims(x), pic = x->t.k == TY_PIC;
         qual_name(x, name, sizeof name);
         ins(NULL, "L", "%d,=A(@L%d)", r, cname_label(xstrdup(name)));
         ins(NULL, "ST", "%d,%d(,13)", r, o);
@@ -4817,8 +4813,43 @@ static void gen_get_data(struct stmt *s)
             reg_free(a);
         }
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 8, (x->t.k << 16) | x->t.p);
-        ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 12, ((x->t.q & 0xFFFF) << 16) | x->ndims);
-        if (x->t.k == TY_PIC) {
+        ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 12, ((x->t.q & 0xFFFF) << 16) | nd);
+        if (nd) {
+            /* an array, or a member of an array of structures: A(a block
+             * in the frame) -- for a picture its two words below first --,
+             * then lb, hb and the stride of each dimension, outermost
+             * first (the strides as gen_place takes them) */
+            struct sym *chain[32];
+            int nc = 0, v = tmp(4 * (3 * nd + 2 * pic), 4), w = v + 8 * pic, a = reg_get();
+            for (struct sym *y = x; y; y = y->parent)
+                chain[nc++] = y;
+            for (int c = nc - 1; c >= 0; c--) {
+                struct sym *y = chain[c];
+                int st[MAXDIMS], stride = y->size;
+                for (int d = y->ndims - 1; d >= 0; d--) {
+                    st[d] = stride;
+                    stride *= dim_extent(y, d);
+                }
+                for (int d = 0; d < y->ndims; d++, w += 12) {
+                    ins(NULL, "MVC", "%d(4,13),=F'%d'", w, y->lb[d]);
+                    ins(NULL, "MVC", "%d(4,13),=F'%d'", w + 4, y->hb[d]);
+                    ins(NULL, "MVC", "%d(4,13),=F'%d'", w + 8, st[d]);
+                }
+            }
+            ins(NULL, "LA", "%d,%d(,13)", a, v);
+            ins(NULL, "ST", "%d,%d(,13)", a, o + 16);
+            ins(NULL, "MVC", "%d(4,13),=F'0'", o + 20);
+            if (pic) {
+                pic_literal(a, x->t.pic);
+                ins(NULL, "ST", "%d,%d(,13)", a, v);
+                ins(NULL, "MVI", "%d(13),%d", v, (int)strlen(x->t.pic));
+                ins(NULL, "L", "%d,=V(PL1PEDT)", a);
+                ins(NULL, "ST", "%d,%d(,13)", a, v + 4);
+            }
+            reg_free(a);
+            continue;
+        }
+        if (pic) {
             /* a numeric picture: its length << 24 | A(its characters), and
              * the editing routine, called through the table so that GET
              * DATA alone does not bring it (rt/pl1ioget.c) */
@@ -4831,8 +4862,7 @@ static void gen_get_data(struct stmt *s)
             reg_free(a);
             continue;
         }
-        ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 16,
-            x->ndims ? (int)(((unsigned)x->lb[0] << 16) | ((unsigned)x->hb[0] & 0xFFFF)) : 0);
+        ins(NULL, "MVC", "%d(4,13),=F'0'", o + 16);
         ins(NULL, "MVC", "%d(4,13),=F'%d'", o + 20, x->size);
     }
     ins(NULL, "LA", "%d,%d(,13)", r, t);

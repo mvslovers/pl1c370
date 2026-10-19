@@ -113,9 +113,10 @@ section 3a, has the list).
       picture as a target, GET DATA of a scalar numeric picture
       (JOB00303); SUBSTR of a numeric picture stays refused, as in
       PL/I (F) (IEM1622I, JOB00354)
-- [ ] GET DATA of arrays of more than one dimension, of arrays of
-      structures and of arrays of pictures (the name table holds one
-      dimension), keyed
+- [x] Tier 126: GET DATA of arrays of more than one dimension, of
+      arrays of structures and of arrays of pictures; a scalar DEFINED
+      on a subscripted base (OPT)
+- [ ] keyed
       record I/O of a VARYING string, PUT DATA beyond 3 dimensions, GET
       DATA of an array of structures, DEFINED with packed bit strings
 

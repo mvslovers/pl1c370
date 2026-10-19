@@ -538,9 +538,12 @@ int pl1_get_float(void *target, int longf)
  * of six words for each name the statement lists (gen.c): A(AL1(n),
  * C'qualified name'), the address of the variable (its first element),
  * kind << 16 | p (kind as the compiler's enum tkind), q << 16 | ndims,
- * lb << 16 | hb, and the bytes from one element to the next; for a
- * numeric picture (kind 9, a scalar) the last two are its length << 24 |
- * A(its characters) and A(PL1PEDT). */
+ * A(a block) or 0, and the bytes of the variable. The block, for an
+ * array or a member of an array of structures (ndims > 0): lb, hb and
+ * the stride of each dimension, outermost first. A numeric picture
+ * (kind 9) has two words more, its length << 24 | A(its characters) and
+ * A(PL1PEDT): in place of the last two words for a scalar, at the head
+ * of the block for an array. */
 static int data_char(struct pfile *f)
 {
     for (;;) {
@@ -602,7 +605,7 @@ int pl1_get_data(const int *table, int n)
     data_mode = 1;
     for (;;) {
         char name[64];
-        int k = 0, sub = 0, hassub = 0, found = -1, fstart;
+        int k = 0, subs[8], ns = 0, hassub = 0, found = -1, fstart;
         const char *frec;
         /* blanks and commas before a name; ';' ends the statement */
         while ((c = data_char(f)) == ' ' || c == ',')
@@ -626,20 +629,29 @@ int pl1_get_data(const int *table, int n)
         while ((c = data_char(f)) == ' ')
             f->rpos++;
         if (c == '(') {
-            int neg = 0;
+            /* the subscripts: optionally signed integers, by commas */
             f->rpos++;
             hassub = 1;
-            while ((c = data_char(f)) == ' ')
-                f->rpos++;
-            if (c == '-') { neg = 1; f->rpos++; }
-            while ((c = data_char(f)) >= '0' && c <= '9') {
-                sub = sub * 10 + (c - '0');
+            for (;;) {
+                int neg = 0, sub = 0;
+                while ((c = data_char(f)) == ' ')
+                    f->rpos++;
+                if (c == '-' || c == '+') { neg = c == '-'; f->rpos++; }
+                while ((c = data_char(f)) >= '0' && c <= '9') {
+                    sub = sub * 10 + (c - '0');
+                    f->rpos++;
+                }
+                if (ns < 8)
+                    subs[ns] = neg ? -sub : sub;
+                ns++;
+                while ((c = data_char(f)) == ' ')
+                    f->rpos++;
+                if (c != ',')
+                    break;
                 f->rpos++;
             }
             while ((c = data_char(f)) == ' ' || c == ')')
                 f->rpos++;
-            if (neg)
-                sub = -sub;
         }
         while ((c = data_char(f)) == ' ')
             f->rpos++;
@@ -674,20 +686,37 @@ int pl1_get_data(const int *table, int n)
             char *addr = (char *)(intptr_t)e[1];
             int kind = (unsigned)e[2] >> 16, p = e[2] & 0xFFFF;
             int q = (short)((unsigned)e[3] >> 16), nd = e[3] & 0xFFFF;
-            int lb = (short)((unsigned)e[4] >> 16), hb = (short)(e[4] & 0xFFFF);
-            if (nd && hassub && sub >= lb && sub <= hb)
-                addr += (sub - lb) * e[5];
+            const int *pw = e + 4;      /* a picture's two words */
+            if (nd) {
+                /* the block: [a picture's two words,] lb, hb, stride for
+                 * each dimension; all subscripts in range, or the first
+                 * element */
+                const int *blk = (const int *)(intptr_t)e[4];
+                const int *dv = blk + (kind == 9 ? 2 : 0);
+                long off = 0;
+                int ok = hassub && ns == nd;
+                pw = blk;
+                for (int i = 0; ok && i < nd; i++) {
+                    if (subs[i] < dv[3 * i] || subs[i] > dv[3 * i + 1])
+                        ok = 0;
+                    else
+                        off += (long)(subs[i] - dv[3 * i]) * dv[3 * i + 2];
+                }
+                if (ok)
+                    addr += off;
+            }
             pl1_icount++;             /* COUNT */
             if (kind == 9) {
                 /* a numeric picture (TY_PIC): the value as FIXED DECIMAL
                  * (15,q), edited by the routine the table names (gen.c) */
                 unsigned char v[8];
                 void (*ed)(const unsigned char *, const char *, int, char *) =
-                    (void (*)(const unsigned char *, const char *, int, char *))(intptr_t)e[5];
+                    (void (*)(const unsigned char *, const char *, int, char *))(intptr_t)pw[1];
                 if (pl1_get_fixdec(v, 15, q))
                     kind = -1;
                 else
-                    ed(v, (const char *)(intptr_t)(e[4] & 0xFFFFFF), (unsigned)e[4] >> 24, addr);
+                    ed(v, (const char *)(intptr_t)(pw[0] & 0xFFFFFF), (unsigned)pw[0] >> 24,
+                       addr);
             }
             if (kind == -1 || (kind != 9 && get_typed(addr, kind, p, q))) {
                 /* the end of the file after name=: ERROR (JOB00207) */
