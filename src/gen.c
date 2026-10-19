@@ -900,8 +900,12 @@ static int const_bin(struct expr *e, int qb, int *v)
         long long n;
         for (const char *d = e->num; *d; d++)
             x = x * 10 + (*d - '0');
-        for (int i = 0; i < e->t.q; i++)
-            x /= 10;
+        if (e->bin)                       /* M*2**-q, or M*2**e10 */
+            for (int i = is_float(e->t) ? -e->e10 : e->t.q; i != 0; i += i > 0 ? -1 : 1)
+                x = i > 0 ? x / 2 : x * 2;
+        else
+            for (int i = 0; i < e->t.q; i++)
+                x /= 10;
         for (int i = 0; i < qb; i++)
             x *= 2;
         n = (long long)x;              /* truncates toward zero */
@@ -1753,6 +1757,29 @@ static void flt_constant(struct expr *e, int longf, unsigned char *b)
     if (e->k == E_NEG) {
         neg = 1;
         e = e->l;
+    }
+    if (e->bin) {
+        /* M*2**k exactly: the fraction of 56 bits, the hexadecimal
+         * exponent c with 1/16 <= value/16**c < 1 */
+        unsigned long long m = strtoull(e->num, NULL, 10), f;
+        int k = is_float(e->t) ? e->e10 : -e->t.q, n = 0, c, sh;
+        if (m == 0)
+            return;
+        while (n < 64 && (m >> n))
+            n++;
+        c = (n + k + 3 + 400) / 4 - 100;      /* ceil((n+k)/4) */
+        sh = k + 56 - 4 * c;
+        f = sh >= 0 ? m << sh : m >> -sh;
+        if (c + 64 < 0 || c + 64 > 127) {
+            error_at(e->line, "this constant is beyond the range of FLOAT");
+            return;
+        }
+        b[0] = (unsigned char)((neg ? 0x80 : 0) | (c + 64));
+        for (int i = 1; i < 8; i++)
+            b[i] = (unsigned char)(f >> (8 * (7 - i)));
+        if (!longf)
+            b[4] = b[5] = b[6] = b[7] = 0;
+        return;
     }
     if (pl1f_constant(e->num, (int)strlen(e->num), is_float(e->t) ? e->e10 : -e->t.q, neg,
                       longf, b) != 0)
@@ -6348,6 +6375,32 @@ static void dc_value(struct type t, struct expr *v)
         struct expr *n = v->k == E_NEG ? v->l : v;
         char digits[40];
         int shift = t.q - n->t.q;
+        if (n->bin && !is_float(n->t)) {
+            /* M*2**-q as decimal digits with q places: M*5**q, exactly */
+            char big[120];
+            int nd;
+            snprintf(big, sizeof big, "%s", n->num);
+            for (int i = 0; i < n->t.q; i++) {
+                int c = 0;
+                nd = (int)strlen(big);
+                for (int j = nd - 1; j >= 0; j--) {
+                    int x = (big[j] - '0') * 5 + c;
+                    big[j] = (char)('0' + x % 10);
+                    c = x / 10;
+                }
+                if (c) {
+                    memmove(big + 1, big, (size_t)nd + 1);
+                    big[0] = (char)('0' + c);
+                }
+            }
+            nd = (int)strlen(big);
+            shift = t.q - n->t.q;
+            if (shift < 0) {
+                big[nd + shift > 0 ? nd + shift : 0] = '\0';
+                shift = 0;
+            }
+            snprintf(digits, sizeof digits, "%s", big + (strlen(big) > 31 ? strlen(big) - 31 : 0));
+        } else
         snprintf(digits, sizeof digits, "%s", n->num);
         if (shift < 0)
             digits[strlen(digits) + (size_t)shift] = '\0';

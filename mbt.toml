@@ -1197,6 +1197,11 @@ sources = ["build/gen/t301rnb.asm"]
 rent    = false
 reus    = false
 
+[module.TT302BIN]
+sources = ["build/gen/t302bin.asm"]
+rent    = false
+reus    = false
+
 [module.TT30ERR]
 sources = ["build/gen/t30err.asm"]
 rent    = false

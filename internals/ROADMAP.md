@@ -1465,6 +1465,19 @@ rules) and `t300rnm` (the default's, a `.opt.pli` with `.sem`)
 identical in JOB00348; the full suite 289 identical and 13 CLOSE
 (JOB00351 to JOB00377).
 
+## Tier 119 -- done 2026-10-19
+
+Binary constants (GC28-8201-4, "Binary Fixed-Point Data", "Binary
+Floating-Point Data"): `1011B` and `101.11B`, FIXED BINARY(p,q) with p
+the digits and q those after the point; `101.1E5B`, FLOAT BINARY(p),
+the exponent a decimal power of 2; imaginary ones, `101BI`, so complex
+binary constants too (Q-6). An E_NUM keeps the mantissa exactly
+(`bin`), and the places that evaluate constants compute from it: the
+value at a binary scale, the floating-point bytes, and a FIXED DECIMAL
+INITIAL. `t302bin` identical (JOB00037, in a new container: the first
+one had gone); the full suite 290 identical and 13 CLOSE (JOB00040
+to JOB00068).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

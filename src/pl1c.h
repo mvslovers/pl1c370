@@ -363,6 +363,9 @@ struct expr {
     int          bare;     /* E_FCALL: written without an argument list */
     int          entryno;  /* E_FCALL: the secondary entry called, 0 the primary */
     int          imag;     /* E_NUM: an imaginary constant, 2I (#2) */
+    int          bin;      /* E_NUM: a binary constant, 101.1B: num the decimal
+                            * digits of its mantissa M, the value M*2**-q
+                            * (FIXED) or M*2**e10 (FLOAT) */
     int          part;     /* E_VAR of a complex variable: 1 its real part, 2 its
                             * imaginary part, 0 the whole (check.c, gen_place) */
     struct sym  *cxt;      /* a complex * / ** (E_BIN): the temporary its run-time
