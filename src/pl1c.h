@@ -82,6 +82,8 @@ void beyond_f(int line, enum level lv, const char *what);
 #define EO_NOWRITE   128
 #define EO_GENKEY    256
 #define EO_TRKOFL    512
+#define EO_SCALARV  1024     /* SCALARVARYING: a VARYING string with its prefix */
+#define EO_OPTFORM  2048     /* the record format the Optimizer's way: FB, RECSIZE ... */
 
 /* ---- types ---------------------------------------------------------- */
 

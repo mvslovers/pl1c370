@@ -1498,6 +1498,19 @@ the standard symbol is no longer recognized unless it is among them;
 strings are not touched. `t304not` (`.opt.pli`) identical in JOB00112; the full suite 292
 identical and 13 CLOSE (JOB00115 to JOB00143).
 
+## Tier 122 -- done 2026-10-19
+
+ENVIRONMENT the way of the Optimizer and PL/I for MVS & VM
+(SC26-3113-01): the record format letters F, FB, FS, FBS, V, VB, VS,
+VBS, U with RECSIZE(n) and BLKSIZE(n), a size not given the DD's;
+SCALARVARYING (a VARYING string written with its prefix, current length
++ 2, and read with it -- without it, as PL/I (F) does, its characters
+only, `t305vrc`); TOTAL, REREAD, ADDBUFF, KEYLENGTH, KEYLOC, BUFND,
+BUFNI, BUFSP accepted without effect; ASCII data sets (D, DB, ASCII,
+BUFOFF) refused. `t305vrc` and `t306env` (`.opt.pli`) identical in
+JOB00148 and JOB00154; the full suite 294 identical and 13 CLOSE
+(JOB00157 to JOB00185).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

@@ -1475,6 +1475,44 @@ static void declare(void)
                             fatal("%s(%d): REGIONAL(%d): 1, 2 or 3", src_name, line, rn);
                         fattr |= FL_REGIONAL | FL_RECORD |
                                  (rn == 2 ? FL_REG2 : rn == 3 ? FL_REG3 : 0);
+                    } else if ((isword("F") || isword("FB") || isword("FS") || isword("FBS") ||
+                                isword("V") || isword("VB") || isword("VS") || isword("VBS") ||
+                                isword("U")) && tk(1)->kind != T_LP) {
+                        /* the record format the Optimizer's and PL/I for
+                         * MVS & VM's way, its sizes in RECSIZE and BLKSIZE
+                         * (SC26-3113-01, "ENVIRONMENT") */
+                        beyond_f(line, L_OPT, "a record format without its sizes");
+                        if (env.recfm[0])
+                            error_at(line, "%s: two record formats", names[0]);
+                        snprintf(env.recfm, sizeof env.recfm, "%s", tk(0)->text);
+                        env.opts |= EO_OPTFORM;
+                        pos++;
+                    } else if (isword("RECSIZE") || isword("BLKSIZE")) {
+                        int b = isword("BLKSIZE");
+                        beyond_f(line, L_OPT, b ? "BLKSIZE" : "RECSIZE");
+                        pos++;
+                        if (b)
+                            env.blk = number_in_parens(NULL);
+                        else
+                            env.rec = number_in_parens(NULL);
+                    } else if (isword("KEYLENGTH") || isword("KEYLOC") || isword("BUFND") ||
+                               isword("BUFNI") || isword("BUFSP")) {
+                        /* the DD's KEYLEN and RKP are used (docs/language-levels.md) */
+                        beyond_f(line, L_OPT, tk(0)->text);
+                        pos++;
+                        (void)number_in_parens(NULL);
+                    } else if (isword("TOTAL") || isword("REREAD") || isword("ADDBUFF")) {
+                        /* no effect here (docs/language-levels.md) */
+                        beyond_f(line, L_OPT, tk(0)->text);
+                        pos++;
+                    } else if (isword("SCALARVARYING")) {
+                        beyond_f(line, L_OPT, "SCALARVARYING");
+                        env.opts |= EO_SCALARV;
+                        pos++;
+                    } else if (isword("D") || isword("DB") || isword("ASCII") ||
+                               isword("BUFOFF")) {
+                        fatal("%s(%d): ENVIRONMENT option %s: ASCII data sets are not supported",
+                              src_name, line, tk(0)->text);
                     } else if (isword("F") || isword("V") || isword("VS") || isword("VBS") ||
                                isword("U")) {
                         /* the record format, with the block size and (not

@@ -96,6 +96,7 @@ against SC26-3114-01.
 
 | Item | Level | Since | Notes |
 |---|---|---|---|
+| ENVIRONMENT: F, FB, FS, FBS, V, VB, VS, VBS, U without sizes, with RECSIZE(n) and BLKSIZE(n); SCALARVARYING; TOTAL, REREAD, ADDBUFF, KEYLENGTH(n), KEYLOC(n), BUFND(n), BUFNI(n), BUFSP(n) | OPT | Tier 122 | SC26-3113-01, "ENVIRONMENT": the record format letters and the two sizes give the DCB, a size not given is the DD's; SCALARVARYING writes a VARYING string with its 2-byte prefix (current length + 2) and reads it with it; the others are accepted without effect (the DD gives KEYLEN and RKP). D, DB, ASCII and BUFOFF (ASCII data sets) are refused |
 | CONNECTED (CONN) | OPT | Tier 103 | taken on a parameter and in a descriptor, no effect: a cross section is passed as a copy anyway |
 | INITIAL CALL p(args) | OPT | Tier 102 | GC33-0009-4 and SC26-3114-01, INITIAL attribute: p called when the variable is allocated -- AUTOMATIC at the block's entry, CONTROLLED at each ALLOCATE; not for STATIC (the rule) nor, here, BASED or factored names. The order among the block's AUTOMATIC initializations is that of the declarations |
 | ENTRY ... VARIABLE, FILE VARIABLE | OPT | Tier 75 | AUTOMATIC scalars; assigned, invoked, used in FILE(...); not compared |
@@ -346,7 +347,9 @@ Each is described in the measurement of its tier
 - **ENVIRONMENT:** the record format options (F, V, U, VS, VBS, CTLASA,
   CTL360) give the DCB; BUFFERS, NCP, INDEXAREA, NOWRITE, GENKEY,
   TRKOFL, LEAVE, REWIND, COBOL and CONSECUTIVE are accepted and have no
-  effect (Tier 95).
+  effect (Tier 95); so are TOTAL, REREAD, ADDBUFF, KEYLENGTH, KEYLOC,
+  BUFND, BUFNI and BUFSP (Tier 122). ASCII data sets (D, DB, ASCII,
+  BUFOFF) are not supported.
 - **TRANSMIT** is raised only by SIGNAL: PL1C/370's I/O does not detect
   transmission errors as such (Tier 68).
 - **ONLOC** in a BEGIN block or on-unit names the procedure the block is

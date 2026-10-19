@@ -57,7 +57,7 @@ PL1C/370, by keyword, made on 2026-10-15.
 | PLICKPT, PLIREST, PLICANC | subroutines | done (Tier 108; a checkpoint taken and a restart not tested) |
 | SAMEKEY | built-in function | VSAM: the next record has the same key |
 | VSAM, KEYLOC, REUSE, BUFND, BUFNI, BUFSP, PASSWORD, SIS, SKIP | ENVIRONMENT options | VSAM data sets (MVS 3.8j has VSAM) |
-| REREAD, LEAVE, SCALARVARYING, BUFOFF, ASCII, ADDBUFF | ENVIRONMENT options | tape and data set handling |
+| REREAD, LEAVE, SCALARVARYING, BUFOFF, ASCII, ADDBUFF | ENVIRONMENT options | done (Tier 122): SCALARVARYING with effect, REREAD, LEAVE, ADDBUFF without; BUFOFF and ASCII (ASCII tapes) refused. Also the record format letters with RECSIZE and BLKSIZE |
 | ASSEMBLER (with RETCODE, INTER) | entry option | done (Tier 89) |
 | COBOL, FORTRAN; NOMAP, NOMAPIN, NOMAPOUT | procedure and entry options | interlanguage calls |
 | PARMSET, COMPILETIME, COUNTER | preprocessor built-in functions | |
