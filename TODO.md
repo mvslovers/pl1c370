@@ -74,7 +74,11 @@ D only after a design note and the maintainer's decision.
   - [ ] #3 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
         done (Tiers 110, 111); tier 2 on needs the maintainer's A, B or
         C
-  - [ ] #4 VSAM
+  - [ ] #4 VSAM: Q1 settled (maintainer, 2026-10-19) -- LIBC/370's
+        `vs*` API is extended for it, mvslovers/libc370#623, #624,
+        #625; the tiers wait for those (the other open questions of
+        `internals/design/vsam.md` come with the tiers; fixture catalogs
+        in a throwaway container)
   - [ ] #5 COBOL and FORTRAN interlanguage calls
   - [ ] #6 FETCH of PL/I procedures, FETCHABLE: waits for the
         maintainer's choice between F-A (an anchor block; each fetched
