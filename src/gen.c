@@ -5607,6 +5607,10 @@ static void gen_stmt1(struct stmt *s)
                   ? (v->nsubs ? x->size : total_size(x)) : type_size(x->t);
         int varying = !x->child && x->t.k == TY_VCHAR && v->nsubs == cum_dims(x);
         int lafter = new_label(), leof = new_label();
+        /* SCALARVARYING: the string with its prefix, as a record of its
+         * current length + 2 out, of its whole storage in (SC26-3113-01) */
+        int scalar = varying && s->file && s->file->k == E_VAR && s->file->sym &&
+                     (s->file->sym->env_opts & EO_SCALARV);
         if (x->root->child && refer_of(x->root))
             error_at(s->line, "INTO or FROM a structure with REFER is not supported yet");
         struct place p;
@@ -5630,7 +5634,20 @@ static void gen_stmt1(struct stmt *s)
         arg_reg(r);
         reg_free(d);
         reg_free(r);
-        arg_const(varying ? x->t.p : len);
+        if (scalar && s->k != S_READ) {
+            int lr = reg_get();
+            struct place q = gen_place(v);
+            ins(NULL, "LH", "%d,%s", lr, p_rx(&q, 0));
+            p_free(&q);
+            ins(NULL, "LA", "%d,2(,%d)", lr, lr);
+            arg_reg(lr);
+            reg_free(lr);
+            varying = 0;
+        } else if (scalar) {
+            arg_const(x->t.p + 2);
+            varying = 0;
+        } else
+            arg_const(varying ? x->t.p : len);
         if (s->e || s->e2) {
             if (varying)
                 fatal("%s(%d): keyed record I/O of a VARYING string is not supported yet",
@@ -6607,7 +6624,27 @@ static void env_dcb(const struct sym *s, int *recfm, int *lrecl, int *blk)
     if (!f[0])
         return;
     *blk = s->env_blk;
-    if (f[0] == 'U') {
+    if (s->env_opts & EO_OPTFORM) {
+        /* FB, FBS, VB ... with RECSIZE and BLKSIZE: the letters say it,
+         * a size not given is the DD's (0) */
+        int b = strchr(f + 1, 'B') != NULL, st = strchr(f + 1, 'S') != NULL;
+        *lrecl = s->env_rec;
+        if (f[0] == 'U') {
+            *recfm = PL1_RECFM_U;
+            if (!*blk)
+                *blk = *lrecl;
+            *lrecl = *blk;
+        } else {
+            *recfm = (f[0] == 'F' ? PL1_RECFM_F : PL1_RECFM_V) | (b ? PL1_RECFM_B : 0) |
+                     (st ? PL1_RECFM_S : 0);
+            if (f[0] == 'F' && !b && !*blk)
+                *blk = *lrecl;
+            if (f[0] == 'F' && !*lrecl)
+                *lrecl = b ? 0 : *blk;
+            if (f[0] == 'V' && !*lrecl && *blk)
+                *lrecl = *blk - 4;
+        }
+    } else if (f[0] == 'U') {
         *recfm = PL1_RECFM_U;
         *lrecl = s->env_blk;
     } else if (f[0] == 'F') {

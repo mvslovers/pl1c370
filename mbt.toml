@@ -1212,6 +1212,16 @@ sources = ["build/gen/t304not.asm"]
 rent    = false
 reus    = false
 
+[module.TT305VRC]
+sources = ["build/gen/t305vrc.asm"]
+rent    = false
+reus    = false
+
+[module.TT306ENV]
+sources = ["build/gen/t306env.asm"]
+rent    = false
+reus    = false
+
 [module.TT30ERR]
 sources = ["build/gen/t30err.asm"]
 rent    = false
