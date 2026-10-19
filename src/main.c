@@ -167,6 +167,17 @@ int main(int argc, char **argv)
         }
         else if (strcmp(argv[i], "-char48") == 0)
             opt_char48 = 1;           /* PL/I (F)'s CHAR48 option */
+        else if (strncmp(argv[i], "-not=", 5) == 0 || strncmp(argv[i], "-or=", 4) == 0) {
+            /* PL/I for MVS & VM's NOT('chars') and OR('chars') */
+            int isnot = argv[i][1] == 'n';
+            const char *v = argv[i] + (isnot ? 5 : 4);
+            extern char opt_not[8], opt_or[8];
+            extern int opt_notor;
+            if (!*v || strlen(v) > 7)
+                fatal("%s takes one to seven characters", isnot ? "-not=" : "-or=");
+            strcpy(isnot ? opt_not : opt_or, v);
+            opt_notor = 1;
+        }
         else if (strcmp(argv[i], "-interrupt") == 0)
             opt_interrupt = 1;        /* the Optimizer's INTERRUPT option */
         else if (argv[i][0] == '-')

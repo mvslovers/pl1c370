@@ -1489,6 +1489,15 @@ shows it (`12.3405.60`); C items edit each part. `t303cpc` identical
 (JOB00077); the full suite 291 identical and 13 CLOSE (JOB00080 to
 JOB00108). With it COMPLEX (#2) is complete.
 
+## Tier 121 -- done 2026-10-19
+
+PL/I for MVS & VM's NOT and OR compiler options (SC26-3113-01): up to
+seven characters each that the lexer takes as the NOT and the OR symbol
+(`||` from two of them), from `*PROCESS`/`%PROCESS` or `-not=`/`-or=`;
+the standard symbol is no longer recognized unless it is among them;
+strings are not touched. `t304not` (`.opt.pli`) identical in JOB00112; the full suite 292
+identical and 13 CLOSE (JOB00115 to JOB00143).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**
