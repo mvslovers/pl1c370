@@ -1866,9 +1866,6 @@ static void declare(void)
                 if (extname && !o_asm)
                     error_at(line, "%s: EXTERNAL('name') is for an OPTIONS(ASSEMBLER) entry",
                              names[i]);
-                if (o_byval && !o_asm)
-                    error_at(line, "%s: OPTIONS(BYVALUE) of an entry is supported with "
-                             "ASSEMBLER only", names[i]);
                 s->asm_opt = o_asm;
                 s->byvalue = o_byval;
                 s->retcode = o_retc;
@@ -4062,9 +4059,11 @@ static struct proc *parse_proc(int from, struct proc *parent)
     p->is_main = main_opt;
     p->noexecops = noexecops;
     p->byvalue = byvalue;
-    if (byvalue && !main_opt)
-        error_at(p->line, "OPTIONS(BYVALUE) is supported for a MAIN procedure only");
-    if (noexecops && !main_opt)
+    if (byvalue && p->parent)
+        /* "BYVALUE ... cannot be specified for internal procedures"
+         * (SC26-3114-01, PROCEDURE statement) */
+        error_at(p->line, "OPTIONS(BYVALUE) is for an external procedure");
+    if (noexecops && !main_opt && !byvalue)
         error_at(p->line, "NOEXECOPS belongs with OPTIONS(MAIN)");
     if (parent && main_opt)
         error_at(p->line, "OPTIONS(MAIN) belongs on the external procedure");

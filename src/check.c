@@ -730,6 +730,24 @@ static void type_fcall(struct expr *e, int as_function)
             e->argt[i] = a->t;
         }
     }
+    if (p->byvalue && !p->is_main) {
+        /* BYVALUE (#6 F1): each argument's value in its word, as a
+         * POINTER or FIXED BINARY(31) of the parameter (design note B1) */
+        for (int i = 0; i < e->nargs && i < np; i++) {
+            struct type pt = pars[i]->t;
+            if (pt.k != TY_PTR && !(pt.k == TY_FIXBIN && pt.p == 31 && pt.q == 0)) {
+                error_at(e->line, "%s: a BYVALUE parameter is a POINTER or FIXED BINARY(31)",
+                         p->name);
+                continue;
+            }
+            type_of(e->arg[i]);
+            if (pt.k == TY_PTR ? e->arg[i]->t.k != TY_PTR : !arith(e->arg[i]->t))
+                error_at(e->line, "argument %d of %s must be a %s", i + 1, p->name,
+                         pt.k == TY_PTR ? "pointer" : "FIXED BINARY value");
+            e->byref[i] = 5;
+            e->argt[i] = pt;
+        }
+    }
     /* an element variable in parentheses, (X): a dummy, not X itself
      * (SC26-3114-01, "Dummy Arguments": "An expression with operators,
      * parentheses, or function references") */
@@ -4087,6 +4105,9 @@ void check_program(struct proc *p)
         }
     for (struct proc *u = p; u; u = u->next_ext)
         star_pass(u);
+    for (struct proc *u = p; u; u = u->next_ext)
+        if (u->byvalue && u->nentries)
+            error_at(u->line, "%s: OPTIONS(BYVALUE) with ENTRY statements", u->name);
     for (struct proc *u = p; u; u = u->next_ext)
         for (int i = 0; u->byvalue && i < u->nparams; i++) {
             /* BYVALUE: "only ... scalar parameters ... either POINTER or

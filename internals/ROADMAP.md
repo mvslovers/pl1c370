@@ -1511,6 +1511,18 @@ BUFOFF) refused. `t305vrc` and `t306env` (`.opt.pli`) identical in
 JOB00148 and JOB00154; the full suite 294 identical and 13 CLOSE
 (JOB00157 to JOB00185).
 
+## Tier 123 -- done 2026-10-19
+
+OPTIONS(BYVALUE) of external PL/I procedures (#6 tier F1, design note
+B1): the caller's ENTRY says OPTIONS(BYVALUE), and the argument words
+of the PL/I list hold the values themselves, POINTER or FIXED
+BINARY(31); the procedure's prologue copies them into cells of its
+frame and makes a list of their addresses, so the rest of the
+procedure is unchanged and the caller's variables keep their values.
+`t307byv` (`.opt.pli` with `.sep`, the `.pli` passing dummies for PL/I
+(F)) identical in JOB00188; the full suite 295 identical and 13 CLOSE
+(JOB00191 to JOB00219).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

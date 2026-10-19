@@ -363,6 +363,7 @@ Both sides are PL1C/370's, so the convention is ours to choose.
   - B2 is the bigger change: the procedure no longer has the PL/I
     header, so internal calls of it need the B2 form too.
 - **Recommendation**: B1 for #6. Mention B2 only as the hook for #10.
+  *Done as B1 in Tier 123 (`t307byv`).*
 - **Rules to check** (SC26-3114-01 p. 103):
   - not on internal procedures or ENTRY statements;
   - scalars POINTER or FIXED BIN(31,0), parameters and RETURNS;

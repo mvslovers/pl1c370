@@ -1222,6 +1222,11 @@ sources = ["build/gen/t306env.asm"]
 rent    = false
 reus    = false
 
+[module.TT307BYV]
+sources = ["build/gen/t307byv_0.asm", "build/gen/t307byv_1.asm", "build/gen/t307byv_2.asm"]
+rent    = false
+reus    = false
+
 [module.TT30ERR]
 sources = ["build/gen/t30err.asm"]
 rent    = false

@@ -525,6 +525,8 @@ struct proc {
     struct pentry *entries;  /* ENTRY statements, entry k at [k-1] */
     int          nentries;
     int          entoff;     /* gen.c: entry number, canonical list */
+    int          byvoff;     /* gen.c: OPTIONS(BYVALUE) of an external procedure:
+                                the list with the cells' addresses, then the cells */
     int          has_ret;
     struct type  ret;
     int          ret_main;   /* check.c: the PROCEDURE statement has RETURNS */
