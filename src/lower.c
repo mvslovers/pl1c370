@@ -2021,9 +2021,13 @@ static void define(struct sym *s)
             b->sub[b->nsubs++] = x;
         }
     } else if (s->ndims == 0) {
-        /* a "deferred feature" of PL/I (F) (IEM0609I, JOB00281) */
-        fatal("%s(%d): %s: a scalar DEFINED on a subscripted base is not supported", src_name,
-              s->line, s->name);
+        /* an element of the base, its subscripts evaluated at each
+         * reference (GC33-0009-4, simple defining: X3 DEF A(L,M,N)); a
+         * "deferred feature" of PL/I (F) (IEM0609I, JOB00281) */
+        beyond_f(s->line, L_OPT, "a scalar DEFINED on a subscripted base");
+        if (b->nsubs != bdims)
+            fatal("%s(%d): %s: the base reference needs %d subscripts", src_name, s->line,
+                  s->name, bdims);
     } else if (b->nsubs != bdims) {
         fatal("%s(%d): %s: the base reference needs %d subscripts", src_name, s->line,
               s->name, bdims);

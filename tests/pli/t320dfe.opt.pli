@@ -1,0 +1,25 @@
+ T320DF: PROC OPTIONS(MAIN);
+   /* A SCALAR DEFINED ON A SUBSCRIPTED BASE: THE ELEMENT THE
+      SUBSCRIPTS NAME WHEN IT IS REFERENCED */
+   DCL A(3,4) FIXED BIN(15) INIT((12)0);
+   DCL (I, J) FIXED BIN(15);
+   DCL X FIXED BIN(15) DEF A(2,3);
+   DCL Y FIXED BIN(15) DEF A(I,J);
+   DCL C(5) CHAR(3) INIT('AAA','BBB','CCC','DDD','EEE');
+   DCL Z CHAR(3) DEF C(I+1);
+   X = 7;
+   PUT SKIP LIST(A(2,3), X);
+   DO I = 1 TO 3;
+     DO J = 1 TO 4;
+       Y = I * 10 + J;
+     END;
+   END;
+   I = 3; J = 2;
+   PUT SKIP LIST(Y, X, A(1,4));
+   DO I = 0 TO 4;
+     PUT SKIP LIST(Z);
+   END;
+   I = 2;
+   Z = 'ZZZ';
+   PUT SKIP LIST(C);
+ END T320DF;
