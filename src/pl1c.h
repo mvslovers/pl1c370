@@ -320,6 +320,9 @@ enum bfn { B_LENGTH, B_SUBSTR, B_INDEX, B_MOD, B_ABS, B_MAX, B_MIN,
            /* COMPLEX (#2); B_CPXSTR, made by check.c, is a complex
             * value as a character string from its two parts */
            B_REAL, B_IMAG, B_CONJG, B_COMPLEX, B_CPXSTR,
+           /* ... B_CXOP a complex * / ** done by the run time, B_CXABS
+            * ABS of a complex value (check.c cx_call, gen.c gen_cxop) */
+           B_CXOP, B_CXABS,
            /* events (#3) */
            B_COMPLETION, B_STATUS };
 
@@ -356,6 +359,9 @@ struct expr {
     int          imag;     /* E_NUM: an imaginary constant, 2I (#2) */
     int          part;     /* E_VAR of a complex variable: 1 its real part, 2 its
                             * imaginary part, 0 the whole (check.c, gen_place) */
+    struct sym  *cxt;      /* a complex * / ** (E_BIN): the temporary its run-time
+                            * call leaves the value in, once made (check.c cx_call);
+                            * B_CXOP: the same, e->l the part read from it */
 };
 
 /* ---- statements ----------------------------------------------------- */

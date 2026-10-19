@@ -62,8 +62,14 @@ D only after a design note and the maintainer's decision.
   - [x] #226 ATTENTION, and INTERRUPT (Tier 106); a real attention
         at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
 - **D -- large projects, design first** (milestone 4)
-  - [ ] #2 COMPLEX: tier C1 done (Tier 109); C2 (`*`, `/`, ABS,
-        integer powers) needs the maintainer's Q-3 and Q-4 first
+  - [ ] #2 COMPLEX: tiers C1 and C2 done (Tiers 109, 114); next C3
+        (the mathematical functions of complex values, general `**`),
+        then C4 and C5. Decided in Tier 114: ABS of COMPLEX FIXED is
+        truncated exactly, where PL/I (F) is sometimes one unit high;
+        MULTIPLY of COMPLEX FIXED BINARY computes the right value
+        where PL/I (F) gives a wrong one (2-14I for (3+4I)*(1-2I));
+        both kept out of the twins (`research/pli/c2-measurement.md`).
+        Left: `rt/pl1cxf.c` links 7.2 KB, PL/I (F)'s modules 1.6 KB
   - [ ] #3 multitasking (TASK, EVENT, WAIT, PRIORITY): tiers 0 and 1
         done (Tiers 110, 111); tier 2 on needs the maintainer's A, B or
         C

@@ -290,6 +290,16 @@ Each is described in the measurement of its tier
   last digit of a result can differ from PL/I (F)'s (Tiers 13 and 14;
   the accuracy of both is measured in Tier 14's note). The errors, the
   messages and the ONCODEs are PL/I (F)'s.
+- **COMPLEX arithmetic** (Tier 114,
+  `internals/research/pli/c2-measurement.md`): ABS of a COMPLEX FIXED
+  value is the square root truncated exactly; PL/I (F)'s is sometimes
+  one unit of the last place high (1414.20 for 1414.1994). MULTIPLY of
+  COMPLEX FIXED BINARY values gives their product; PL/I (F) gives a
+  wrong value (2-14I for (3+4I) and (1-2I), where `*` gives 11-2I). In
+  COMPLEX FLOAT `*`, `/`, ABS and `**`, UNDERFLOW is raised as often as
+  in PL/I (F), but after the routine's other operations: where an
+  OVERFLOW or ZERODIVIDE comes later in the same operation, the
+  on-units run in another order.
 - **A VARYING argument to an external CHAR(\*) parameter** gets its
   current length. PL/I (F) passes the maximum length and reads storage
   beyond the value (Tier 55).
