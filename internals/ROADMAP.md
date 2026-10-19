@@ -1554,6 +1554,17 @@ IEM4136I, JOB00303) and %NOTE. Tests t308mod to t317bit (t312bin,
 t315bdt, t316lst `.opt.pli`), identical in JOB00224, JOB00233,
 JOB00267, JOB00270, JOB00306, JOB00315; the full suite 305 identical and 13 CLOSE (JOB00321 to JOB00349).
 
+## Tier 125 -- done 2026-10-19
+
+Pictures, PL/I (F)'s (Q8PIC, JOB00303): a numeric picture as the control
+variable of a DO (its value read through PICVAL, each new value edited
+in); SUBSTR of a character picture as a target; GET DATA of a numeric
+picture, scalar (the value read as FIXED DECIMAL(15,q) and edited; the
+name table carries the picture and the editing routine, so GET DATA
+alone does not link it). SUBSTR of a numeric picture as a target stays
+refused, as PL/I (F) refuses it (IEM1622I, JOB00354), with its wording
+now. `t318pic` identical in JOB00352.
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

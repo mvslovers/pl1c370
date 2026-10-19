@@ -93,8 +93,10 @@ listing control statements and %NOTE (OPT). What is left, by size:
 
 - **Waiting for a decision:** TASK, PRIORITY (#3); FETCH of PL/I
   procedures, FETCHABLE (#6); COBOL and FORTRAN (#5); VSAM (#4).
-- **Small:** GET DATA of a picture or a BASED variable; a picture as a
-  DO control variable or SUBSTR target; keyed record I/O of a VARYING
+- **Small:** GET DATA of arrays beyond one dimension, of arrays of
+  structures or of pictures (pictures as scalars, a picture as a DO
+  control variable and SUBSTR of a character picture: Tier 125); keyed
+  record I/O of a VARYING
   string; PUT DATA of more than 3 dimensions; GET DATA of an array of
   structures; DEFINED with packed bit strings; a scalar DEFINED on a
   subscripted base; INITIAL CALL for factored names.

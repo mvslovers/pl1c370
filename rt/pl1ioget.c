@@ -538,7 +538,9 @@ int pl1_get_float(void *target, int longf)
  * of six words for each name the statement lists (gen.c): A(AL1(n),
  * C'qualified name'), the address of the variable (its first element),
  * kind << 16 | p (kind as the compiler's enum tkind), q << 16 | ndims,
- * lb << 16 | hb, and the bytes from one element to the next. */
+ * lb << 16 | hb, and the bytes from one element to the next; for a
+ * numeric picture (kind 9, a scalar) the last two are its length << 24 |
+ * A(its characters) and A(PL1PEDT). */
 static int data_char(struct pfile *f)
 {
     for (;;) {
@@ -676,7 +678,18 @@ int pl1_get_data(const int *table, int n)
             if (nd && hassub && sub >= lb && sub <= hb)
                 addr += (sub - lb) * e[5];
             pl1_icount++;             /* COUNT */
-            if (get_typed(addr, kind, p, q)) {
+            if (kind == 9) {
+                /* a numeric picture (TY_PIC): the value as FIXED DECIMAL
+                 * (15,q), edited by the routine the table names (gen.c) */
+                unsigned char v[8];
+                void (*ed)(const unsigned char *, const char *, int, char *) =
+                    (void (*)(const unsigned char *, const char *, int, char *))(intptr_t)e[5];
+                if (pl1_get_fixdec(v, 15, q))
+                    kind = -1;
+                else
+                    ed(v, (const char *)(intptr_t)(e[4] & 0xFFFFFF), (unsigned)e[4] >> 24, addr);
+            }
+            if (kind == -1 || (kind != 9 && get_typed(addr, kind, p, q))) {
                 /* the end of the file after name=: ERROR (JOB00207) */
                 char m[96];
                 snprintf(m, sizeof m, "IHE038I FILE %s - ENDFILE FOUND UNEXPECTEDLY IN MIDDLE "
