@@ -41,7 +41,7 @@ PL1C/370, by keyword, made on 2026-10-15.
 | pointer arithmetic: `P + n`, `P - n`, `P2 - P1`, `<` and `>` on pointers | expressions | done (Tier 88), with LANGLVL(SPROG) |
 | ENTRYADDR | built-in function and pseudovariable | done (Tier 87) |
 | DATETIME | built-in function | done (Tier 86) |
-| NOT, OR | compiler options | the characters for NOT and OR |
+| NOT, OR | compiler options | done (Tier 121) |
 
 ## 2. In the Optimizer, not in PL/I (F) (level OPT, missing)
 

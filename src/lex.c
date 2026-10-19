@@ -123,6 +123,32 @@ static void char48(struct lexer *lx)
     lx->n = n;
 }
 
+/* PL/I for MVS & VM's NOT and OR options (SC26-3113-01, "NOT", "OR"):
+ * the characters that are the NOT and the OR symbol; the standard one is
+ * no longer recognized unless it is among them.  From *PROCESS or
+ * %PROCESS, or -not= and -or=. */
+char opt_not[8] = "^", opt_or[8] = "|";
+int opt_notor;                   /* given: beyond PL/I (F) */
+
+/* NOT('chars') and OR('chars') in a PROCESS record */
+static void process_notor(const char *rec, int len, int line)
+{
+    for (int i = 0; i + 4 < len; i++) {
+        int isnot = strncmp(rec + i, "NOT('", 5) == 0, isor = !isnot && strncmp(rec + i, "OR('", 4) == 0;
+        if ((isnot || isor) && (i == 0 || !isidch((unsigned char)rec[i - 1]))) {
+            char *dst = isnot ? opt_not : opt_or;
+            int j = i + (isnot ? 5 : 4), n = 0;
+            while (j < len && rec[j] != '\'' && n < 7)
+                dst[n++] = rec[j++];
+            dst[n] = '\0';
+            if (!n)
+                error_at(line, "%s needs at least one character", isnot ? "NOT" : "OR");
+            opt_notor = 1;
+            i = j;
+        }
+    }
+}
+
 static void read_stream(struct lexer *lx, const char *path)
 {
     FILE *f = fopen(path, "r");
@@ -146,6 +172,15 @@ static void read_stream(struct lexer *lx, const char *path)
                 memmove(rec + c + 1, rec + c + 2, (size_t)(len - c - 1));
                 len--;
             }
+        {
+            /* *PROCESS (column 1) or %PROCESS: the NOT and OR options */
+            int b = 0;
+            while (b < len && rec[b] == ' ')
+                b++;
+            if (len - b > 8 && (rec[b] == '*' || rec[b] == '%') &&
+                strncmp(rec + b + 1, "PROCESS", 7) == 0)
+                process_notor(rec + b, len - b, line);
+        }
         for (c = 0; c < LASTCOL - FIRSTCOL + 1; c++) {
             int i = FIRSTCOL - 1 + c;
             char ch = i < len ? rec[i] : ' ';
@@ -544,6 +579,15 @@ void lex_file(struct lexer *lx, const char *path)
         {
             char d = lx->s[i + 1];
             int w = 1;
+            if (opt_notor) {
+                /* the NOT and OR symbols of the options: as ^ and |; the
+                 * standard ones, when not among them, not valid */
+                c = strchr(opt_not, c) && c ? '^' : strchr(opt_or, c) && c ? '|' :
+                    (c == '^' || c == '|') ? '\001' : c;
+                d = d && strchr(opt_not, d) ? '^' : d && strchr(opt_or, d) ? '|' : d;
+                if (c != lx->s[i] || (d != lx->s[i + 1] && (c == '|' || c == '^')))
+                    beyond_f(t.line, L_MVS, "the NOT or OR option");
+            }
             switch (c) {
             case '(': t.kind = T_LP; break;
             case ')': t.kind = T_RP; break;
@@ -578,7 +622,8 @@ void lex_file(struct lexer *lx, const char *path)
                 else t.kind = T_NOT;
                 break;
             default:
-                fatal("%s(%d): character '%c' not valid in PL/I source", src_name, t.line, c);
+                fatal("%s(%d): character '%c' not valid in PL/I source", src_name, t.line,
+                      c == '\001' ? lx->s[i] : c);
             }
             push(lx, t);
             i += w;
