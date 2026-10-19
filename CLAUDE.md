@@ -10,17 +10,25 @@ is cobc370 (`~/repos/mvs/cobc370`, a COBOL-74 compiler written in C), whose
 `docs/COBOL74-ROADMAP.md` and `docs/DIFFERENTIAL-TESTING.md` are the templates
 for how this project defines a target level and tests against it.
 
-**Status: Tier 91 done** (2026-10-15), the roadmap as planned complete, the backlog in progress: see `internals/ROADMAP.md`.
+**Status:** the tiers done are in `internals/ROADMAP.md`, what comes next in `TODO.md`.
 
 **The NOT sign in test sources is `¬` (UTF-8).** `submit.py` sends it as
 Latin-1 X'AC', the only form mvsMF delivers to PL/I (F) as NOT; `^` and `~`
 arrive as invalid characters (JOB00070).
 
-Issue and PR numbers: this repository started with a fresh history on
-2026-10-18. The open issues moved here as #1 to #11 (#1 was #179, #2 to
-#7 were #227 to #232, #8 #236, #9 #255, #10 #268, #11 #275); every other
-number in notes written before that date (#177, PR #254, ...) is one of
-the predecessor repository, mvslovers/pl1c370-archive (private).
+Issue and PR numbers before 2026-10-18 belong to the predecessor
+repository, mvslovers/pl1c370-archive (private); the mapping of the moved
+issues is at the top of `TODO.md` and `internals/ROADMAP.md`.
+
+## Read when relevant
+
+| Before you … | read |
+|---|---|
+| pick or finish a tier | `TODO.md`, `internals/ROADMAP.md` |
+| start a block D piece (COMPLEX, tasking, VSAM, ILC, FETCH, ...) | `internals/design/README.md` and its note |
+| look something up in a manual, add a manual | `internals/manuals/README.md`, `internals/research/pli/manuals_inventory.md` |
+| rely on how PL/I (F) V5.5 behaves | `internals/research/pli/v55-measurement.md` |
+| decide on the run-time options without LE | `internals/research/le-light-study.md` |
 
 ## Layout and commands
 
@@ -127,8 +135,9 @@ it, #220). On an older one a record read gets nothing wrong at the link
 and everything wrong at run time.
 
 **mbt's default target is `dev1` = MVSCE-DEV, which is never written to.**
-Always deploy with `MBT_TARGET=m38b` (MVSTK5-BLD); `tests/run_mvs.py` sets
-it. The development library is `PL1C370.DEV.LINKLIB` on TSO001;
+Always deploy with `MBT_TARGET=m38b` (MVSTK5-BLD), or `MBT_TARGET=env`
+for a throwaway container; `tests/run_mvs.py` and `tests/submit.py` take
+`MBT_TARGET` and default to m38b. The development library is `PL1C370.DEV.LINKLIB` on TSO001;
 `tests/run_mvs.py` deletes it and lets `mbt deploy` allocate it anew on
 every run. Not `--reallocate`: it grows the request each time (128, then
 32768 tracks: IEF257I, and the library was already deleted).
@@ -253,11 +262,8 @@ MVS & VM gaps are closed.
 **Working mode** (maintainer, 2026-10-18): everything that needs no
 important decision of the maintainer is worked off without asking;
 small decisions are taken here, and each is written into the tier's PR
-and TODO.md, so that it can be vetoed. In throwaway containers for TK5
-and MVS/CE of this session's own (`mvs-docker`, `mvsce-target`) the
-work on MVS needs no confirmation; the real stands (m38b and the
-others) keep the root CLAUDE.md's rules, and slots there go through
-MBT.
+and TODO.md, so that it can be vetoed. Containers and real stands: the
+root rules; slots on the real stands go through MBT.
 
 The maintainer's copy of the standard is licensed to one user: cite its
 sections, never commit it.
