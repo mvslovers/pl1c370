@@ -289,7 +289,9 @@ Each is described in the measurement of its tier
   the last digit; PL/I (F)'s library is often a few units off, so the
   last digit of a result can differ from PL/I (F)'s (Tiers 13 and 14;
   the accuracy of both is measured in Tier 14's note). The errors, the
-  messages and the ONCODEs are PL/I (F)'s.
+  messages and the ONCODEs are PL/I (F)'s. Those of complex values and
+  `z1 ** z2` (Tier 115) are computed in long precision from them,
+  within a few units of the last digit.
 - **COMPLEX arithmetic** (Tier 114,
   `internals/research/pli/c2-measurement.md`): ABS of a COMPLEX FIXED
   value is the square root truncated exactly; PL/I (F)'s is sometimes

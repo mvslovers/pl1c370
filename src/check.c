@@ -1063,8 +1063,18 @@ static void type_sort(struct expr *e)
 
 static void type_call(struct expr *e)
 {
-    if (e->fn == B_CXOP || e->fn == B_CXABS)
-        return;                           /* typed when made (cx_call, cx_abs) */
+    if (e->fn == B_CXOP || e->fn == B_CXABS || e->fn == B_CXFN)
+        return;                           /* typed when made (cx_call, cx_abs, cx_fn) */
+    if ((e->fn == B_LOG10 || e->fn == B_LOG2 || e->fn == B_ATAND || e->fn == B_SIND ||
+         e->fn == B_COSD || e->fn == B_TAND || e->fn == B_ERF || e->fn == B_ERFC ||
+         e->fn == B_ATAN) && e->nargs >= 1 &&
+        (cx_expr(e->arg[0]) || (e->nargs > 1 && cx_expr(e->arg[1])))) {
+        /* PL/I (F): IEM1056I, IEM1062I for ATAN(y,x) (JOB00148) */
+        error_at(e->line, "this function does not take a complex argument");
+        e->t.k = TY_FLTDEC;
+        e->t.p = 6;
+        return;
+    }
     if (e->fn == B_ABS && e->nargs == 1 && cx_expr(e->arg[0])) {
         cx_abs(e);
         return;
@@ -1483,7 +1493,7 @@ static void type_call(struct expr *e)
         e->t.p = 31;
         return;
     case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-    case B_CXABS:
+    case B_CXABS: case B_CXFN:
         return;                         /* type_cplxfn, type_cpxstr */
     case B_COMPLETION: case B_STATUS:
         /* of an event: its completion, BIT(1); its status, FIXED
@@ -2337,6 +2347,15 @@ static struct type cx_real(struct type t)
     return t;
 }
 
+/* a mathematical function that takes a complex argument (GC28-8201-4,
+ * Figure G-1) */
+static int cx_math(enum bfn f)
+{
+    return f == B_SQRT || f == B_EXP || f == B_LOG || f == B_SIN || f == B_COS ||
+           f == B_SINH || f == B_COSH || f == B_TAN || f == B_TANH || f == B_ATAN ||
+           f == B_ATANH;
+}
+
 static int cx_expr(struct expr *e)
 {
     if (!e)
@@ -2354,6 +2373,8 @@ static int cx_expr(struct expr *e)
     case E_CALL:
         if (e->fn == B_ADD || e->fn == B_MULTIPLY || e->fn == B_DIVIDE)
             return e->nargs >= 2 && (cx_expr(e->arg[0]) || cx_expr(e->arg[1]));
+        if (cx_math(e->fn) && e->nargs == 1)
+            return cx_expr(e->arg[0]);
         return e->fn == B_COMPLEX || (e->fn == B_CONJG && cx_expr(e->arg[0]));
     case E_FCALL:
         return e->callee && e->callee->has_ret && is_cplx(e->callee->ret);
@@ -2411,6 +2432,7 @@ static struct expr *cx_zero(struct type t, int line)
 }
 
 static struct expr *cx_part(struct expr *e, int part);
+static struct expr *cx_fn(struct expr *e, int part);
 
 /* a real operand that can be taken twice, once for each part: a
  * constant, or a variable with constant or plain subscripts */
@@ -2503,17 +2525,31 @@ static struct expr *cx_call(struct expr *e, int part)
     if (e->op == T_POWER) {
         struct expr *y = e->r;
         int con = y->k == E_NUM || (y->k == E_NEG && y->l->k == E_NUM);
-        if (cx_expr(y)) {
-            cx_error(e->line, "a complex exponent is not supported yet%s", "");
-            return iter_num("0", e->line);
+        if (!cx_expr(y)) {
+            y = cx_copy(y);
+            type_of(y);
+            tb = cx_real(y->t);
+            if (!arith(tb)) {
+                cx_error(e->line, "a complex value takes arithmetic operands%s", "");
+                return iter_num("0", e->line);
+            }
         }
-        y = cx_copy(y);
-        type_of(y);
-        tb = cx_real(y->t);
-        if (!arith(tb) || is_float(tb) || tb.q != 0 || (con && y->k == E_NUM && y->e10)) {
-            cx_error(e->line, "a complex value to a power that is not an integer is not "
-                     "supported yet%s", "");
-            return iter_num("0", e->line);
+        if (cx_expr(e->r) || is_float(tb) || tb.q != 0) {
+            /* the general case, z1**z2 = EXP(z2*LOG(z1)) (rt/pl1cxx.c):
+             * a complex exponent, or a real one not an integer */
+            x[2] = cx_part(e->r, 1);
+            x[3] = cx_part(e->r, 2);
+            type_of(x[2]);
+            type_of(x[3]);
+            tb = cx_real(x[2]->t);
+            if (!arith(tb)) {
+                cx_error(e->line, "a complex value takes arithmetic operands%s", "");
+                return iter_num("0", e->line);
+            }
+            t = float_common(float_of(ta), float_of(tb));
+            x[2] = cx_to(x[2], t);
+            x[3] = cx_to(x[3], t);
+            goto made;
         }
         if (!is_float(ta) && con) {
             /* FIXED to a positive integer constant stays FIXED when the
@@ -2590,6 +2626,7 @@ static struct expr *cx_call(struct expr *e, int part)
             x[3] = cx_to(x[3], t);
         }
     }
+made:
     if (is_float(t)) {
         x[0] = cx_to(x[0], t);
         x[1] = cx_to(x[1], t);
@@ -2600,6 +2637,38 @@ static struct expr *cx_call(struct expr *e, int part)
     n->nargs = nx;
     for (int i = 0; i < nx; i++)
         n->arg[i] = x[i];
+    n->t = t;
+    e->cxt = n->cxt = iter_temp(cplx_type(t));
+    n->l = cx_read(n->cxt, part, e->line);
+    return n;
+}
+
+/* SQRT, EXP, LOG, SIN, COS, SINH, COSH, TAN, TANH, ATAN, ATANH of a
+ * complex value: one B_CXFN run-time call (rt/pl1cx.h, C3), as cx_call
+ * does for the operators; FLOAT of the argument's base and precision
+ * (GC28-8201-4, "Mathematical Built-in Functions"). */
+static struct expr *cx_fn(struct expr *e, int part)
+{
+    struct expr *a, *b, *n;
+    struct type t;
+    if (e->cxt)
+        return cx_read(e->cxt, part, e->line);
+    a = cx_part(e->arg[0], 1);
+    b = cx_part(e->arg[0], 2);
+    type_of(a);
+    type_of(b);
+    t = cx_real(a->t);
+    if (!arith(t)) {
+        cx_error(e->line, "this function needs an arithmetic argument%s", "");
+        return iter_num("0", e->line);
+    }
+    t = float_of(t);
+    n = new_node(E_CALL, e->line);
+    n->fn = B_CXFN;
+    n->op = (int)e->fn;
+    n->nargs = 2;
+    n->arg[0] = cx_to(a, t);
+    n->arg[1] = cx_to(b, t);
     n->t = t;
     e->cxt = n->cxt = iter_temp(cplx_type(t));
     n->l = cx_read(n->cxt, part, e->line);
@@ -2694,6 +2763,8 @@ static struct expr *cx_part(struct expr *e, int part)
                          "DIVIDE");
             return cx_to(r, t);
         }
+        if (cx_math(e->fn))
+            return cx_fn(e, part);
         if (e->fn == B_CONJG) {
             if (part == 1)
                 return cx_part(e->arg[0], 1);
@@ -3227,6 +3298,11 @@ static void check_stmts(struct stmt *s)
                     for (int i = 0; i < s->nfmts; i++)
                         if (s->fmts[i].k == F_A || s->fmts[i].k == F_B)
                             error_at(s->line, "GET EDIT needs A(w) and B(w), with a width");
+                if (s->k == S_GET)
+                    for (int i = 0; i < s->nfmts; i++)
+                        if (s->fmts[i].k == F_C)
+                            error_at(s->line, "GET EDIT with a C format item is not supported "
+                                     "yet");
             }
             check_stmts(s->body);
             break;
@@ -3234,9 +3310,22 @@ static void check_stmts(struct stmt *s)
             if (s->get && s->lhs->k == E_VAR && cx_expr(s->lhs))
                 error_at(s->line, "GET into a complex variable is not supported yet");
             if (!s->get && cx_expr(s->e)) {
-                if (s->owner_io && s->owner_io->edit)
-                    error_at(s->line, "PUT EDIT of a complex value is not supported yet");
-                s->e = cx_put(s->e);
+                if (s->owner_io && s->owner_io->edit) {
+                    /* PUT EDIT: the real part, then the imaginary part as an
+                     * item after it, which the run time edits with a C item's
+                     * two items (rt/pl1ioed.c pl1_edit_cpx) */
+                    struct stmt *n = xmalloc(sizeof *n);
+                    struct expr *x = s->e;
+                    *n = *s;
+                    n->nlabels = 0;
+                    n->cxpair = 2;
+                    s->cxpair = 1;
+                    s->e = cx_part(x, 1);
+                    n->e = cx_part(x, 2);
+                    s->next = n;
+                } else {
+                    s->e = cx_put(s->e);
+                }
             }
             if (s->get) {
                 type_of(s->lhs);

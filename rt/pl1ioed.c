@@ -19,8 +19,13 @@
 static void edit_value(const char *text, int tlen, const char *d, int nd, int q, int neg,
                        int numeric);
 
+static int cpair;              /* a complex value's parts (pl1_edit_cpx): 1 the real
+                                  part next, 2 the imaginary part (its item at
+                                  fi), 3 the imaginary part dropped */
+
 void pl1_format_begin(const short *list)
 {
+    cpair = 0;
     pl1x_edit = edit_value;
     fmt = list;
     fi = 0;
@@ -101,7 +106,7 @@ int next_data(int wrap)
         if (mode == M_GETEDIT)
             return fi;                  /* GET EDIT handles control items itself */
         switch (it[0]) {
-        case K_A: case K_AW: case K_F: case K_E: case K_P: case K_B: case K_BW:
+        case K_A: case K_AW: case K_F: case K_E: case K_P: case K_B: case K_BW: case K_C:
             return fi;
         case K_X:
             blanks(it[1]);
@@ -275,17 +280,73 @@ static int str_number(const char *t, int n, char *dg, int *nd, int *q, int *neg)
     return 1;
 }
 
-static void edit_value(const char *text, int tlen, const char *d, int nd, int q, int neg,
-                       int numeric)
-{
-    int k = next_data(1);
-    const short *it;
-    char field[260], sdig[32], bits[64], dg[1100];
+/* A complex value's parts (#2 C4): PL1ECPX says that the next two
+ * values are the real and the imaginary part.  The real part meeting
+ * C(item,item) is edited with the first item, the imaginary part with
+ * the second; meeting another item, the real part is edited with it and
+ * the imaginary part not at all; a real value meeting C is edited with
+ * the first item and 0 with the second (Q10CED, Q10CE2, Q10CE3,
+ * JOB00159). */
 
+void pl1_edit_cpx(void) asm("PL1ECPX");
+void pl1_edit_cpx(void)
+{
+    if (mode == M_PUTEDIT)
+        cpair = 1;
+}
+
+/* The format item for the next value, or -1 for none (an error) or -2
+ * for a dropped imaginary part; *zero: 0 is to be edited with the next
+ * item after it. */
+static int value_item(int *zero)
+{
+    int k;
+    *zero = 0;
+    if (cpair == 2) {
+        cpair = 0;
+        return fi;
+    }
+    if (cpair == 3) {
+        cpair = 0;
+        return -2;
+    }
+    k = next_data(1);
     if (k < 0) {
         fputs("PL1C/370: PUT EDIT format list has no data format item\n", stderr);
         exit(16);
     }
+    if (fmt[3 * k] == K_C) {
+        if (cpair == 1)
+            cpair = 2;
+        else
+            *zero = 1;
+        return k + 1;
+    }
+    if (cpair == 1)
+        cpair = 3;
+    return k;
+}
+
+static void edit_at(int k, const char *text, int tlen, const char *d, int nd, int q, int neg,
+                    int numeric);
+
+static void edit_value(const char *text, int tlen, const char *d, int nd, int q, int neg,
+                       int numeric)
+{
+    int zero, k = value_item(&zero);
+    if (k == -2)
+        return;
+    edit_at(k, text, tlen, d, nd, q, neg, numeric);
+    if (zero)
+        edit_at(fi, "0", 1, "0", 1, 0, 0, 1);
+}
+
+static void edit_at(int k, const char *text, int tlen, const char *d, int nd, int q, int neg,
+                    int numeric)
+{
+    const short *it;
+    char field[260], sdig[32], bits[64], dg[1100];
+
     it = fmt + 3 * k;
     if ((it[0] == K_B || it[0] == K_BW) && numeric) {
         /* the number as a bit string first, as PL/I (F) converts it: the
@@ -452,11 +513,12 @@ static int e_text(char *out, int w, int dd, int sd, const char *dg, int e, int n
     return w;
 }
 
+static void float_at(int k, const unsigned char *v, int longf, int p);
+
 void pl1_list_float(const unsigned char *v, int longf, int p)
 {
     char field[260];
     int k;
-    const short *it;
 
     if (mode != M_PUTEDIT) {
         pl1i_place_num = 1;
@@ -464,12 +526,23 @@ void pl1_list_float(const unsigned char *v, int longf, int p)
         pl1i_place_num = 0;
         return;
     }
-    k = next_data(1);
-    if (k < 0) {
-        fputs("PL1C/370: PUT EDIT format list has no data format item\n", stderr);
-        exit(16);
+    {
+        int zero;
+        k = value_item(&zero);
+        if (k == -2)
+            return;
+        float_at(k, v, longf, p);
+        if (zero) {
+            static const unsigned char z[8];
+            float_at(fi, z, longf, p);
+        }
     }
-    it = fmt + 3 * k;
+}
+
+static void float_at(int k, const unsigned char *v, int longf, int p)
+{
+    char field[260];
+    const short *it = fmt + 3 * k;
     switch (it[0]) {
     case K_E:
         put_text(field, e_field(field, it[1] > 250 ? 250 : it[1], it[2] & 255, it[2] >> 8, v,
@@ -495,8 +568,7 @@ void pl1_list_float(const unsigned char *v, int longf, int p)
     default: {
         /* A: the string a float converts to */
         int n = pl1i_flt_field(field, v, longf, p);
-        fi = k;
-        edit_value(field, n, NULL, 0, 0, 0, 0);
+        edit_at(k, field, n, NULL, 0, 0, 0, 0);
         return;
     }
     }

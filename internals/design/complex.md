@@ -390,7 +390,8 @@ lines already). Open question Q-2.
   precision: that is what reproduces PL/I (F)'s bits and how often it
   raises OVERFLOW, UNDERFLOW and ZERODIVIDE
   (`research/pli/c2-measurement.md`; `rt/pl1cx.h`).
-- **General power and the eleven mathematical functions** (C3): C in
+- **General power and the eleven mathematical functions** (done, Tier
+  115): C in
   the run time, computed in extended precision and rounded once, as
   `rt/pl1m*.c` does for the real functions (maintainer, 2026-10-18:
   no IBM code in the run time). The results are at least as accurate
@@ -548,6 +549,9 @@ Twins: `t268cml` (float * / with both division branches),
 
 ### C3: mathematical functions and general power
 
+*Done (Tier 115, twins `t291cmf` to `t293cxx`;
+`research/pli/c3-measurement.md`).*
+
 Scope: SQRT, EXP, LOG, SIN, COS, SINH, COSH, TAN, TANH, ATAN(z), ATANH
 for complex, `z1**z2`, ONCODE
 1556-1559, the refusals of section 1.3 (ATAND, COSD, ERF, ... of
@@ -565,6 +569,12 @@ Twins: `t272mth` (short), `t273mtl` (long), `t274cxx` (general power
 and its ERROR cases).
 
 ### C4: edit-directed I/O, GET, character to complex
+
+*PUT EDIT with C done (Tier 115, `t294ced`,
+`research/pli/c4-measurement.md`); GET and character to complex
+next (C4b). Q-8 decided: the format kinds stay in `rt/pl1iof.h` and
+`src/pl1c.h`, K_C added at the end of both; the ABI stamp is not
+changed, since no existing format table changes.*
 
 Scope: the C format item for PUT EDIT and GET EDIT; GET LIST and GET
 DATA of complex targets; character to complex conversion with

@@ -321,8 +321,10 @@ enum bfn { B_LENGTH, B_SUBSTR, B_INDEX, B_MOD, B_ABS, B_MAX, B_MIN,
             * value as a character string from its two parts */
            B_REAL, B_IMAG, B_CONJG, B_COMPLEX, B_CPXSTR,
            /* ... B_CXOP a complex * / ** done by the run time, B_CXABS
-            * ABS of a complex value (check.c cx_call, gen.c gen_cxop) */
-           B_CXOP, B_CXABS,
+            * ABS of a complex value, B_CXFN a mathematical function of
+            * a complex value, op the function (check.c cx_call, cx_fn,
+            * gen.c gen_cxop) */
+           B_CXOP, B_CXABS, B_CXFN,
            /* events (#3) */
            B_COMPLETION, B_STATUS };
 
@@ -401,6 +403,7 @@ enum skind { S_NULL, S_ASSIGN, S_IF, S_GROUP, S_WHILE, S_ITER, S_PUT,
 enum fkind { F_END, F_A, F_AW, F_F, F_X, F_COL, F_SKIP, F_PAGE, F_LINE, F_E, F_P, F_B, F_BW,
              F_REP,                  /* (expression) item: w the count, d the items */
              F_TAB,                  /* ANSI's TAB(w): w tab positions on (Tier 72) */
+             F_C,                    /* C(item[,item]): the two data items follow it */
              F_R };                  /* R(label): replaced by its FORMAT (parse.c) */
 struct fmt { enum fkind k; int w, d; const char *pic; /* F_P */
              struct sym *ws, *ds;    /* a width or d given by an expression: the
@@ -480,6 +483,8 @@ struct stmt {
     struct expr *ignore;     /* S_READ: IGNORE(n), records skipped */
     int          copy;       /* S_GET: COPY, the fields to SYSPRINT */
     struct expr *copyfile;   /* ... or to this file: ANSI's COPY(file) */
+    int          cxpair;     /* S_ITEM of PUT EDIT: 1 a complex value's real part,
+                                2 its imaginary part (check.c, rt PL1ECPX) */
 };
 
 #define MAXPARAMS MAXCALLARGS

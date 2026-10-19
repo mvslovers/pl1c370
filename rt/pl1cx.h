@@ -44,4 +44,64 @@ void cxal(const double *a, const double *b, double *r, int m) asm("PL1CXAL");
  * the routine has its result (rt/pl1cxu.c) */
 void cx_ufl(int n, int m) asm("PL1CXUF");
 
+/* ---- the mathematical functions of complex values (C3) ----
+ *
+ * The methods are C28-6590-0's for PL/I (F) ("Functions with Complex
+ * Arguments"), computed in long precision through the run time's own
+ * real functions (rt/pl1m*.c), the short entries rounding the long
+ * result: as accurate as PL/I (F)'s or more, the last digit may
+ * differ, as for the real functions.  An argument that the real
+ * routine PL/I (F) calls would refuse is refused with that routine's
+ * short or long message and ONCODE (cx_sinchk), as PL/I (F) does
+ * (JOB00148, JOB00150). */
+void snls(const double *x, double *r) asm("PL1SNLS");
+void snlc(const double *x, double *r) asm("PL1SNLC");
+void exl(const double *x, double *r) asm("PL1EXL0");
+void lnle(const double *x, double *r) asm("PL1LNLE");
+void shls(const double *x, double *r) asm("PL1SHLS");
+void shlc(const double *x, double *r) asm("PL1SHLC");
+void thl(const double *x, double *r) asm("PL1THL0");
+void tnlr(const double *x, double *r) asm("PL1TNLR");
+void htl(const double *x, double *r) asm("PL1HTL0");
+void atl2(const double *y, const double *x, double *r) asm("PL1ATL2");
+void sql(const double *x, double *r) asm("PL1SQL0");
+
+static inline double cx_sin(double x) { double r; snls(&x, &r); return r; }
+static inline double cx_cos(double x) { double r; snlc(&x, &r); return r; }
+
+/* ABS(x) >= 2**18*pi (short) or 2**50*pi (long): the error of the real
+ * SIN routine (code 0x0103 or 0x010B), or of TAN (0x0104, 0x010C) */
+static inline void cx_sinchk(double x, int lo, int code)
+{
+    /* the limits of rt/pl1msin.c: 823549.66... and 3537118876014220 */
+    static const union { unsigned w[2]; double d; } lim[2] = {
+        {{0x45C90FDA, 0xA22168C2}}, {{0x4DC90FDA, 0xA22168C2}}
+    };
+    if ((x < 0 ? -x : x) >= lim[lo].d)
+        pl1_math_error(lo ? code + 8 : code);
+}
+
+/* EXP(x+yI) into r, of rt/pl1cxe.c, for ** too */
+void cx_exp(double x, double y, double *r, int lo) asm("PL1CXEX");
+/* LOG(x+yI) into r, of rt/pl1cxl.c */
+void cx_log(double x, double y, double *r, int lo) asm("PL1CXLG");
+
+/* the short and the long entry of a function f(x, y, r, lo) */
+#define CX_ENTRIES(fs, fl, sn, ln, f)                                          \
+    void fs(const float *a, const float *b, float *r, int m) asm(sn);          \
+    void fl(const double *a, const double *b, double *r, int m) asm(ln);       \
+    void fs(const float *a, const float *b, float *r, int m)                   \
+    {                                                                          \
+        double o[2];                                                           \
+        (void)m;                                                               \
+        f(*a, *b, o, 0);                                                       \
+        r[0] = (float)o[0];                                                    \
+        r[1] = (float)o[1];                                                    \
+    }                                                                          \
+    void fl(const double *a, const double *b, double *r, int m)                \
+    {                                                                          \
+        (void)m;                                                               \
+        f(*a, *b, r, 1);                                                       \
+    }
+
 #endif

@@ -89,7 +89,8 @@ enum { R_NONE, R_CREATE, R_DIRECT, R_SEQ, R_ICREATE, R_IDIRECT, R_ISEQ,
 
 enum { K_END, K_A, K_AW, K_F, K_X, K_COL, K_SKIP, K_PAGE, K_LINE, K_E, K_P, K_B, K_BW,
        K_REP,     /* (expression) item: its count, then the length of the group */
-       K_TAB };   /* ANSI's TAB(w) (Tier 72) */
+       K_TAB,     /* ANSI's TAB(w) (Tier 72) */
+       K_C };     /* C(item,item): its two data items follow (#2 C4) */
 #define MAXREP 8
 extern short rst[MAXREP][3] asm("PL1XRST");  /* the repetitions running: start,
                                                 end, count left */

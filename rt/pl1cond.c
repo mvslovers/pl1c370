@@ -780,6 +780,10 @@ static const struct { int code; const char *text; int oncode; } math_errors[] = 
     { 0x0113, "IHE209I IHEXXL X=0, Y LE 0 IN X**Y", 1553 },
     { 0x0114, "IHE209I IHEXIW X=0, Y LE 0 IN X**Y", 1554 },    /* complex z**n, JOB00079 */
     { 0x0115, "IHE209I IHEXIZ X=0, Y LE 0 IN X**Y", 1555 },
+    { 0x0118, "IHE210I IHEXXW X=0,Y NOT POSITIVE REAL IN X**Y", 1556 },  /* JOB00148 */
+    { 0x0119, "IHE210I IHEXXZ X=0,Y NOT POSITIVE REAL IN X**Y", 1557 },
+    { 0x0116, "IHE211I IHEATW Z=+I OR -I IN ATAN(Z) OR Z=+1 OR -1 IN ATANH(Z)", 1558 },
+    { 0x0117, "IHE211I IHEATZ Z=+I OR -I IN ATAN(Z) OR Z=+1 OR -1 IN ATANH(Z)", 1559 },
 };
 
 /* A program interruption, from the exit (rt/pl1pie.asm): 12 exponent
