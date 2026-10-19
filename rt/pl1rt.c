@@ -188,12 +188,54 @@ int pl1_compare_char(const char *a, int alen, const char *b, int blen)
 /* PL/I (F) converts a string to a number by its digits, sign and point,
  * truncating to the target's scale; anything else raises CONVERSION
  * (ONCODE 612; IHE604I with no on-unit).  A blank string is zero. */
+int (*pl1x_cxsplit)(const char *, int, int *, int *, int *, int *);
+
+/* A string holding a complex constant, in a program with COMPLEX data:
+ * 1 if s[0..len) is one, its real part in *rs, *rn (rn 0: 0); 0 if it
+ * is no complex constant; otherwise CONVERSION at the character that is
+ * wrong, and -1 to try again after the on-unit, -2 if it is disabled */
+int pl1i_cpx_real(char *s, int len, int code, int *rs, int *rn)
+{
+    int is, in, k;
+    if (!pl1x_cxsplit)
+        return 0;
+    k = pl1x_cxsplit(s, len, rs, rn, &is, &in);
+    if (k < 0)
+        return in ? 1 : 0;
+    {
+        /* only what looks complex: an I at the end, or a central sign */
+        int b = len, c = 0;
+        while (b > 0 && s[b - 1] == ' ')
+            b--;
+        for (int i = 1; i < b; i++)
+            if ((s[i] == '+' || s[i] == '-') && s[i - 1] != 'E' && s[i - 1] != ' ')
+                c = 1;
+        if (!(b > 0 && s[b - 1] == 'I') && !c)
+            return 0;
+    }
+    return pl1i_conversion(code, s, len, k) ? -1 : -2;
+}
+
 void pl1_char_to_dec(char *s, int len, int q, unsigned char *dst)
 {
     char d[40];
     int nd, sq, point, neg, k, zero = 1;
 
 again:
+    {
+        int rs, rn, c = pl1i_cpx_real(s, len, 612, &rs, &rn);
+        if (c == -1)
+            goto again;
+        if (c == 1) {
+            pl1_char_to_dec(rn ? s + rs : (char *)"0", rn ? rn : 1, q, dst);
+            return;
+        }
+        if (c == -2) {
+            memset(dst, 0, 8);
+            dst[7] = 0x0C;
+            return;
+        }
+    }
     nd = sq = point = neg = 0;
     for (int i = 0; i < len; i++) {
         char c = s[i];

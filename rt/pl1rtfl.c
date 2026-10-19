@@ -125,6 +125,17 @@ void pl1_dec_to_float(const unsigned char *packed, int q, int longf, unsigned ch
 
 void pl1_char_to_float(char *s, int len, int longf, unsigned char *dst)
 {
+    int rs, rn, c;
+    while ((c = pl1i_cpx_real(s, len, 612, &rs, &rn)) == -1)
+        ;
+    if (c == 1) {
+        pl1i_parse_float(rn ? s + rs : (char *)"0", rn ? rn : 1, 0, 612, 0, longf, dst);
+        return;
+    }
+    if (c == -2) {
+        memset(dst, 0, longf ? 8 : 4);
+        return;
+    }
     pl1i_parse_float(s, len, 0, 612, 0, longf, dst);
 }
 

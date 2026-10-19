@@ -1063,7 +1063,7 @@ static void type_sort(struct expr *e)
 
 static void type_call(struct expr *e)
 {
-    if (e->fn == B_CXOP || e->fn == B_CXABS || e->fn == B_CXFN)
+    if (e->fn == B_CXOP || e->fn == B_CXABS || e->fn == B_CXFN || e->fn == B_CXCVT)
         return;                           /* typed when made (cx_call, cx_abs, cx_fn) */
     if ((e->fn == B_LOG10 || e->fn == B_LOG2 || e->fn == B_ATAND || e->fn == B_SIND ||
          e->fn == B_COSD || e->fn == B_TAND || e->fn == B_ERF || e->fn == B_ERFC ||
@@ -1493,7 +1493,7 @@ static void type_call(struct expr *e)
         e->t.p = 31;
         return;
     case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-    case B_CXABS: case B_CXFN:
+    case B_CXABS: case B_CXFN: case B_CXCVT:
         return;                         /* type_cplxfn, type_cpxstr */
     case B_COMPLETION: case B_STATUS:
         /* of an event: its completion, BIT(1); its status, FIXED
@@ -2191,7 +2191,7 @@ static void check_data_sym(struct sym *x, int line)
     }
     if (x->ndims > 1 || cum_dims(x) > x->ndims)
         error_at(line, "GET DATA of %s: one dimension at most here", x->name);
-    if (!arith(x->t) && !is_string(x->t) && x->t.k != TY_BIT)
+    if (!arith(x->t) && !is_cplx(x->t) && !is_string(x->t) && x->t.k != TY_BIT)
         error_at(line, "GET DATA of %s is not supported", x->name);
 }
 
@@ -2375,6 +2375,8 @@ static int cx_expr(struct expr *e)
             return e->nargs >= 2 && (cx_expr(e->arg[0]) || cx_expr(e->arg[1]));
         if (cx_math(e->fn) && e->nargs == 1)
             return cx_expr(e->arg[0]);
+        if (e->fn == B_CXCVT)
+            return 1;
         return e->fn == B_COMPLEX || (e->fn == B_CONJG && cx_expr(e->arg[0]));
     case E_FCALL:
         return e->callee && e->callee->has_ret && is_cplx(e->callee->ret);
@@ -2653,6 +2655,18 @@ static struct expr *cx_fn(struct expr *e, int part)
     struct type t;
     if (e->cxt)
         return cx_read(e->cxt, part, e->line);
+    if (e->fn == B_CXCVT) {
+        /* a string: split and converted by the run time into a complex
+         * temporary of the type e->t (rt/pl1cxsp.c) */
+        n = new_node(E_CALL, e->line);
+        n->fn = B_CXCVT;
+        n->nargs = 1;
+        n->arg[0] = e->arg[0];
+        n->t = e->t;
+        e->cxt = n->cxt = iter_temp(cplx_type(e->t));
+        n->l = cx_read(n->cxt, part, e->line);
+        return n;
+    }
     a = cx_part(e->arg[0], 1);
     b = cx_part(e->arg[0], 2);
     type_of(a);
@@ -2763,7 +2777,7 @@ static struct expr *cx_part(struct expr *e, int part)
                          "DIVIDE");
             return cx_to(r, t);
         }
-        if (cx_math(e->fn))
+        if (cx_math(e->fn) || e->fn == B_CXCVT)
             return cx_fn(e, part);
         if (e->fn == B_CONJG) {
             if (part == 1)
@@ -2885,6 +2899,31 @@ static void cx_stmt(struct stmt *s)
         if (cx_expr(src))
             s->e = cx_part(src, 1);
         return;
+    }
+    if (!cx_expr(src) && lhs->k == E_VAR && cx_expr(lhs)) {
+        struct expr *c = cx_copy(src);
+        type_of(c);
+        if (is_string(c->t) && !is_bit(c->t)) {
+            /* a string to a complex target: the run time splits it and
+             * converts the parts, to the target's FLOAT or to FIXED
+             * DECIMAL(15,q) as for a real target (Q12CCV2, JOB00248) */
+            struct type pt = cx_real(part_type(lhs->sym->t)), ct;
+            struct expr *v = new_node(E_CALL, s->line);
+            memset(&ct, 0, sizeof ct);
+            if (is_float(pt)) {
+                ct = pt;
+            } else {
+                ct.k = TY_FIXDEC;
+                ct.p = 15;
+                ct.q = dec_scale(pt);
+            }
+            type_of(src);
+            v->fn = B_CXCVT;
+            v->nargs = 1;
+            v->arg[0] = src;
+            v->t = ct;
+            s->e = src = v;
+        }
     }
     if (lhs->k == E_CALL && lhs->fn == B_COMPLEX) {
         a = lhs->arg[0];
@@ -3298,17 +3337,25 @@ static void check_stmts(struct stmt *s)
                     for (int i = 0; i < s->nfmts; i++)
                         if (s->fmts[i].k == F_A || s->fmts[i].k == F_B)
                             error_at(s->line, "GET EDIT needs A(w) and B(w), with a width");
-                if (s->k == S_GET)
-                    for (int i = 0; i < s->nfmts; i++)
-                        if (s->fmts[i].k == F_C)
-                            error_at(s->line, "GET EDIT with a C format item is not supported "
-                                     "yet");
+
             }
             check_stmts(s->body);
             break;
         case S_ITEM:
-            if (s->get && s->lhs->k == E_VAR && cx_expr(s->lhs))
-                error_at(s->line, "GET into a complex variable is not supported yet");
+            if (s->get && s->lhs->k == E_VAR && cx_expr(s->lhs)) {
+                /* the real part, then the imaginary part as a target after
+                 * it, which the run time reads from one complex constant
+                 * or a C item's two fields (rt/pl1ioget.c pl1_get_cpx) */
+                struct stmt *n = xmalloc(sizeof *n);
+                struct expr *x = s->lhs;
+                *n = *s;
+                n->nlabels = 0;
+                n->cxpair = 2;
+                s->cxpair = 1;
+                s->lhs = cx_part(x, 1);
+                n->lhs = cx_part(x, 2);
+                s->next = n;
+            }
             if (!s->get && cx_expr(s->e)) {
                 if (s->owner_io && s->owner_io->edit) {
                     /* PUT EDIT: the real part, then the imaginary part as an

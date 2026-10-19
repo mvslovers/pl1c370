@@ -139,6 +139,8 @@ static int list_item(char *out, int max, int *quoted, int *bit)
 static const char *last_pic;     /* the picture of the last P field */
 static int last_picn;
 
+static int c_second;             /* a C item's second field is to be read */
+
 static int edit_field(char *out, int max, int *kind, int *dd)
 {
     struct pfile *f = in_file();
@@ -176,6 +178,12 @@ static int edit_field(char *out, int max, int *kind, int *dd)
             fi = k + 1;
             continue;
         case K_PAGE:
+            fi = k + 1;
+            continue;
+        case K_C:
+            /* C(item,item): the first field now, the second after it
+             * (get_num) */
+            c_second = 1;
             fi = k + 1;
             continue;
         default: {
@@ -274,6 +282,94 @@ static int get_item(char *out, int max, int *quoted, int *implied)
     return list_item(out, max, quoted, &bit);
 }
 
+/* A complex target's parts (#2 C4b): PL1GCPX says that the next two
+ * targets are the real and the imaginary part.  GET LIST and GET DATA
+ * read one complex constant for both; GET EDIT two fields of C(item,
+ * item), or one field of another item for the real part and 0 for the
+ * imaginary part.  A real target takes the real part of a complex
+ * constant, and with C reads both fields, the second for nothing
+ * (Q11CGE2, JOB00248). */
+static int gpair;                /* 1 the real part next, 2 the imaginary part */
+static char gim[260];            /* ... its text */
+static int gimn, gimq, gimimp, gimkind;
+
+void pl1_get_cpx(void) asm("PL1GCPX");
+void pl1_get_cpx(void)
+{
+    gpair = 1;
+    c_second = 0;
+}
+
+static int get_num(char *t, int max, int *quoted, int *implied)
+{
+    int n;
+    if (gpair == 2) {
+        gpair = 0;
+        memcpy(t, gim, (size_t)gimn);
+        *quoted = gimq;
+        *implied = gimimp;
+        last_kind = gimkind;
+        return gimn;
+    }
+    n = get_item(t, max, quoted, implied);
+    if (n < 0) {
+        gpair = c_second = 0;
+        return n;
+    }
+    if (mode == M_GETEDIT) {
+        if (c_second) {
+            int q2, i2, k2 = last_kind;
+            c_second = 0;
+            gimn = get_item(gim, sizeof gim, &q2, &i2);
+            if (gimn < 0)
+                gimn = 0;
+            gimq = q2;
+            gimimp = i2;
+            gimkind = last_kind;
+            last_kind = k2;
+            if (gpair == 1)
+                gpair = 2;
+        } else if (gpair == 1) {
+            gim[0] = '0';
+            gimn = 1;
+            gimq = gimimp = gimkind = 0;
+            gpair = 2;
+        }
+        return n;
+    }
+    if (!*quoted && pl1x_cxsplit) {
+        int rs, rn, is, in, k = pl1x_cxsplit(t, n, &rs, &rn, &is, &in);
+        if (gpair == 1) {
+            while (k >= 0) {
+                if (!pl1i_conversion(613, t, n, k)) {
+                    rn = in = 0;
+                    break;
+                }
+                k = pl1x_cxsplit(t, n, &rs, &rn, &is, &in);
+            }
+            if (in) {
+                memcpy(gim, t + is, (size_t)in);
+                gimn = in;
+            } else {
+                gim[0] = '0';
+                gimn = 1;
+            }
+            gimq = gimimp = gimkind = 0;
+            gpair = 2;
+        } else if (k >= 0 || !in) {
+            return n;               /* a real constant, or none: parse_number */
+        }
+        if (rn) {
+            memmove(t, t + rs, (size_t)rn);
+            n = rn;
+        } else {
+            t[0] = '0';
+            n = 1;
+        }
+    }
+    return n;
+}
+
 /* Parse a decimal number: digits, sign, scale.  Returns the digit count. */
 static int parse_number(char *t, int n, char *d, int *q, int *neg, int implied)
 {
@@ -337,7 +433,7 @@ again:
 int pl1_get_fixbin(void *target, int p)
 {
     char t[260], d[40];
-    int quoted, implied, q, neg, n = get_item(t, sizeof t, &quoted, &implied);
+    int quoted, implied, q, neg, n = get_num(t, sizeof t, &quoted, &implied);
     long long v = 0;
     int nd, qb = p >> 8;
 
@@ -380,7 +476,7 @@ int pl1_get_fixbin(void *target, int p)
 int pl1_get_fixdec(void *target, int p, int q)
 {
     char t[260], d[40], dig[40];
-    int quoted, implied, sq, neg, n = get_item(t, sizeof t, &quoted, &implied);
+    int quoted, implied, sq, neg, n = get_num(t, sizeof t, &quoted, &implied);
     int nd, k, nb = p / 2 + 1;
     unsigned char *b = target;
 
@@ -430,7 +526,7 @@ static void check_unquoted(char *t, int n, int quoted)
 int pl1_get_float(void *target, int longf)
 {
     char t[260];
-    int quoted, implied, n = get_item(t, sizeof t, &quoted, &implied);
+    int quoted, implied, n = get_num(t, sizeof t, &quoted, &implied);
     if (n < 0)
         return 1;
     pl1i_parse_float(t, n, implied, last_kind == K_E || last_kind == K_F ? 607 : 613,
@@ -465,6 +561,17 @@ static int get_typed(void *target, int kind, int p, int q)
     case 5: return pl1_get_bit(target, p);
     case 6: return pl1_get_float(target, p > 6);
     case 7: return pl1_get_float(target, p > 21);
+    case 16: case 17: case 18: case 19: {
+        /* COMPLEX FIXED BINARY, FIXED DECIMAL, FLOAT DECIMAL, FLOAT
+         * BINARY (enum tkind): the parts, each as the real kind */
+        int rk = kind == 16 ? 1 : kind == 17 ? 2 : kind == 18 ? 6 : 7;
+        int sz = rk == 1 ? (p <= 15 ? 2 : 4) : rk == 2 ? p / 2 + 1 :
+                 (rk == 6 ? p > 6 : p > 21) ? 8 : 4;
+        pl1_get_cpx();
+        if (get_typed(target, rk, p, q))
+            return 1;
+        return get_typed((char *)target + sz, rk, p, q);
+    }
     default: return 1;
     }
 }

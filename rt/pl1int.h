@@ -21,6 +21,12 @@ int pl1i_flt_field(char *field, const unsigned char *v, int longf, int p);
 /* CONVERSION for the character at src[idx]; returns after a normal return
  * of the on-unit, which has changed the field: convert it again. */
 int pl1i_conversion(int oncode, char *src, int len, int idx);
+/* the complex constant reader (rt/pl1cxsp.c), once a program with
+ * COMPLEX data has called PL1CXON; NULL otherwise, so that a program
+ * without complex values links none of it (rt/pl1rt.c) */
+extern int (*pl1x_cxsplit)(const char *t, int n, int *rs, int *rn, int *is, int *in)
+    asm("PL1XCSP");
+int pl1i_cpx_real(char *s, int len, int code, int *rs, int *rn) asm("PL1CXRL");
 int pl1i_endpage(void *desc);
 void pl1i_filecond(int cond, int oncode, void *desc);
 /* GET DATA: the data field read last, for DATAFIELD */
