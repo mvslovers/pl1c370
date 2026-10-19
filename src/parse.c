@@ -1842,9 +1842,15 @@ static void declare(void)
             s->init = tmpl.init;
             s->inits = tmpl.inits;
             s->ninits = tmpl.ninits;
-            if (tmpl.initcall && nn > 1)
-                error_at(line, "INITIAL CALL for factored names is not supported");
             s->initcall = tmpl.initcall;
+            if (tmpl.initcall && i > 0) {
+                /* factored: a CALL of its own for each name, made at its
+                 * allocation */
+                struct stmt *c = xmalloc(sizeof *c);
+                *c = *tmpl.initcall;
+                c->next = NULL;
+                s->initcall = c;
+            }
             if (level > 1 && depth > 0) {
                 struct sym *p = stack[depth - 1], **c = &p->child;
                 while (*c)

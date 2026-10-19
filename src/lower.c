@@ -1986,6 +1986,27 @@ static void define(struct sym *s)
         fatal("%s(%d): %s: DEFINED on a variable that is not a structure, nor DEFINED "
               "itself, is all that is supported", src_name, s->line, s->name);
     bdims = cum_dims(base);
+    {
+        /* asterisks in the base reference: a cross section, the k-th
+         * asterisk the item's k-th dimension, as kSUB would say it
+         * (GC33-0009-4, simple defining: X2(10,10) DEF A(*,*,5)) */
+        int k = 0;
+        for (int i = 0; i < b->nsubs; i++)
+            if (b->sub[i]->k == E_STAR)
+                k++;
+        if (k) {
+            beyond_f(s->line, L_OPT, "a cross section as the base of DEFINED");
+            if (k != s->ndims)
+                fatal("%s(%d): %s has %d dimensions, its base reference %d asterisks",
+                      src_name, s->line, s->name, s->ndims, k);
+            for (int i = 0, j = 0; i < b->nsubs; i++)
+                if (b->sub[i]->k == E_STAR) {
+                    struct expr *x = mk(E_ISUB, s->line);
+                    x->len = ++j;
+                    b->sub[i] = x;
+                }
+        }
+    }
     if (s->ndims == 0 && bdims == 0 && b->nsubs == 0 &&
         ((s->t.k == TY_CHAR && (base->t.k == TY_CHAR || base->t.k == TY_PIC)) ||
          (s->t.k == TY_BIT && base->t.k == TY_BIT))) {

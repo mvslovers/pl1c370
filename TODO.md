@@ -116,9 +116,13 @@ section 3a, has the list).
 - [x] Tier 126: GET DATA of arrays of more than one dimension, of
       arrays of structures and of arrays of pictures; a scalar DEFINED
       on a subscripted base (OPT)
-- [ ] keyed
-      record I/O of a VARYING string, PUT DATA beyond 3 dimensions, GET
-      DATA of an array of structures, DEFINED with packed bit strings
+- [x] Tier 127: a cross section as the base of DEFINED, INITIAL CALL
+      for factored names (OPT)
+- [ ] keyed record I/O of a VARYING string, PUT DATA beyond 3
+      dimensions, DEFINED with packed bit strings
+- [ ] 12 KB of code per procedure (three base registers): a large main
+      procedure must be split today; lifting it is a design question
+      (base reloads per 4 KB section, or a fourth base register)
 
 ## PL/I in MBT (no milestone)
 
