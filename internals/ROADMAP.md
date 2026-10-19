@@ -1563,7 +1563,7 @@ picture, scalar (the value read as FIXED DECIMAL(15,q) and edited; the
 name table carries the picture and the editing routine, so GET DATA
 alone does not link it). SUBSTR of a numeric picture as a target stays
 refused, as PL/I (F) refuses it (IEM1622I, JOB00354), with its wording
-now. `t318pic` identical in JOB00352.
+now. `t318pic` identical in JOB00352; the full suite 306 identical and 13 CLOSE (JOB00357 to JOB00385).
 
 ## Definition of done
 
