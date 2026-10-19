@@ -546,6 +546,11 @@ Memory -- MVS's first constraint:
    buffers, password, RST, BWD, SKP, SIS, GEN, NSP and LOC, and use it?
    The glue keeps the PL/I semantics in one place and needs no libc370
    release; extending libc370 helps cobc370 and C programs too.
+   *Settled* (maintainer, 2026-10-19): extend LIBC/370's `vs*` API, so
+   that other projects profit too: mvslovers/libc370#623 (open options
+   and the cluster's attributes), #624 (request options per call), #625
+   (return codes and feedback per request). PL1C/370's VSAM waits for
+   them; the assembler glue of section 3.2 is not built.
 2. May a fixture user catalog be defined on m38b, on which volume, and
    who runs the setup (with a DASD checkpoint first)?
 3. REUSE fixtures emptied at each OPEN (cobc370's way), or DELETE/DEFINE
@@ -562,7 +567,7 @@ Memory -- MVS's first constraint:
    (this note's reading), or a shorter string?
 9. The Optimizer's record-format spelling (FB, RECSIZE(n), BLKSIZE(n)):
    part of this issue, or an issue of its own? VSAM needs RECSIZE and
-   KEYLENGTH only for checking.
+   KEYLENGTH only for checking. *Done* in Tier 122 (outside VSAM).
 10. READ SET on VSAM input: point into VSAM's buffer (LOC, valid until the
     next request) or copy into a buffer of ours (one LRECL per file)?
 11. BKWD is not in #4's list but is OPT: include it (V5)?
