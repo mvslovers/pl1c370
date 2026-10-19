@@ -63,9 +63,10 @@ D only after a design note and the maintainer's decision.
         at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
 - **D -- large projects, design first** (milestone 4)
   - [ ] #2 COMPLEX: tiers C1 to C5 done (Tiers 109, 114 to 117) but
-        for PICTURE COMPLEX and complex binary constants, which wait for
-        the maintainer's Q-6 (keep them, or leave them out of the
-        plan). Decided on the way (each in its PR): the format kinds
+        for PICTURE COMPLEX and complex binary constants: both are PL/I
+        for MVS & VM's language, so they stay in the plan (Q-6 settled
+        by the goal of 2026-10-18, maintainer 2026-10-19); binary
+        constants in general come first (lex.c refuses them). Decided on the way (each in its PR): the format kinds
         stay where they are, K_C added, the ABI stamp kept (Q-8); a
         complex constant into a real target gives its real part only in
         a source with COMPLEX data, its imaginary part checked as in
