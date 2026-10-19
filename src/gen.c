@@ -3944,6 +3944,9 @@ static int gen_fcall(struct expr *e)
                 r = reg_get();
                 ins(NULL, "LA", "%d,%d(,13)", r, dsc);
             }
+        } else if (e->byref[i] == 5) {
+            /* BYVALUE (check.c): the value itself in the word */
+            r = e->argt[i].k == TY_PTR ? gen_ptr(a) : gen_int(a);
         } else if (e->byref[i]) {
             struct place pl = gen_place(a);
             r = p_take(&pl);
@@ -3959,7 +3962,7 @@ static int gen_fcall(struct expr *e)
             r = reg_get();
             ins(NULL, "LA", "%d,%d(,13)", r, d);
         }
-        if (e->byref[i] != 2 && e->byref[i] != 3 && a->t.k != TY_FILE &&
+        if (e->byref[i] != 2 && e->byref[i] != 3 && e->byref[i] != 5 && a->t.k != TY_FILE &&
             (ext_string_par(callee_par(e, i)) || ext_string_arg(e, i))) {
             /* the argument or its dummy, in a descriptor (ext_string_par) */
             int dsc = tmp(8, 4), rl = reg_get();
@@ -6356,6 +6359,13 @@ static void layout(struct proc *p)
         ests[i].off = off;
         off += EST_SIZE;
     }
+    if (p->byvalue && !p->is_main) {
+        /* BYVALUE: a list of the static link, the result and the cells'
+         * addresses, then the cells (gen_proc) */
+        off = align(off, 4);
+        p->byvoff = off;
+        off += 4 * (2 + 2 * p->nparams);
+    }
     if (p->nentries) {
         /* secondary entries: the entry number, then the canonical
          * argument list (static link, result, every parameter) */
@@ -6909,6 +6919,19 @@ static void gen_proc(struct proc *p, FILE *f)
         fprintf(f, "         LA    1,%d(,13)\n", cl);
     }
     fprintf(f, "         ST    1,%d(,13)\n", ALIST);
+    if (p->byvalue && !p->is_main) {
+        /* BYVALUE (design note B1): the values out of the caller's list
+         * into cells; the procedure's list addresses the cells */
+        int L = p->byvoff, c = p->byvoff + 4 * (2 + p->nparams);
+        fprintf(f, "         MVC   %d(8,13),0(1)\n", L);
+        for (int i = 0; i < p->nparams; i++) {
+            fprintf(f, "         MVC   %d(4,13),%d(1)\n", c + 4 * i, 8 + 4 * i);
+            fprintf(f, "         LA    0,%d(,13)\n", c + 4 * i);
+            fprintf(f, "         ST    0,%d(,13)\n", L + 8 + 4 * i);
+        }
+        fprintf(f, "         LA    1,%d(,13)\n", L);
+        fprintf(f, "         ST    1,%d(,13)\n", ALIST);
+    }
     if (p->is_main) {
         /* the program interruption exit (rt/pl1pie.asm), and the ESTAE
          * for an abnormal termination by the system (rt/pl1cond.c) */

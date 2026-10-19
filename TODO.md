@@ -76,9 +76,12 @@ D only after a design note and the maintainer's decision.
         C
   - [ ] #4 VSAM
   - [ ] #5 COBOL and FORTRAN interlanguage calls
-  - [ ] #6 FETCH of PL/I procedures, FETCHABLE, BYVALUE of external
-        procedures (a run time shared with the fetched module,
-        `internals/research/le-light-study.md` stage 2)
+  - [ ] #6 FETCH of PL/I procedures, FETCHABLE: waits for the
+        maintainer's choice between F-A (an anchor block; each fetched
+        module carries its own run time, about 100 KB) and F-B (a run-time
+        vector; the FETCHing program links all of pl1rt, about 76 KB),
+        `internals/design/fetch.md` section 7. BYVALUE of external
+        procedures (tier F1, convention B1) done in Tier 123
   - [ ] #7 IRXEXCOM for the book's FCONCAT (to be talked over with
         the maintainer first)
   - [x] #233 PLISRTx (Tier 107) and PLICKPT, PLIREST, PLICANC (Tier
