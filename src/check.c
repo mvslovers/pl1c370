@@ -121,6 +121,7 @@ static void cx_stmt(struct stmt *s);
 static struct expr *cx_put(struct expr *e);
 static void type_cplxfn(struct expr *e);
 static void type_cpxstr(struct expr *e);
+static void cx_abs(struct expr *e);
 
 /* A string where a number is needed: converted, as PL/I (F) does, to
  * FIXED DECIMAL(15,q), truncating (JOB00115: '1.5' * 2 is 2, and '1.236'
@@ -1062,6 +1063,19 @@ static void type_sort(struct expr *e)
 
 static void type_call(struct expr *e)
 {
+    if (e->fn == B_CXOP || e->fn == B_CXABS)
+        return;                           /* typed when made (cx_call, cx_abs) */
+    if (e->fn == B_ABS && e->nargs == 1 && cx_expr(e->arg[0])) {
+        cx_abs(e);
+        return;
+    }
+    if ((e->fn == B_ADD || e->fn == B_MULTIPLY || e->fn == B_DIVIDE) && e->nargs >= 2 &&
+        (cx_expr(e->arg[0]) || cx_expr(e->arg[1]))) {
+        error_at(e->line, "a complex value is not supported here yet");
+        e->t.k = TY_FIXDEC;
+        e->t.p = 1;
+        return;
+    }
     if (e->fn == B_REAL || e->fn == B_IMAG || e->fn == B_CONJG || e->fn == B_COMPLEX) {
         type_cplxfn(e);
         return;
@@ -1468,7 +1482,8 @@ static void type_call(struct expr *e)
         e->t.k = TY_FIXBIN;
         e->t.p = 31;
         return;
-    case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR:
+    case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
+    case B_CXABS:
         return;                         /* type_cplxfn, type_cpxstr */
     case B_COMPLETION: case B_STATUS:
         /* of an event: its completion, BIT(1); its status, FIXED
@@ -2242,7 +2257,15 @@ static void check_keys(struct stmt *s)
 /* A compiler temporary of type t in the current block (TO, BY). */
 static struct sym *iter_temp(struct type t)
 {
-    struct sym *v = new_loop_var(CUR);
+    struct sym *v;
+    if (is_cplx(t)) {
+        /* the two parts, the real one first (cx_call) */
+        v = iter_temp(part_type(t));
+        v->t = t;
+        v->size *= 2;
+        return v;
+    }
+    v = new_loop_var(CUR);
     if (t.k == TY_PIC) {
         t.k = TY_FIXDEC;
         t.pic = NULL;
@@ -2329,6 +2352,8 @@ static int cx_expr(struct expr *e)
     case E_NEG:
         return cx_expr(e->l);
     case E_CALL:
+        if (e->fn == B_ADD || e->fn == B_MULTIPLY || e->fn == B_DIVIDE)
+            return e->nargs >= 2 && (cx_expr(e->arg[0]) || cx_expr(e->arg[1]));
         return e->fn == B_COMPLEX || (e->fn == B_CONJG && cx_expr(e->arg[0]));
     case E_FCALL:
         return e->callee && e->callee->has_ret && is_cplx(e->callee->ret);
@@ -2385,6 +2410,226 @@ static struct expr *cx_zero(struct type t, int line)
     return cast_of(iter_num("0", line), t);
 }
 
+static struct expr *cx_part(struct expr *e, int part);
+
+/* a real operand that can be taken twice, once for each part: a
+ * constant, or a variable with constant or plain subscripts */
+static int cx_simple(const struct expr *e)
+{
+    if (e->k == E_NEG)
+        e = e->l;
+    if (e->k == E_NUM)
+        return 1;
+    if (e->k != E_VAR || e->qual || (e->sym && e->sym->child))
+        return 0;
+    for (int i = 0; i < e->nsubs && i < MAXCALLARGS; i++) {
+        const struct expr *x = e->sub[i];
+        if (x->k == E_NEG)
+            x = x->l;
+        if (x->k != E_NUM && (x->k != E_VAR || x->nsubs || x->qual))
+            return 0;
+    }
+    return 1;
+}
+
+/* is e a complex * / ** that a run-time call computes (cx_call) */
+static int cx_is_call(const struct expr *e)
+{
+    if (e->k != E_BIN || (e->op != T_STAR && e->op != T_SLASH && e->op != T_POWER) ||
+        !cx_expr((struct expr *)e))
+        return 0;
+    if (e->op == T_POWER)
+        return 1;
+    return !((!cx_expr(e->r) && cx_simple(e->r)) ||
+             (e->op == T_STAR && !cx_expr(e->l) && cx_simple(e->l)));
+}
+
+/* x in the type t, a cast only if it changes something */
+static struct expr *cx_to(struct expr *x, struct type t)
+{
+    if (x->t.k == t.k && x->t.p == t.p && x->t.q == t.q)
+        return x;
+    return cast_of(x, t);
+}
+
+/* an error of the complex operations, once a line: each part of a
+ * value, and each copy, would report it again */
+static void cx_error(int line, const char *fmt, const char *arg)
+{
+    static int last;
+    if (line == last)
+        return;
+    last = line;
+    error_at(line, fmt, arg);
+}
+
+/* the part of the complex temporary v, as a variable */
+static struct expr *cx_read(struct sym *v, int part, int line)
+{
+    struct expr *c = new_node(E_VAR, line);
+    c->sym = cx_sym(v, part);
+    c->part = part;
+    c->t = c->sym->t;
+    return c;
+}
+
+/* A complex * / or ** that the run time computes (rt/pl1cx.h,
+ * rt/pl1cxf.c): one B_CXOP call with the operands' parts as arguments,
+ * whose value goes into a complex temporary.  cx_part asks for each
+ * part of e once, the first time the call itself (the part read from
+ * the temporary after it, e->l), the second time only a read: so the
+ * operands are evaluated and the conditions raised once, however the
+ * value is split.  gen.c emits the call where it meets it, and the
+ * part asked for first is generated first, on every path to the other
+ * (cx_stmt's assignments follow each other, cx_compare's & and | and
+ * cx_put's arguments are generated left to right).  ** takes an integer exponent, a constant or a FIXED (p,0)
+ * value, which keeps its REAL mode (GC28-8201-4, "Mode"). */
+static struct expr *cx_call(struct expr *e, int part)
+{
+    struct expr *x[4], *n;
+    struct type ta, tb, t;
+    int nx = 4;
+    if (e->cxt)
+        return cx_read(e->cxt, part, e->line);
+    x[0] = cx_part(e->l, 1);
+    x[1] = cx_part(e->l, 2);
+    type_of(x[0]);
+    type_of(x[1]);
+    ta = cx_real(x[0]->t);
+    if (!arith(ta)) {
+        cx_error(e->line, "a complex value takes arithmetic operands%s", "");
+        return iter_num("0", e->line);
+    }
+    if (e->op == T_POWER) {
+        struct expr *y = e->r;
+        int con = y->k == E_NUM || (y->k == E_NEG && y->l->k == E_NUM);
+        if (cx_expr(y)) {
+            cx_error(e->line, "a complex exponent is not supported yet%s", "");
+            return iter_num("0", e->line);
+        }
+        y = cx_copy(y);
+        type_of(y);
+        tb = cx_real(y->t);
+        if (!arith(tb) || is_float(tb) || tb.q != 0 || (con && y->k == E_NUM && y->e10)) {
+            cx_error(e->line, "a complex value to a power that is not an integer is not "
+                     "supported yet%s", "");
+            return iter_num("0", e->line);
+        }
+        if (!is_float(ta) && con) {
+            /* FIXED to a positive integer constant stays FIXED when the
+             * precision allows (GC28-8201-4, "Exponentiation") */
+            int n = 0, lim = ta.k == TY_FIXBIN ? 31 : 15;
+            const struct expr *c = y->k == E_NEG ? y->l : y;
+            for (const char *d = c->num; *d && n < 100; d++)
+                n = n * 10 + (*d - '0');
+            if (y->k != E_NEG && n > 0 && (ta.p + 1) * n - 1 <= lim) {
+                /* z*z*...*z, the precision (p+1)*n-1 by the rules of
+                 * the products; exact, so the order does not matter.
+                 * The base is shared: a run-time value in it is
+                 * computed once (cx_call), a variable read n times. */
+                struct expr *b = e->l, *m = b;
+                if (n == 1) {
+                    *e = *b;
+                    return cx_part(e, part);
+                }
+                for (int i = 2; i < n; i++) {
+                    struct expr *k = new_node(E_BIN, e->line);
+                    k->op = T_STAR;
+                    k->l = m;
+                    k->r = b;
+                    m = k;
+                }
+                e->op = T_STAR;
+                e->l = m;
+                e->r = b;
+                return cx_part(e, part);
+            }
+        }
+        /* a FIXED base otherwise as FLOAT of its base and precision
+         * (P**7, P**N, P**0 measured, JOB00075, JOB00079) */
+        t = float_of(ta);
+        memset(&tb, 0, sizeof tb);
+        tb.k = TY_FIXBIN;
+        tb.p = 31;
+        x[2] = cx_to(y, tb);
+        nx = 3;
+    } else {
+        x[2] = cx_part(e->r, 1);
+        x[3] = cx_part(e->r, 2);
+        type_of(x[2]);
+        type_of(x[3]);
+        tb = cx_real(x[2]->t);
+        if (!arith(tb)) {
+            cx_error(e->line, "a complex value takes arithmetic operands%s", "");
+            return iter_num("0", e->line);
+        }
+        if (!is_float(ta) && !is_float(tb)) {
+            /* FIXED: the operands in their common base, each with its own
+             * precision and scale; the result's precision by the real
+             * rules on the parts (rt/pl1cxf.c, JOB00077) */
+            int lim;
+            common(&ta, &tb);
+            lim = ta.k == TY_FIXBIN ? 31 : 15;
+            t = ta;
+            if (e->op == T_STAR) {
+                t.p = min(lim, ta.p + tb.p + 1);
+                t.q = ta.q + tb.q;
+            } else {
+                t.p = lim;
+                t.q = lim - ((ta.p - ta.q) + tb.q);
+                if (t.q < 0)
+                    cx_error(e->line, "the quotient would have a negative scale%s", "");
+            }
+            x[0] = cx_to(x[0], ta);
+            x[1] = cx_to(x[1], ta);
+            x[2] = cx_to(x[2], tb);
+            x[3] = cx_to(x[3], tb);
+        } else {
+            t = float_common(ta, tb);
+            x[2] = cx_to(x[2], t);
+            x[3] = cx_to(x[3], t);
+        }
+    }
+    if (is_float(t)) {
+        x[0] = cx_to(x[0], t);
+        x[1] = cx_to(x[1], t);
+    }
+    n = new_node(E_CALL, e->line);
+    n->fn = B_CXOP;
+    n->op = e->op;
+    n->nargs = nx;
+    for (int i = 0; i < nx; i++)
+        n->arg[i] = x[i];
+    n->t = t;
+    e->cxt = n->cxt = iter_temp(cplx_type(t));
+    n->l = cx_read(n->cxt, part, e->line);
+    return n;
+}
+
+/* ABS of a complex value: B_CXABS, a run-time call with its two parts
+ * (rt/pl1cxa.c, rt/pl1cxf.c), real. */
+static void cx_abs(struct expr *e)
+{
+    struct expr *a = cx_part(e->arg[0], 1), *b = cx_part(e->arg[0], 2);
+    struct type t;
+    type_of(a);
+    type_of(b);
+    t = cx_real(a->t);
+    if (!arith(t)) {
+        error_at(e->line, "ABS needs an arithmetic argument");
+        e->t = t;
+        return;
+    }
+    e->fn = B_CXABS;
+    e->nargs = 2;
+    e->arg[0] = cx_to(a, t);
+    e->arg[1] = cx_to(b, t);
+    if (!is_float(t))
+        /* (MIN(N,p+1),q) (GC28-8201-4, ABS); truncated (rt/pl1cxf.c) */
+        t.p = min(t.k == TY_FIXBIN ? 31 : 15, t.p + 1);
+    e->t = t;
+}
+
 /* the part (1 real, 2 imaginary) of e, a real expression not yet typed */
 static struct expr *cx_part(struct expr *e, int part)
 {
@@ -2417,13 +2662,38 @@ static struct expr *cx_part(struct expr *e, int part)
         c->l = cx_part(e->l, part);
         return c;
     case E_BIN:
-        if (e->op != T_PLUS && e->op != T_MINUS) {
-            error_at(e->line, "complex %s is not supported yet", e->op == T_STAR ?
-                     "multiplication" : e->op == T_SLASH ? "division" : "exponentiation");
-            return iter_num("0", e->line);
-        }
-        return iter_bin(e->op, cx_part(e->l, part), cx_part(e->r, part), e->line);
+        if (e->op == T_PLUS || e->op == T_MINUS)
+            return iter_bin(e->op, cx_part(e->l, part), cx_part(e->r, part), e->line);
+        if (e->op != T_POWER && !cx_expr(e->r) && cx_simple(e->r))
+            /* by a real value: each part by it, as PL/I (F) does (two
+             * ZERODIVIDEs for a real 0 divisor, JOB00079) */
+            return iter_bin(e->op, cx_part(e->l, part), cx_copy(e->r), e->line);
+        if (e->op == T_STAR && !cx_expr(e->l) && cx_simple(e->l))
+            return iter_bin(e->op, cx_copy(e->l), cx_part(e->r, part), e->line);
+        return cx_call(e, part);
     case E_CALL:
+        if (e->fn == B_ADD || e->fn == B_MULTIPLY || e->fn == B_DIVIDE) {
+            /* the operation (made once, in e->l), then each part
+             * converted to the precision given, as for real values */
+            struct expr *o = e->l, *r;
+            struct type t;
+            if (!o) {
+                o = new_node(E_BIN, e->line);
+                o->op = e->fn == B_ADD ? T_PLUS : e->fn == B_MULTIPLY ? T_STAR : T_SLASH;
+                o->l = e->arg[0];
+                o->r = e->arg[1];
+                e->l = o;
+            }
+            r = cx_part(o, part);
+            type_of(r);
+            if (!arith(r->t) || !conv_type(e, r->t, B_PRECISION, 2, &t))
+                return r;
+            if (is_float(t) && flt_long(t) != flt_long(r->t))
+                cx_error(e->line, "%s of complex values to another length is not supported "
+                         "yet", e->fn == B_ADD ? "ADD" : e->fn == B_MULTIPLY ? "MULTIPLY" :
+                         "DIVIDE");
+            return cx_to(r, t);
+        }
         if (e->fn == B_CONJG) {
             if (part == 1)
                 return cx_part(e->arg[0], 1);
@@ -2576,7 +2846,7 @@ static void cx_stmt(struct stmt *s)
         }
         return;
     }
-    if (cx_uses(src, a->sym) || cx_uses(src, b->sym)) {
+    if ((cx_uses(src, a->sym) || cx_uses(src, b->sym)) && !cx_is_call(src)) {
         /* the target in its own source, Z = COMPLEX(IMAG(Z), REAL(Z)): the
          * imaginary part into a temporary first */
         struct expr *i = cx_part(src, 2);

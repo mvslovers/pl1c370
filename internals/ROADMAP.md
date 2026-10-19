@@ -1358,6 +1358,41 @@ No arithmetic changed: the 22 tests that use mathematical or complex
 functions print byte for byte what they printed before (a throwaway
 TK5 container, JOB00070 against JOB00073).
 
+## Tier 114 -- done 2026-10-19
+
+COMPLEX, tier C2 (#2, `design/complex.md`): `*`, `/`, ABS and `z**n`
+with an integer exponent for FLOAT and FIXED, and ADD, MULTIPLY and
+DIVIDE of complex values.
+
+- FLOAT: the run time computes them in C in plain short or long
+  arithmetic, in the order C28-6590-0 gives for PL/I (F)'s library,
+  and so gives its bits and raises its conditions as often as it does
+  (OVERFLOW four times for a product, ZERODIVIDE three times for a
+  division by 0+0I): `rt/pl1cxm.c` the multiplication, `rt/pl1cxd.c`
+  the division, `rt/pl1cxa.c` ABS, `rt/pl1cxp.c` the powers, each a
+  member of its own, with `rt/pl1cxu.c` for UNDERFLOW. Linked, from
+  ld370 maps: `*` 920 bytes, `/` 1,340, `**` 3,068 (with `*` and `/`),
+  ABS 5,864 (with SQRT's members).
+- FIXED: exact in a wide integer of 16-bit digits (`rt/pl1cxf.c`,
+  7.2 KB linked, against 1.6 KB of PL/I (F)'s modules: a size step
+  like #12's is left for later); the result precisions are the real
+  rules on the parts; a power that stays FIXED is a chain of
+  multiplications. Checked against exact arithmetic on 24,192 random
+  cases on the host. Two decisions (the PR, TODO.md): ABS is truncated
+  exactly, where PL/I (F) is sometimes one unit high, and MULTIPLY of
+  COMPLEX FIXED BINARY computes the right value, where PL/I (F) gives a
+  wrong one; the twins leave both out.
+- check.c makes one run-time call per operator (`cx_call`), its value
+  in a complex temporary, so an operand is evaluated and a condition
+  raised once however the value is split; a FIXED base to a power is
+  FLOAT where PL/I (F) makes it so; 0**n for n <= 0 is ONCODE 1554 or
+  1555 with PL/I (F)'s message.
+
+The probes (`research/pli/c2-measurement.md`) ran on PL/I (F) in a
+throwaway TK5 container, as did the twins: `t285cml` to `t290cfa` and
+the C1 twins identical in JOB00146 there; the full suite 281
+identical and the 10 mathematical twins CLOSE (JOB00117 to JOB00143).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

@@ -1097,8 +1097,38 @@ sources = ["build/gen/t284evc.asm"]
 rent    = false
 reus    = false
 
+[module.TT285CML]
+sources = ["build/gen/t285cml.asm"]
+rent    = false
+reus    = false
+
+[module.TT286CMX]
+sources = ["build/gen/t286cmx.asm"]
+rent    = false
+reus    = false
+
+[module.TT287CAB]
+sources = ["build/gen/t287cab.asm"]
+rent    = false
+reus    = false
+
+[module.TT288CPW]
+sources = ["build/gen/t288cpw.asm"]
+rent    = false
+reus    = false
+
+[module.TT289CFX]
+sources = ["build/gen/t289cfx.asm"]
+rent    = false
+reus    = false
+
 [module.TT28CONV]
 sources = ["build/gen/t28conv.asm"]
+rent    = false
+reus    = false
+
+[module.TT290CFA]
+sources = ["build/gen/t290cfa.asm"]
 rent    = false
 reus    = false
 

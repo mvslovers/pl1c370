@@ -778,6 +778,8 @@ static const struct { int code; const char *text; int oncode; } math_errors[] = 
     { 0x010F, "IHE208I IHEHTL ABS(X) GT OR = 1 IN ATANH(X)", 1515 },
     { 0x0112, "IHE209I IHEXXS X=0, Y LE 0 IN X**Y", 1552 },
     { 0x0113, "IHE209I IHEXXL X=0, Y LE 0 IN X**Y", 1553 },
+    { 0x0114, "IHE209I IHEXIW X=0, Y LE 0 IN X**Y", 1554 },    /* complex z**n, JOB00079 */
+    { 0x0115, "IHE209I IHEXIZ X=0, Y LE 0 IN X**Y", 1555 },
 };
 
 /* A program interruption, from the exit (rt/pl1pie.asm): 12 exponent

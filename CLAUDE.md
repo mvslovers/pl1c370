@@ -48,6 +48,11 @@ the predecessor repository, mvslovers/pl1c370-archive (private).
   family and `pl1mxf.c` what they share (`pl1mth.h`): computed in an
   extended format with a 64-bit fraction and rounded once, at least as
   accurate as PL/I (F)'s, the last digit may differ (Tier 14's note),
+  `pl1cx.c` COMPLEX values as characters, `pl1cxm.c`, `pl1cxd.c`,
+  `pl1cxa.c`, `pl1cxp.c` the COMPLEX FLOAT `*`, `/`, ABS and `z**n`
+  (`pl1cx.h`): plain short or long arithmetic in PL/I (F)'s order,
+  which gives its bits and its conditions; `pl1cxf.c` COMPLEX FIXED
+  `*`, `/` and ABS, exact in a wide integer,
   `pl1pic.c` PICTURE editing, sterling pictures included (compiled
   into the compiler too, for a picture's attributes), `pl1qsam.asm` QSAM in update mode for UPDATE
   files (LIBC/370 has no record update), `pl1date.c` and `pl1time.asm`

@@ -384,16 +384,20 @@ lines already). Open question Q-2.
 
 ### 3.5 Arithmetic in the run time
 
-- **Float multiply, divide, ABS, integer and general power, and the
-  eleven mathematical functions**: C in the run time, after the
-  methods C28-6590-0 describes (scaled division, max*SQRT(1+r**2) for
-  ABS), computed in extended precision and rounded once, as
+- **Float multiply, divide, ABS and integer power** (done, Tier 114):
+  C in the run time after the methods C28-6590-0 describes, in plain
+  short or long arithmetic in the order it gives, *not* in extended
+  precision: that is what reproduces PL/I (F)'s bits and how often it
+  raises OVERFLOW, UNDERFLOW and ZERODIVIDE
+  (`research/pli/c2-measurement.md`; `rt/pl1cx.h`).
+- **General power and the eleven mathematical functions** (C3): C in
+  the run time, computed in extended precision and rounded once, as
   `rt/pl1m*.c` does for the real functions (maintainer, 2026-10-18:
   no IBM code in the run time). The results are at least as accurate
   as PL/I (F)'s; the last digit can differ from it, and a twin that
   prints it records the difference.
 - **Fixed complex** multiply, divide, ABS, power, ADD, MULTIPLY and
-  DIVIDE: C as well. Multiplication is exact; division and ABS
+  DIVIDE (done, Tier 114): C as well, exact in a wide integer. Multiplication is exact; division and ABS
   truncate as C28-6590-0 p. 19 describes, and the twins show where the
   last digit differs. (Q-3, settled: C.)
 - New error rows in `math_errors` (rt/pl1cond.c:644-661) for 1554-1559.
@@ -510,6 +514,16 @@ complex values, complex to character), and if Q-7 is accepted
 level only); the C2 twins then move up by one.
 
 ### C2: multiply, divide, ABS, integer power, fixed precision
+
+*Done (Tier 114, twins `t285cml` to `t290cfa`).* The split pass did
+not become a pass of its own: check.c's `cx_part` makes one B_CXOP
+run-time call per operator, whose value goes into a complex
+temporary; the part asked for first carries the call, the other is
+read from the temporary (`cx_call`). A real operand that can be taken
+twice multiplies or divides each part in line, as PL/I (F) does (two
+ZERODIVIDEs for a real 0 divisor). FIXED is exact in the run time
+(`rt/pl1cxf.c`); a FIXED power that stays FIXED is a chain of
+multiplications.
 
 Scope: `*`, `/`, ABS for FLOAT and FIXED (Q-4), `z**n`, ADD, MULTIPLY,
 DIVIDE with complex arguments, ZERODIVIDE, OVERFLOW, UNDERFLOW,

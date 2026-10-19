@@ -743,6 +743,90 @@ static void check_fofl(void)
     ins(NULL, "BAL", "14,@O%d", CURP->id);
 }
 
+static int gen_flt(struct expr *e, struct type t);
+static struct place gen_place(struct expr *e);
+
+/* A complex * / ** of the run time (check.c cx_call, rt/pl1cx.h): the
+ * operands' parts into temporaries, then the call with their addresses
+ * (for ** the integer exponent's value), the address of the complex
+ * temporary e->cxt for the result and whether UNDERFLOW is enabled.
+ * The caller then reads the part e->l from the temporary. */
+/* The address of a FLOAT operand of a run-time call in a register: a
+ * variable of the call's length where it is, any other value in a
+ * temporary. */
+static int flt_arg_addr(struct expr *x, struct type t)
+{
+    int r;
+    if (x->k == E_VAR && x->sym && is_float(x->t) && flt_long(x->t) == flt_long(t)) {
+        struct place p = gen_place(x);
+        r = p_take(&p);
+        ins(NULL, "LA", "%d,%s", r, p_rx(&p, 0));
+        p_free_except(&p, r);
+    } else {
+        int o = gen_flt(x, t);
+        r = reg_get();
+        ins(NULL, "LA", "%d,%d(,13)", r, o);
+    }
+    return r;
+}
+
+static int gen_dec(struct expr *e);
+static int gen_bin(struct expr *e);
+
+/* the conditions a FIXED complex routine raises, and the scales and
+ * precision it works with (rt/pl1cxf.c) */
+static int cx_fixed_desc(int q1, int q2, struct type t)
+{
+    return (q1 & 255) | (q2 & 255) << 8 | (t.q & 255) << 16 | t.p << 24 |
+           (cur_mask & EN_FOFL ? 1 << 29 : 0) | (cur_mask & EN_ZDIV ? 1 << 30 : 0);
+}
+
+/* a FIXED part for a complex routine: DECIMAL the address of its
+ * 8-byte packed value, BINARY the value */
+static int fix_arg(struct expr *x)
+{
+    int r;
+    if (x->t.k == TY_FIXBIN)
+        return gen_bin(x);
+    r = reg_get();
+    ins(NULL, "LA", "%d,%d(,13)", r, gen_dec(x));
+    return r;
+}
+
+static void gen_cxop(struct expr *e)
+{
+    int a[4], n = e->nargs, r;
+    int lo = flt_long(e->t), fx = !is_float(e->t);
+    struct expr v;
+    struct place p;
+    for (int i = 0; i < n; i++)
+        a[i] = fx ? fix_arg(e->arg[i]) : e->op == T_POWER && i == 2 ? gen_int(e->arg[i]) :
+               flt_arg_addr(e->arg[i], e->t);
+    for (int i = 0; i < n; i++) {
+        arg_reg(a[i]);
+        reg_free(a[i]);
+    }
+    memset(&v, 0, sizeof v);
+    v.k = E_VAR;
+    v.sym = e->cxt;
+    v.t = e->cxt->t;
+    p = gen_place(&v);
+    r = p_take(&p);
+    ins(NULL, "LA", "%d,%s", r, p_rx(&p, 0));
+    p_free_except(&p, r);
+    arg_reg(r);
+    reg_free(r);
+    if (fx) {
+        int dec = e->t.k == TY_FIXDEC;
+        arg_const(cx_fixed_desc(e->arg[0]->t.q, e->arg[2]->t.q, e->t));
+        call(e->op == T_STAR ? (dec ? "PL1CXMD" : "PL1CXMB") : (dec ? "PL1CXDD" : "PL1CXDB"));
+        return;
+    }
+    arg_const(cur_mask & EN_UFL ? 1 : 0);
+    call(e->op == T_STAR ? (lo ? "PL1CXML" : "PL1CXMS") :
+         e->op == T_SLASH ? (lo ? "PL1CXDL" : "PL1CXDS") : (lo ? "PL1CXPL" : "PL1CXPS"));
+}
+
 /* ---- constants ------------------------------------------------------ */
 
 /* Value of an arithmetic constant (or its negation) as a scaled binary
@@ -838,6 +922,27 @@ static int gen_bin(struct expr *e)
 static int gen_bin_at(struct expr *e, int qs)
 {
     int r, v;
+
+    if (e->k == E_CALL && e->fn == B_CXOP) {
+        gen_cxop(e);
+        e = e->l;
+    }
+    if (e->k == E_CALL && e->fn == B_CXABS && e->t.k == TY_FIXBIN) {
+        /* ABS of COMPLEX FIXED BINARY: the parts' values, A(result) */
+        int a = gen_bin(e->arg[0]), b = gen_bin(e->arg[1]), t = tmp(4, 4);
+        arg_reg(a);
+        arg_reg(b);
+        reg_free(a);
+        reg_free(b);
+        r = reg_get();
+        ins(NULL, "LA", "%d,%d(,13)", r, t);
+        arg_reg(r);
+        arg_const(cx_fixed_desc(e->arg[0]->t.q, 0, e->t));
+        call("PL1CXAB");
+        ins(NULL, "L", "%d,%d(,13)", r, t);
+        bin_rescale(r, e->t.q, qs);
+        return r;
+    }
 
     if (is_bit(e->t)) {
         /* a bit string's value (JOB00336) */
@@ -1239,7 +1344,8 @@ static int gen_bin_at(struct expr *e, int qs)
         case B_PLISRTA: case B_PLISRTB: case B_PLISRTC: case B_PLISRTD:
         case B_PLICKPT: case B_PLIREST: case B_PLICANC:
         case B_COMPLETION:
-        case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR:
+        case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
+        case B_CXABS:
             break;
         }
         break;
@@ -1289,6 +1395,27 @@ static void pic_literal(int r, const char *pic)
 static int gen_dec(struct expr *e)
 {
     int t;
+
+    if (e->k == E_CALL && e->fn == B_CXOP) {
+        gen_cxop(e);
+        e = e->l;
+    }
+    if (e->k == E_CALL && e->fn == B_CXABS && e->t.k == TY_FIXDEC) {
+        /* ABS of COMPLEX FIXED DECIMAL: A(parts), A(result) */
+        int a = fix_arg(e->arg[0]), b = fix_arg(e->arg[1]), r;
+        arg_reg(a);
+        arg_reg(b);
+        reg_free(a);
+        reg_free(b);
+        t = tmp(8, 1);
+        r = reg_get();
+        ins(NULL, "LA", "%d,%d(,13)", r, t);
+        arg_reg(r);
+        reg_free(r);
+        arg_const(cx_fixed_desc(e->arg[0]->t.q, 0, e->t));
+        call("PL1CXAD");
+        return t;
+    }
 
     if (is_float(e->t))
         return flt_to_dec(gen_flt(e, e->t), flt_long(e->t), 0);
@@ -1651,6 +1778,11 @@ static int gen_flt(struct expr *e, struct type tt)
 {
     int L = flt_long(tt), t;
 
+    if (e->k == E_CALL && e->fn == B_CXOP) {
+        gen_cxop(e);
+        e = e->l;
+    }
+
     if (e->k == E_NUM || (e->k == E_NEG && e->l->k == E_NUM)) {
         unsigned char b[8];
         flt_constant(e, L, b);
@@ -1796,6 +1928,24 @@ static int gen_flt(struct expr *e, struct type tt)
             flt_length(t, lo, L);
             return t;
         }
+        case B_CXABS: {
+            /* ABS of a complex value: A(real part), A(imaginary part),
+             * A(result), UNDERFLOW enabled (rt/pl1cxa.c) */
+            int a0 = flt_arg_addr(e->arg[0], e->t), a1 = flt_arg_addr(e->arg[1], e->t), r;
+            arg_reg(a0);
+            arg_reg(a1);
+            reg_free(a0);
+            reg_free(a1);
+            t = tmp(8, 8);
+            r = reg_get();
+            ins(NULL, "LA", "%d,%d(,13)", r, t);
+            arg_reg(r);
+            reg_free(r);
+            arg_const(cur_mask & EN_UFL ? 1 : 0);
+            call(lo ? "PL1CXAL" : "PL1CXAS");
+            flt_length(t, lo, L);
+            return t;
+        }
         case B_FLOOR:
         case B_CEIL:
         case B_TRUNC: {
@@ -1849,6 +1999,10 @@ static int gen_flt(struct expr *e, struct type tt)
  * strings live in temporaries of the frame. */
 static void gen_string(struct expr *e, int *ra, int *rl)
 {
+    if (e->k == E_CALL && e->fn == B_CXOP) {
+        gen_cxop(e);
+        e = e->l;
+    }
     if (is_bit(e->t)) {
         /* a bit string as characters '1' and '0' (JOB00336) */
         int a, l, t = tmp(e->t.p ? e->t.p : 1, 1);
@@ -2952,6 +3106,10 @@ static void gen_sort(struct expr *e)
 
 static void gen_store(struct target *tg, struct type tt, struct expr *e)
 {
+    if (e && e->k == E_CALL && e->fn == B_CXOP) {
+        gen_cxop(e);
+        e = e->l;
+    }
     if (tt.k == TY_EVENT) {
         /* an event from an event: its completion and status (t228 Q1EVT) */
         struct place q = gen_place(e), p;
