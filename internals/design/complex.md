@@ -599,8 +599,8 @@ Twins: `t275ped` (PUT EDIT C), `t276get` (GET LIST/EDIT/DATA, with a
 
 ### C5: the rest
 
-*Done but for PICTURE COMPLEX and complex binary constants (Q-6, the
-maintainer's): Tier 117, `t297cbf`, `t298car`,
+*Done but for PICTURE COMPLEX and complex binary constants (in the
+plan, Q-6 settled; binary constants in general first): Tier 117, `t297cbf`, `t298car`,
 `research/pli/c5-measurement.md`.*
 
 Scope, each item only if the maintainer keeps it: PICTURE COMPLEX
@@ -694,7 +694,10 @@ character conversion in C (estimate). The frame grows by the
 - **Q-5** Constant folding of `real ± imaginary` constants: only if
   PL/I (F) is shown to fold (Q2CLIST)?
 - **Q-6** PICTURE COMPLEX and complex binary constants: in C5, or out
-  of the plan?
+  of the plan? *Settled* (maintainer, 2026-10-19): both are PL/I for
+  MVS & VM's language (SC26-3114-01, "COMPLEX" with PICTURE, binary
+  constants), so the goal of 2026-10-18 keeps them; binary constants
+  in general first.
 - **Q-7** REAL/IMAG/CONJG of a real argument by default (GC33-0009-4
   allows, F refuses or warns): accept as an OPT deviation, as proposed?
   *Settled by the probe:* PL/I (F) takes them as functions without a
