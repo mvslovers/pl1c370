@@ -325,8 +325,10 @@ enum bfn { B_LENGTH, B_SUBSTR, B_INDEX, B_MOD, B_ABS, B_MAX, B_MIN,
             * a complex value, op the function (check.c cx_call, cx_fn,
             * gen.c gen_cxop) */
            B_CXOP, B_CXABS, B_CXFN,
-           /* ... B_CXCVT a string as a complex value (cx_stmt, rt PL1CXCV) */
-           B_CXCVT,
+           /* ... B_CXCVT a string as a complex value (cx_stmt, rt PL1CXCV);
+            * B_CXPAIR a complex value as its two parts, stored into a dummy
+            * or a result (cx_pair); B_CXFC a function's complex value */
+           B_CXCVT, B_CXPAIR, B_CXFC,
            /* events (#3) */
            B_COMPLETION, B_STATUS };
 

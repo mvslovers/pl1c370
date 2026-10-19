@@ -1437,6 +1437,23 @@ so a program without complex values links none of it (1.2 KB).
 `t296ccv` identical in JOB00263; the full suite 284 identical and 13
 CLOSE (JOB00266 to JOB00292).
 
+## Tier 117 -- done 2026-10-19
+
+COMPLEX, tier C5 without PICTURE COMPLEX and complex binary constants
+(#2, `design/complex.md`, `research/pli/c5-measurement.md`): COMPLEX
+in descriptors and RETURNS; a complex argument by reference where it
+is a variable of the parameter's type, through a dummy otherwise
+(check.c `cx_args`, `cx_pair`; a real argument for a complex parameter,
+a complex one for a real parameter its real part); RETURN of complex
+values, and a function's complex value read once into a temporary
+(B_CXFC); ROUND, PRECISION, FIXED, FLOAT, BINARY and DECIMAL of complex
+values part by part; SUM, PROD and POLY of complex arrays (complex
+FLOAT). Two gaps found on the way and closed: ROUND of a FLOAT value
+(the rightmost bit of the fraction set to 1, as the manuals say) and
+array descriptors `(*)` in `DECLARE ... ENTRY(...)` (as GENERIC had
+them). `t297cbf` and `t298car` identical in JOB00332; the full suite
+before those two 286 identical and 13 CLOSE (JOB00303 to JOB00329).
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

@@ -802,6 +802,19 @@ static void gen_cxop(struct expr *e)
     int lo = flt_long(e->t), fx = !is_float(e->t);
     struct expr v;
     struct place p;
+    if (e->fn == B_CXFC) {
+        /* a function's complex value, from its result area into the
+         * temporary the parts are read from (check.c cx_part) */
+        int res = gen_fcall(e->arg[0]), n2 = type_size(e->cxt->t);
+        memset(&v, 0, sizeof v);
+        v.k = E_VAR;
+        v.sym = e->cxt;
+        v.t = e->cxt->t;
+        p = gen_place(&v);
+        ins(NULL, "MVC", "%s,%d(13)", p_ss(&p, 0, n2), res);
+        p_free(&p);
+        return;
+    }
     if (e->fn == B_CXCVT) {
         /* a string to the complex temporary (rt/pl1cxsp.c): A(string),
          * its length, A(temporary), FLOAT 256 (+1 long) or the scale */
@@ -968,7 +981,7 @@ static int gen_bin_at(struct expr *e, int qs)
 {
     int r, v;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT || e->fn == B_CXFC)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1390,7 +1403,7 @@ static int gen_bin_at(struct expr *e, int qs)
         case B_PLICKPT: case B_PLIREST: case B_PLICANC:
         case B_COMPLETION:
         case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-        case B_CXABS: case B_CXFN: case B_CXCVT:
+        case B_CXABS: case B_CXFN: case B_CXCVT: case B_CXPAIR: case B_CXFC:
             break;
         }
         break;
@@ -1441,7 +1454,7 @@ static int gen_dec(struct expr *e)
 {
     int t;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT || e->fn == B_CXFC)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1823,7 +1836,7 @@ static int gen_flt(struct expr *e, struct type tt)
 {
     int L = flt_long(tt), t;
 
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT || e->fn == B_CXFC)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -1991,6 +2004,12 @@ static int gen_flt(struct expr *e, struct type tt)
             flt_length(t, lo, L);
             return t;
         }
+        case B_ROUND:
+            /* the rightmost bit of the fraction set to 1 (check.c) */
+            t = gen_flt(e->arg[0], e->t);
+            ins(NULL, "OI", "%d(13),X'01'", t + (lo ? 7 : 3));
+            flt_length(t, lo, L);
+            return t;
         case B_FLOOR:
         case B_CEIL:
         case B_TRUNC: {
@@ -2044,7 +2063,7 @@ static int gen_flt(struct expr *e, struct type tt)
  * strings live in temporaries of the frame. */
 static void gen_string(struct expr *e, int *ra, int *rl)
 {
-    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
+    if (e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT || e->fn == B_CXFC)) {
         gen_cxop(e);
         e = e->l;
     }
@@ -2959,7 +2978,7 @@ static struct place target_place(struct target *t)
         p.off = t->off;
     } else {
         p.base = reg_get();
-        p.off = 0;
+        p.off = t->off;
         ins(NULL, "L", "%d,%d(,13)", p.base, ALIST);
         ins(NULL, "L", "%d,4(,%d)", p.base, p.base);
     }
@@ -3151,7 +3170,17 @@ static void gen_sort(struct expr *e)
 
 static void gen_store(struct target *tg, struct type tt, struct expr *e)
 {
-    if (e && e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT)) {
+    if (e && e->k == E_CALL && e->fn == B_CXPAIR && tg->k != TG_REF) {
+        /* a complex dummy or result: the real part, then the imaginary
+         * part after it (check.c cx_pair) */
+        struct target t2 = *tg;
+        struct type pt = part_type(tt);
+        gen_store(tg, pt, e->arg[0]);
+        t2.off += type_size(pt);
+        gen_store(&t2, pt, e->arg[1]);
+        return;
+    }
+    if (e && e->k == E_CALL && (e->fn == B_CXOP || e->fn == B_CXFN || e->fn == B_CXCVT || e->fn == B_CXFC)) {
         gen_cxop(e);
         e = e->l;
     }

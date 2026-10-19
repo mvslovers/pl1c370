@@ -371,6 +371,70 @@ static int whole_structure(struct expr *a, struct expr *e, int i)
     return 1;
 }
 
+static struct expr *cx_part(struct expr *e, int part);
+static struct expr *cx_to(struct expr *x, struct type t);
+static struct type cx_real(struct type t);
+static struct expr *new_node(enum ekind k, int line);
+
+/* A complex value as a dummy or a result of the complex type t: its two
+ * parts, each converted to t's part type (gen.c gen_store). */
+static struct expr *cx_pair(struct expr *a, struct type t)
+{
+    struct expr *n = new_node(E_CALL, a->line), *x = cx_part(a, 1), *y = cx_part(a, 2);
+    struct type pt = part_type(t);
+    type_of(x);
+    type_of(y);
+    n->fn = B_CXPAIR;
+    n->nargs = 2;
+    n->arg[0] = cx_to(x, pt);
+    n->arg[1] = cx_to(y, pt);
+    n->t = t;
+    return n;
+}
+
+/* The arguments of a call where complex values meet: an argument for a
+ * complex parameter (descriptor) that is not a variable of its type
+ * becomes a dummy of it; a complex argument for a real one gives its real
+ * part; a complex expression for an undeclared one a dummy of its own
+ * type (SC26-3114-01, "Dummy Arguments"; Q15CARG, JOB00294). */
+static void cx_args(struct expr *e)
+{
+    struct proc *p = e->callee;
+    struct sym *en = e->entry;
+    for (int i = 0; i < e->nargs; i++) {
+        struct expr *a = e->arg[i];
+        struct type t;
+        memset(&t, 0, sizeof t);
+        if (a->k == E_STAR || (a->k == E_VAR && a->sym && (a->sym->child ||
+                                                          a->nsubs < cum_dims(a->sym))))
+            continue;                    /* omitted, or an aggregate */
+        if (en && en->has_desc && i < en->ndesc && !en->desc_dims[i])
+            t = en->desc[i];
+        else if (p && !p->nodesc && !p->asm_opt) {
+            if (e->entryno && i < p->entries[e->entryno - 1].nparams)
+                t = p->params[p->entries[e->entryno - 1].canon[i]]->t;
+            else if (!e->entryno && i < (p->nentries ? p->nprim : p->nparams))
+                t = p->params[i]->ndims ? t : p->params[i]->t;
+        }
+        if (is_cplx(t)) {
+            if (a->k == E_VAR && cx_expr(a)) {
+                type_of(a);
+                if (a->t.k == t.k && a->t.p == t.p && a->t.q == t.q)
+                    continue;                /* by reference */
+            }
+            e->arg[i] = cx_pair(a, t);
+        } else if (cx_expr(a)) {
+            if (t.k != TY_NONE)
+                e->arg[i] = cx_part(a, 1);
+            else if (a->k != E_VAR) {
+                struct expr *x = cx_part(a, 1);
+                type_of(x);
+                e->arg[i] = cx_pair(a, cplx_type(cx_real(x->t)));
+            }
+        }
+    }
+}
+
 static void type_fcall(struct expr *e, int as_function)
 {
     struct proc *p;
@@ -378,6 +442,7 @@ static void type_fcall(struct expr *e, int as_function)
 
     if (e->generic)
         gen_select(e);
+    cx_args(e);
     p = e->callee;
     en = e->entry;
 
@@ -1063,7 +1128,8 @@ static void type_sort(struct expr *e)
 
 static void type_call(struct expr *e)
 {
-    if (e->fn == B_CXOP || e->fn == B_CXABS || e->fn == B_CXFN || e->fn == B_CXCVT)
+    if (e->fn == B_CXOP || e->fn == B_CXABS || e->fn == B_CXFN || e->fn == B_CXCVT ||
+        e->fn == B_CXPAIR || e->fn == B_CXFC)
         return;                           /* typed when made (cx_call, cx_abs, cx_fn) */
     if ((e->fn == B_LOG10 || e->fn == B_LOG2 || e->fn == B_ATAND || e->fn == B_SIND ||
          e->fn == B_COSD || e->fn == B_TAND || e->fn == B_ERF || e->fn == B_ERFC ||
@@ -1318,12 +1384,18 @@ static void type_call(struct expr *e)
     case B_ROUND: {
         struct type a = e->arg[0]->t;
         int n;
-        if (a.k != TY_FIXDEC) {
-            error_at(e->line, "ROUND of other than FIXED DECIMAL is not supported yet");
-            return;
-        }
         if (!int_arg(e->arg[1], &n))
             error_at(e->line, "ROUND needs a constant number of places");
+        if (is_float(a)) {
+            /* FLOAT: the rightmost bit of the fraction set to 1, y
+             * ignored (SC26-3114-01, ROUND; GC28-8201-4 the same) */
+            e->t = a;
+            return;
+        }
+        if (a.k != TY_FIXDEC) {
+            error_at(e->line, "ROUND of FIXED BINARY is not supported yet");
+            return;
+        }
         /* (p+1, q), rounded half away from zero (JOB00184) */
         e->t = a;
         e->t.p = min(15, a.p + 1);
@@ -1493,7 +1565,7 @@ static void type_call(struct expr *e)
         e->t.p = 31;
         return;
     case B_REAL: case B_IMAG: case B_CONJG: case B_COMPLEX: case B_CPXSTR: case B_CXOP:
-    case B_CXABS: case B_CXFN: case B_CXCVT:
+    case B_CXABS: case B_CXFN: case B_CXCVT: case B_CXPAIR: case B_CXFC:
         return;                         /* type_cplxfn, type_cpxstr */
     case B_COMPLETION: case B_STATUS:
         /* of an event: its completion, BIT(1); its status, FIXED
@@ -2347,6 +2419,15 @@ static struct type cx_real(struct type t)
     return t;
 }
 
+/* a built-in function that keeps the mode and applies to each part:
+ * ROUND, PRECISION, FIXED, FLOAT, BINARY, DECIMAL (GC28-8201-4, Section
+ * G; Q16CBIF, JOB00294) */
+static int cx_partwise(enum bfn f)
+{
+    return f == B_ROUND || f == B_PRECISION || f == B_FIXED || f == B_FLOAT ||
+           f == B_BINARY || f == B_DECIMAL;
+}
+
 /* a mathematical function that takes a complex argument (GC28-8201-4,
  * Figure G-1) */
 static int cx_math(enum bfn f)
@@ -2377,9 +2458,12 @@ static int cx_expr(struct expr *e)
             return cx_expr(e->arg[0]);
         if (e->fn == B_CXCVT)
             return 1;
+        if (cx_partwise(e->fn) && e->nargs >= 1)
+            return cx_expr(e->arg[0]);
         return e->fn == B_COMPLEX || (e->fn == B_CONJG && cx_expr(e->arg[0]));
     case E_FCALL:
-        return e->callee && e->callee->has_ret && is_cplx(e->callee->ret);
+        return (e->callee && e->callee->has_ret && is_cplx(e->callee->ret)) ||
+               (!e->callee && e->entry && e->entry->has_ret && is_cplx(e->entry->ret));
     default:
         return 0;
     }
@@ -2779,6 +2863,11 @@ static struct expr *cx_part(struct expr *e, int part)
         }
         if (cx_math(e->fn) || e->fn == B_CXCVT)
             return cx_fn(e, part);
+        if (cx_partwise(e->fn)) {
+            c = cx_copy(e);
+            c->arg[0] = cx_part(e->arg[0], part);
+            return c;
+        }
         if (e->fn == B_CONJG) {
             if (part == 1)
                 return cx_part(e->arg[0], 1);
@@ -2811,9 +2900,22 @@ static struct expr *cx_part(struct expr *e, int part)
             }
             return cast_of(part == 1 ? a : b, t);
         }
+    case E_FCALL:
+        /* the function's value once into a complex temporary (gen.c
+         * gen_cxop), the parts read from it */
+        if (e->cxt)
+            return cx_read(e->cxt, part, e->line);
+        type_of(e);
+        c = new_node(E_CALL, e->line);
+        c->fn = B_CXFC;
+        c->nargs = 1;
+        c->arg[0] = e;
+        c->t = part_type(e->t);
+        e->cxt = c->cxt = iter_temp(e->t);
+        c->l = cx_read(c->cxt, part, e->line);
+        return c;
     default:
-        error_at(e->line, "a complex %s is not supported yet", e->k == E_FCALL ?
-                 "function value" : "value here");
+        error_at(e->line, "a complex value is not supported here yet");
         return iter_num("0", e->line);
     }
 }
@@ -3597,7 +3699,19 @@ static void check_stmts(struct stmt *s)
                 error_at(s->line, "RETURN with a value in %s, which has no RETURNS", CUR->name);
             else if (!s->e && CUR->ret_all)
                 error_at(s->line, "RETURN in %s needs a value", CUR->name);
-            else if (s->e && CUR->ret_multi) {
+            else if (s->e && (is_cplx(CUR->ret) || cx_expr(s->e))) {
+                /* COMPLEX: the value's parts into the result (cx_pair); a
+                 * complex value for a real result, its real part */
+                if (CUR->ret_multi)
+                    error_at(s->line, "RETURN of a complex value in a procedure with entry "
+                             "points of other attributes is not supported yet");
+                else if (is_cplx(CUR->ret))
+                    s->e = cx_pair(s->e, CUR->ret);
+                else {
+                    s->e = cx_part(s->e, 1);
+                    check_assign(CUR->ret, &s->e, s->line);
+                }
+            } else if (s->e && CUR->ret_multi) {
                 /* the value for each entry's attributes (gen.c); one of
                  * another kind, a bit string for an arithmetic entry,
                  * say, is not converted: that entry's value is left
@@ -3927,6 +4041,9 @@ struct type elem_type(struct expr *e)
  * first (Q1ARR). POLY: the FLOAT type of both arguments (Q3POLY). */
 struct type reduce_type(struct type t, struct type x)
 {
+    if (is_cplx(t) || is_cplx(x))
+        /* SUM, PROD, POLY of complex values: complex FLOAT (Q16CBIF) */
+        return cplx_type(reduce_type(part_type(t), part_type(x)));
     if (is_string(t)) {
         memset(&t, 0, sizeof t);
         t.k = TY_FLTDEC;

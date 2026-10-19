@@ -62,16 +62,19 @@ D only after a design note and the maintainer's decision.
   - [x] #226 ATTENTION, and INTERRUPT (Tier 106); a real attention
         at a terminal measured with `mbt test --tso` (`test/tso/attn.lua`)
 - **D -- large projects, design first** (milestone 4)
-  - [ ] #2 COMPLEX: tiers C1 to C4 done (Tiers 109, 114 to 116); C5
-        left (PICTURE COMPLEX, complex binary constants, ROUND/
-        PRECISION/FIXED/FLOAT of complex values, SUM/PROD/POLY of
-        complex arrays, complex arguments, parameters and RETURNS);
-        Q-6 (what of C5 to keep) is the maintainer's. Decided in Tiers
-        115 and 116: the format kinds stay where they are, K_C added,
-        the ABI stamp kept (Q-8); a complex constant into a real target
-        gives its real part only in a source with COMPLEX data (others
-        raise CONVERSION as before), and its imaginary part is checked,
-        as in PL/I (F) (PL/I for MVS & VM does not check it) Decided in Tier 114: ABS of COMPLEX FIXED is
+  - [ ] #2 COMPLEX: tiers C1 to C5 done (Tiers 109, 114 to 117) but
+        for PICTURE COMPLEX and complex binary constants, which wait for
+        the maintainer's Q-6 (keep them, or leave them out of the
+        plan). Decided on the way (each in its PR): the format kinds
+        stay where they are, K_C added, the ABI stamp kept (Q-8); a
+        complex constant into a real target gives its real part only in
+        a source with COMPLEX data, its imaginary part checked as in
+        PL/I (F); ABS of COMPLEX FIXED truncated exactly, MULTIPLY of
+        COMPLEX FIXED BINARY right where PL/I (F) is wrong. Found on the
+        way: ROUND of FIXED BINARY is not supported yet, and ROUND of
+        FIXED DECIMAL keeps PL/I (F)'s precision (p+1,q) where PL/I for
+        MVS & VM gives (MAX(1,MIN(p-q+1+y,N)),y) -- a default-level
+        difference to settle (SC26-3114-01, ROUND) Decided in Tier 114: ABS of COMPLEX FIXED is
         truncated exactly, where PL/I (F) is sometimes one unit high;
         MULTIPLY of COMPLEX FIXED BINARY computes the right value
         where PL/I (F) gives a wrong one (2-14I for (3+4I)*(1-2I));

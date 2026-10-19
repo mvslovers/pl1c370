@@ -1162,6 +1162,16 @@ sources = ["build/gen/t296ccv.asm"]
 rent    = false
 reus    = false
 
+[module.TT297CBF]
+sources = ["build/gen/t297cbf.asm"]
+rent    = false
+reus    = false
+
+[module.TT298CAR]
+sources = ["build/gen/t298car.asm"]
+rent    = false
+reus    = false
+
 [module.TT29FOFL]
 sources = ["build/gen/t29fofl.asm"]
 rent    = false

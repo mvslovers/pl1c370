@@ -840,7 +840,7 @@ static void gen_when(struct gelem *ge, int line)
 static void attrs(struct type *t, int line)
 {
     int fixed = 0, flt = 0, bin = 0, dec = 0, chr = 0, var = 0, bit = 0, prec = -1, scale = 0,
-        len = 1, optional = 0;
+        len = 1, optional = 0, cplx = 0;
     if (is(T_COMMA) || is(T_RP)) {
         /* an empty descriptor: the argument as it is (PL1SAMP's
          * ENTRY(,FLOAT BIN,FLOAT BIN)) */
@@ -905,6 +905,8 @@ static void attrs(struct type *t, int line)
         else if (isword2("CONN", "CONNECTED")) { beyond_f(line, L_OPT, "CONNECTED"); pos++; }
         else if (isword("ENTRY")) { bit = -3; pos++; }
         else if (isword("FILE")) { bit = -4; pos++; }
+        else if (isword2("COMPLEX", "CPLX")) { cplx = 1; pos++; }   /* #2 C5 */
+        else if (isword("REAL")) pos++;
         else if (is(T_LP)) prec = number_in_parens(&scale);
         else
             fatal("%s(%d): attribute %s is not supported in a descriptor yet", src_name, line,
@@ -918,9 +920,14 @@ static void attrs(struct type *t, int line)
     else if (bit < 0) { t->k = TY_PTR; t->p = 4; }
     else if (bit) { t->k = var ? TY_VBIT : TY_BIT; t->p = len; }
     else if (chr) { t->k = var ? TY_VCHAR : TY_CHAR; t->p = len; }
-    else if (fixed || flt || bin || dec) arith_type(t, !fixed, bin, prec, scale, "descriptor", line);
+    else if (fixed || flt || bin || dec || cplx) arith_type(t, !fixed, bin, prec, scale, "descriptor", line);
     else
         fatal("%s(%d): give the attributes here", src_name, line);
+    if (cplx) {
+        if (bit || chr)
+            fatal("%s(%d): COMPLEX takes FIXED or FLOAT data", src_name, line);
+        *t = cplx_type(*t);
+    }
     t->optional = optional;
 }
 
@@ -1522,6 +1529,21 @@ static void declare(void)
                                 }
                                 if (is(T_COMMA)) { pos++; continue; }
                                 break;
+                            }
+                            if (is(T_LP) && (tk(1)->kind == T_STAR || tk(1)->kind == T_NUM) &&
+                                (tk(2)->kind == T_RP || tk(2)->kind == T_COMMA)) {
+                                /* (*) or (n, ...): an array parameter, as in
+                                 * GENERIC below */
+                                int nd = 0;
+                                pos++;
+                                for (;;) {
+                                    nd++;
+                                    pos++;
+                                    if (is(T_COMMA)) { pos++; continue; }
+                                    break;
+                                }
+                                expect(T_RP, "')'");
+                                tmpl.desc_dims[tmpl.ndesc] = (unsigned char)nd;
                             }
                             attrs(&tmpl.desc[tmpl.ndesc++], line);
                             if (is(T_COMMA)) { pos++; continue; }
