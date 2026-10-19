@@ -1044,7 +1044,7 @@ static struct expr *reduce(struct expr *e)
     el = subst(a, z.vars, z.nv, z.lb, z.hb);
     et = elem_type(subst(el, NULL, 0, NULL, NULL));
     if (e->fn == B_SUM || e->fn == B_PROD) {
-        if (!arith(et) && !is_string(et))
+        if (!arith(et) && !is_string(et) && !is_cplx(et))
             fatal("%s(%d): %s of a bit string array is not supported yet", src_name, line,
                   e->fn == B_SUM ? "SUM" : "PROD");
         memset(&rt, 0, sizeof rt);

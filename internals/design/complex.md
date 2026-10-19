@@ -599,6 +599,10 @@ Twins: `t275ped` (PUT EDIT C), `t276get` (GET LIST/EDIT/DATA, with a
 
 ### C5: the rest
 
+*Done but for PICTURE COMPLEX and complex binary constants (Q-6, the
+maintainer's): Tier 117, `t297cbf`, `t298car`,
+`research/pli/c5-measurement.md`.*
+
 Scope, each item only if the maintainer keeps it: PICTURE COMPLEX
 (storage, assignment, PUT LIST as the concatenated string, P items
 under C), complex binary constants (after binary constants exist at
