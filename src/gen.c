@@ -2265,7 +2265,7 @@ static void gen_string(struct expr *e, int *ra, int *rl)
             *ra = reg_get();
             ins(NULL, "LA", "%d,%d(,13)", *ra, t);
             arg_reg(*ra); arg_reg(a1); arg_reg(l1); arg_reg(a2); arg_reg(l2);
-            call("PL1CPXJ");
+            call(e->op == 1 ? "PL1CPXC" : "PL1CPXJ");   /* 1: PICTURE COMPLEX */
             reg_free(a1); reg_free(a2); reg_free(l2);
             *rl = l1;
             ins(NULL, "LR", "%d,15", *rl);
@@ -3723,7 +3723,7 @@ static int type_size(struct type t)
     case TY_ENTRY:  return 8;
     case TY_FILE:   return 4;
     case TY_AREA:   return 16 + t.p;
-    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN:
+    case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN: case TY_CPIC:
         return 2 * type_size(part_type(t));
     case TY_EVENT:  return PL1_EV_SIZE;
     default:        return 4;

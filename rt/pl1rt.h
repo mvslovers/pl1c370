@@ -19,6 +19,8 @@ void pl1_list_number(const char *p, int len)          asm("PL1LNUM");
 /* a complex value's characters from its parts' (rt/pl1cx.c) */
 int  pl1_cpx_join(char *dst, const char *re, int rl, const char *im, int il)
                                                       asm("PL1CPXJ");
+int  pl1_cpx_cat(char *dst, const char *re, int rl, const char *im, int il)
+                                                      asm("PL1CPXC");
 void pl1_list_fixbin(int value, int prec)             asm("PL1LFXB");
 void pl1_list_fixdec(const unsigned char *packed, int p, int q)
                                                       asm("PL1LFXD");

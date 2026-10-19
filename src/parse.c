@@ -1940,9 +1940,9 @@ static void declare(void)
             }
             if (cplx) {
                 if (s->t.k != TY_FIXBIN && s->t.k != TY_FIXDEC && s->t.k != TY_FLTDEC &&
-                    s->t.k != TY_FLTBIN)
-                    error_at(line, "%s: COMPLEX takes FIXED or FLOAT data%s", names[i],
-                             haspic ? " (COMPLEX PICTURE is not supported yet)" : "");
+                    s->t.k != TY_FLTBIN && s->t.k != TY_PIC)
+                    error_at(line, "%s: COMPLEX takes FIXED, FLOAT or numeric PICTURE data",
+                             names[i]);
                 else
                     s->t = cplx_type(s->t);
             }

@@ -101,6 +101,7 @@ enum tkind { TY_NONE, TY_FIXBIN, TY_FIXDEC, TY_CHAR, TY_VCHAR, TY_BIT, TY_FLTDEC
               * stored as the real kind; arith() is false for them, so code
               * that knows nothing of complex refuses them */
              TY_CFIXBIN, TY_CFIXDEC, TY_CFLTDEC, TY_CFLTBIN,
+             TY_CPIC,  /* PICTURE COMPLEX: two picture fields, the same pic */
              TY_EVENT /* (#3): PL1_EV_... of rt/pl1abi.h */ };
 
 #define MAXBITS 4096     /* the longest bit string (frame temporaries) */
@@ -129,19 +130,21 @@ struct type {
 };
 
 int pic_length(struct type t);  /* the characters of a TY_PIC */
-static inline int is_cplx(struct type t) { return t.k >= TY_CFIXBIN && t.k <= TY_CFLTBIN; }
+static inline int is_cplx(struct type t) { return t.k >= TY_CFIXBIN && t.k <= TY_CPIC; }
 /* the type of either part of a complex value, and the complex type of
  * a real arithmetic one */
 static inline struct type part_type(struct type t)
 {
     t.k = t.k == TY_CFIXBIN ? TY_FIXBIN : t.k == TY_CFIXDEC ? TY_FIXDEC :
-          t.k == TY_CFLTDEC ? TY_FLTDEC : t.k == TY_CFLTBIN ? TY_FLTBIN : t.k;
+          t.k == TY_CFLTDEC ? TY_FLTDEC : t.k == TY_CFLTBIN ? TY_FLTBIN :
+          t.k == TY_CPIC ? TY_PIC : t.k;
     return t;
 }
 static inline struct type cplx_type(struct type t)
 {
     t.k = t.k == TY_FIXBIN ? TY_CFIXBIN : t.k == TY_FIXDEC ? TY_CFIXDEC :
-          t.k == TY_FLTDEC ? TY_CFLTDEC : t.k == TY_FLTBIN ? TY_CFLTBIN : t.k;
+          t.k == TY_FLTDEC ? TY_CFLTDEC : t.k == TY_FLTBIN ? TY_CFLTBIN :
+          t.k == TY_PIC ? TY_CPIC : t.k;
     return t;
 }
 static inline int is_bit(struct type t) { return t.k == TY_BIT || t.k == TY_VBIT; }

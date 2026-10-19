@@ -1478,6 +1478,17 @@ INITIAL. `t302bin` identical (JOB00037, in a new container: the first
 one had gone); the full suite 290 identical and 13 CLOSE (JOB00040
 to JOB00068).
 
+## Tier 120 -- done 2026-10-19
+
+PICTURE COMPLEX (#2 C5, Q13CPIC, JOB00073): a new kind TY_CPIC, two
+picture fields of the same picture, the real one first. Its parts are
+pictures (their values in arithmetic, `B_PICVAL`); as characters --
+PUT LIST, PUT DATA, assignment to a string, the A format, UNSPEC,
+STRING -- it is its two fields with nothing between them, as PL/I (F)
+shows it (`12.3405.60`); C items edit each part. `t303cpc` identical
+(JOB00077); the full suite 291 identical and 13 CLOSE (JOB00080 to
+JOB00108). With it COMPLEX (#2) is complete.
+
 ## Definition of done
 
 **A Subset G core, plus the IBM extensions that PL/I (F) V5 accepts.**

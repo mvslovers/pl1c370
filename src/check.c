@@ -119,6 +119,7 @@ static int cx_expr(struct expr *e);
 static int cx_compare(struct expr *e);
 static void cx_stmt(struct stmt *s);
 static struct expr *cx_put(struct expr *e);
+static struct expr *cx_picchars(struct expr *e);
 static void type_cplxfn(struct expr *e);
 static void type_cpxstr(struct expr *e);
 static void cx_abs(struct expr *e);
@@ -1070,9 +1071,11 @@ static void string_leaves(struct sym *x, int *kind, int *n, int mult)
         return;
     }
     {
-        int k = x->t.k == TY_CHAR || x->t.k == TY_PIC ? 1 : x->t.k == TY_BIT ? 2 : 3;
+        int k = x->t.k == TY_CHAR || x->t.k == TY_PIC || x->t.k == TY_CPIC ? 1 :
+                x->t.k == TY_BIT ? 2 : 3;
         *kind = *kind == 0 || *kind == k ? k : 3;
-        *n += mult * (x->t.k == TY_PIC ? pic_length(x->t) : x->t.p);
+        *n += mult * (x->t.k == TY_PIC ? pic_length(x->t) :
+                      x->t.k == TY_CPIC ? 2 * pic_length(part_type(x->t)) : x->t.p);
     }
 }
 
@@ -1344,7 +1347,9 @@ static void type_call(struct expr *e)
         int n = a.k == TY_CHAR ? a.p : a.k == TY_FIXBIN ? (a.p <= 15 ? 2 : 4) :
                 a.k == TY_FIXDEC ? dec_bytes(a.p) : is_float(a) ? (flt_long(a) ? 8 : 4) :
                 a.k == TY_PTR || a.k == TY_OFFSET ? 4 : a.k == TY_BIT ? (a.p + 7) / 8 :
-                a.k == TY_AREA ? a.p + 16 : is_cplx(a) ? 2 * (part_type(a).k == TY_FIXBIN ?
+                a.k == TY_AREA ? a.p + 16 : a.k == TY_PIC ? pic_length(a) :
+                a.k == TY_CPIC ? 2 * pic_length(part_type(a)) :
+                is_cplx(a) ? 2 * (part_type(a).k == TY_FIXBIN ?
                 (a.p <= 15 ? 2 : 4) : part_type(a).k == TY_FIXDEC ? dec_bytes(a.p) :
                 flt_long(part_type(a)) ? 8 : 4) : 0;
         if (n < 1 || 8 * n > MAXBITS)
@@ -2837,6 +2842,16 @@ static struct expr *cx_part(struct expr *e, int part)
         c = cx_copy(e);
         c->part = part;
         c->sym = cx_sym(e->sym, part);
+        if (c->sym->t.k == TY_PIC) {
+            /* a part of a PICTURE COMPLEX value: its arithmetic value, as
+             * lower.c makes it of a picture (pic_expr) */
+            struct expr *v = new_node(E_CALL, e->line);
+            c->picstr = 1;
+            v->fn = B_PICVAL;
+            v->nargs = 1;
+            v->arg[0] = c;
+            return v;
+        }
         return c;
     case E_NEG:
         c = new_node(E_NEG, e->line);
@@ -3058,7 +3073,9 @@ static void cx_stmt(struct stmt *s)
          * PUT LIST writes it (t227 Q3CMODE) */
         struct expr *t = cx_copy(lhs);
         type_of(t);
-        if (is_string(t->t) && !is_bit(t->t)) {
+        if (is_string(t->t) && !is_bit(t->t) && cx_picchars(src)) {
+            s->e = cx_picchars(src);
+        } else if (is_string(t->t) && !is_bit(t->t)) {
             struct expr *c = new_node(E_CALL, s->line);
             c->fn = B_CPXSTR;
             c->nargs = 2;
@@ -3089,10 +3106,42 @@ static void cx_stmt(struct stmt *s)
     cx_assign_after(s, b, cx_part(src, 2));
 }
 
+/* a PICTURE COMPLEX variable as characters: its two fields, nothing
+ * between them (B_CPXSTR, op 1; Q13CPIC, JOB00073); NULL for any other
+ * value */
+static struct expr *cx_picchars(struct expr *e)
+{
+    struct expr *c;
+    int n;
+    if (e->k != E_VAR || !e->sym || e->part || e->sym->t.k != TY_CPIC)
+        return NULL;
+    n = pic_length(part_type(e->sym->t));
+    c = new_node(E_CALL, e->line);
+    c->fn = B_CPXSTR;
+    c->op = 1;
+    c->nargs = 2;
+    for (int k = 0; k < 2; k++) {
+        struct expr *p = cx_copy(e);
+        p->part = k + 1;
+        p->sym = cx_sym(e->sym, k + 1);
+        p->picstr = 1;
+        memset(&p->t, 0, sizeof p->t);
+        p->t.k = TY_CHAR;
+        p->t.p = n;
+        c->arg[k] = p;
+    }
+    c->arg[2] = e;
+    c->t.k = TY_CHAR;
+    c->t.p = 2 * n;
+    return c;
+}
+
 /* a complex PUT item: the value as one character string, written as a
  * number is (B_CPXSTR, rt/pl1cx.c) */
 static struct expr *cx_put(struct expr *e)
 {
+    if (cx_picchars(e))
+        return cx_picchars(e);
     struct expr *c = new_node(E_CALL, e->line);
     c->fn = B_CPXSTR;
     c->nargs = 2;
@@ -3183,6 +3232,8 @@ int cplx_init(struct expr *v, struct expr **re, struct expr **im)
 static void type_cpxstr(struct expr *e)
 {
     int n = 2;                          /* a sign the imaginary part lacks, and I */
+    if (e->op == 1)
+        return;                         /* PICTURE COMPLEX: typed when made */
     for (int i = 0; i < 2; i++) {
         type_of(e->arg[i]);
         n += string_len(cx_real(e->arg[i]->t));
@@ -3483,8 +3534,22 @@ static void check_stmts(struct stmt *s)
                     n->nlabels = 0;
                     n->cxpair = 2;
                     s->cxpair = 1;
-                    s->e = cx_part(x, 1);
-                    n->e = cx_part(x, 2);
+                    if (x->k == E_VAR && x->sym && x->sym->t.k == TY_CPIC && !x->part) {
+                        /* pictures: their characters and values (PL1LPIC) */
+                        for (int k = 0; k < 2; k++) {
+                            struct expr *p = cx_copy(x);
+                            p->part = k + 1;
+                            p->sym = cx_sym(x->sym, k + 1);
+                            p->t = p->sym->t;
+                            if (k)
+                                n->e = p;
+                            else
+                                s->e = p;
+                        }
+                    } else {
+                        s->e = cx_part(x, 1);
+                        n->e = cx_part(x, 2);
+                    }
                     s->next = n;
                 } else {
                     s->e = cx_put(s->e);
