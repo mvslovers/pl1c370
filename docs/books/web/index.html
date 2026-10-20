@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PL1C/370 manuals</title>
+<link rel="stylesheet" href="bookmaster.css">
+<style>
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+.card { border-top: 6px solid var(--ink); padding: 1rem 0 0; }
+.card h3 { border: 0; margin: 0 0 .5rem; padding: 0; font-size: 1.35rem; }
+.card .num { color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; font-size: .85rem; }
+.card ul { list-style: none; padding: 0; font-family: 'IBM Plex Sans', sans-serif; }
+main.landing { max-width: 60rem; margin: 0 auto; }
+</style>
+</head>
+<body class="bm-landing">
+<header class="bm-top"><nav class="bm-crumbs" aria-label="Breadcrumb"><a href="https://mvslovers.readthedocs.io/">mvslovers</a><span class="sep">›</span><a href="index.html">PL1C/370</a></nav><span class="num">mvslovers manuals</span></header>
+<main class="landing">
+<h2>PL1C/370 (pl1c370) for MVS 3.8j</h2>
+<p>A PL/I compiler for MVS 3.8j that runs on a workstation, with its run time. Two books describe it: the guide shows how to compile and run programs, the reference describes the language and the command.</p>
+<div class="cards">
+  <section class="card">
+    <h3>Programmer's Guide</h3>
+    <p class="num">ML10-0001</p>
+    <p>Installing the compiler, compiling and linking, running programs on MVS, migrating from PL/I (F).</p>
+    <ul><li><a href="guide/index.html">Read online</a></li><li><a href="ml10-0001-0.pdf">Download PDF</a></li></ul>
+  </section>
+  <section class="card">
+    <h3>Language Reference</h3>
+    <p class="num">ML10-0002</p>
+    <p>The pl1c370 command and its options, and the language levels: PL/I (F), the Optimizing Compiler, PL/I for MVS &amp; VM and the ISO extensions.</p>
+    <ul><li><a href="reference/index.html">Read online</a></li><li><a href="ml10-0002-0.pdf">Download PDF</a></li></ul>
+  </section>
+</div>
+</main>
+</body>
+</html>

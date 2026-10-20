@@ -28,6 +28,8 @@ issues is at the top of `TODO.md` and `internals/ROADMAP.md`.
 | start a block D piece (COMPLEX, tasking, VSAM, ILC, FETCH, ...) | `internals/design/README.md` and its note |
 | look something up in a manual, add a manual | `internals/manuals/README.md`, `internals/research/pli/manuals_inventory.md` |
 | rely on how PL/I (F) V5.5 behaves | `internals/research/pli/v55-measurement.md` |
+| change documented behaviour, or write in the books (ML10) | `docs/books/` (bookmaster template), root `.workspace/context/books.md` |
+| cut a release | `internals/releasing.md` |
 | decide on the run-time options without LE | `internals/research/le-light-study.md` |
 
 ## Layout and commands
