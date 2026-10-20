@@ -26,8 +26,9 @@ needs a connection to MVS; only running the program does.
 
 == The Language <pg-intro-lang>
 
-By default PL1C/370 compiles the language of IBM PL/I for MVS & VM,
-without what exists only in Language Environment and without DBCS. With
+By default PL1C/370 compiles the language of IBM PL/I for MVS & VM, with
+some extensions from the standard ANSI X3.53-1976, without what exists
+only in Language Environment and without DBCS. With
 the option #cmd("-lang=F") it compiles exactly the language of IBM PL/I
 (F) Version 5, and refuses anything beyond it. The _PL1C/370 Language
 Reference_ describes both.

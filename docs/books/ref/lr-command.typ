@@ -6,8 +6,10 @@
 #cmd("pl1c370") [_options_] _source_
 
 The command compiles one PL/I source into one assembler source. It ends
-with 0 when the source compiled and with 8 when it did not; the messages
-go to the standard error, each with the source's name and line.
+with 0 when the source compiled and with 8 when it did not. The messages
+go to the standard error: an error in the source with the source's name
+and line, as _name_(_line_); an error in the options with
+#cmd("pl1c370:").
 
 #tab(caption: [The options of pl1c370])[
   #table(columns: (1.3in, 1fr),
@@ -31,9 +33,9 @@ go to the standard error, each with the source's name and line.
       with PL/I (F)'s entry points IHESAPB and IHESAPD.],
     [#cmd("-interrupt")], [The Optimizing Compiler's INTERRUPT option. Not
       with #cmd("-lang=F").],
-    [#cmd("-stack=")_n_], [The size of the run time's stack in bytes, or
-      kilobytes with K: 0, or 4096 to 8M. 0 keeps the default of
-      LIBC/370.],
+    [#cmd("-stack=")_n_], [The size of the run time's stack: 0, or 4096 to
+      8388608 bytes; with K, kilobytes (up to 8192K). 0 keeps the default
+      of LIBC/370.],
     [#cmd("--version")], [Print the version and the run time's interface
       level, and end.],
   )
