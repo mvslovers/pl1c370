@@ -1,6 +1,7 @@
 # A tag v<version> (the version of mbt.toml) gives a GitHub release with
 # the host compiler for Linux and macOS and the run time (pl1rt.a with
-# rt/pl1abi.h) built from the same commit, and their SHA256SUMS.
+# rt/pl1abi.h) built from the same commit, the manuals (docs/books), and
+# their SHA256SUMS.
 
 name: Release
 
@@ -18,8 +19,11 @@ jobs:
   rt:
     uses: ./.github/workflows/rt.yml
 
+  books:
+    uses: ./.github/workflows/books.yml
+
   release:
-    needs: [host, rt]
+    needs: [host, rt, books]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

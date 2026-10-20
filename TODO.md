@@ -124,6 +124,22 @@ section 3a, has the list).
       procedure must be split today; lifting it is a design question
       (base reloads per 4 KB section, or a fourth base register)
 
+## The books (ML10, 2026-10-20)
+
+ML10 is PL1C/370's book area (bookmaster README): ML10-0001
+Programmer's Guide, ML10-0002 Language Reference, in `docs/books`, Draft
+(edition -0). This repository's session writes them until the project
+moves to Paperclip; the books session cross-reads.
+
+- [x] skeleton: both books, CI (`books.yml`), release attachment,
+      `internals/releasing.md`
+- [ ] Language Reference: the levels chapter from
+      `docs/language-levels.md`, item by item, then the language
+      chapters with PL/I (F) as the yardstick
+- [ ] Programmer's Guide: a first program with a captured session under
+      `ex/`, compiling and linking, running on MVS
+- [ ] Read the Docs subproject (`web/build.sh` is there)
+
 ## PL/I in MBT (no milestone)
 
 Agreed with the MBT session: the run time stays a library, linked by

@@ -11,3 +11,6 @@ jobs:
 
   rt:
     uses: ./.github/workflows/rt.yml
+
+  books:
+    uses: ./.github/workflows/books.yml
