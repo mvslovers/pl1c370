@@ -1769,6 +1769,8 @@ static void declare(void)
             beyond_f(line, L_OPT, "a file variable");
             implied_var = 1;
         }
+        if ((file || fattr) && (data || entry || hasret))
+            error_at(line, "%s: a file takes no other attributes", names[0]);
         if ((a_var || implied_var) && (file || fattr) && (ctl || stat || tmpl.based ||
                                                          tmpl.defined))
             fatal("%s(%d): %s: a FILE variable not AUTOMATIC is not supported yet",
@@ -1894,8 +1896,6 @@ static void declare(void)
             }
             s->t.k = TY_NONE;
             if (file || fattr) {
-                if (data || entry || hasret)
-                    error_at(line, "%s: a file takes no other attributes", names[i]);
                 if ((fattr & FL_RECORD) && (fattr & FL_PRINT))
                     error_at(line, "%s: a RECORD file cannot be PRINT", names[i]);
                 if (excl && (fattr & FL_STREAM))
