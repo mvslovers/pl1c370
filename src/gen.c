@@ -315,6 +315,12 @@ static struct place gen_place(struct expr *e)
         ins(NULL, "L", "%d,=A(@V%d)", p.base, root->label);
         ins(NULL, "L", "%d,0(,%d)", p.base, p.base);
         p.off = 8 + (root->child ? root->phase : 0);
+        if (root->adjust) {
+            /* bounds from expressions: A(data) from the generation's
+             * descriptor at 8 */
+            ins(NULL, "L", "%d,8(,%d)", p.base, p.base);
+            p.off = 0;
+        }
     } else if (root->st == ST_STATIC && root->external) {
         /* its section, the data at the structure's phase in it */
         p.base = reg_get();
@@ -4096,10 +4102,73 @@ static int refer_len(struct sym *s, int ra)
     return r;
 }
 
+/* The bounds of adjustable array x, each evaluated once, as F(lb),
+ * F(hb) pairs from off(13) on; returns a register with the number of
+ * elements (0 when a dimension has none) */
+static int adjust_bounds(const struct sym *x, int off)
+{
+    int n = reg_get();
+    load_const(n, 1);
+    for (int d = 0; d < x->ndims; d++) {
+        int lo = gen_int(x->lbx[d]), hi, z = new_label();
+        ins(NULL, "ST", "%d,%d(,13)", lo, off + 8 * d);
+        hi = gen_int(x->hbx[d]);
+        ins(NULL, "ST", "%d,%d(,13)", hi, off + 8 * d + 4);
+        ins(NULL, "SR", "%d,%d", hi, lo);
+        ins(NULL, "LA", "%d,1(,%d)", hi, hi);
+        ins(NULL, "LTR", "%d,%d", hi, hi);
+        ins(NULL, "BC", "2,@L%d", z);
+        ins(NULL, "SR", "%d,%d", hi, hi);      /* no elements */
+        here(z);
+        ins(NULL, "LR", "1,%d", n);
+        ins(NULL, "MR", "0,%d", hi);
+        ins(NULL, "LR", "%d,1", n);
+        reg_free(lo);
+        reg_free(hi);
+    }
+    return n;
+}
+
+/* ALLOCATE of a CONTROLLED array whose bounds are expressions, its
+ * anchor's address in ra: the bounds into a temporary, once each; the
+ * generation A(the one before), a word, the descriptor (A(data),
+ * F(element length), F(lb), F(hb) ...), the data at a doubleword */
+static void ctl_adjust_alloc(struct sym *x, int ra)
+{
+    int dlen = 8 + 8 * x->ndims, doff = (8 + dlen + 7) / 8 * 8, phase = x->child ? x->phase : 0;
+    int t = tmp(8 * x->ndims, 4);
+    int n = adjust_bounds(x, t);
+    int g;
+    ins(NULL, "LR", "1,%d", n);
+    ins(NULL, "M", "0,=F'%d'", x->size);
+    ins(NULL, "LA", "%d,%d(,1)", n, doff + phase);
+    arg_reg(n);
+    reg_free(n);
+    call("PL1ALOC");
+    ins(NULL, "MVC", "0(4,15),0(%d)", ra);
+    ins(NULL, "ST", "15,0(,%d)", ra);
+    g = reg_get();
+    ins(NULL, "LA", "%d,%d(,15)", g, doff + phase);  /* a structure at its phase */
+    ins(NULL, "ST", "%d,8(,15)", g);
+    load_const(g, x->size);
+    ins(NULL, "ST", "%d,12(,15)", g);
+    reg_free(g);
+    ins(NULL, "MVC", "16(%d,15),%d(13)", 8 * x->ndims, t);
+}
+
 /* The descriptor of a CHAR(*), BIT(*) or A(*) parameter, in a register. */
 static int star_desc(struct sym *s)
 {
     int fb = frame_reg(s->owner), r = reg_get();
+    if (s->adjust && s->st == ST_CTL) {
+        /* CONTROLLED: the descriptor in its latest generation, at 8 */
+        if (fb != 13)
+            reg_free(fb);
+        ins(NULL, "L", "%d,=A(@V%d)", r, s->label);
+        ins(NULL, "L", "%d,0(,%d)", r, r);
+        ins(NULL, "LA", "%d,8(,%d)", r, r);
+        return r;
+    }
     if (s->adjust) {
         /* an adjustable array: the descriptor in its block's frame */
         ins(NULL, "LA", "%d,%d(,%d)", r, s->off, fb);
@@ -5289,27 +5358,10 @@ static void gen_stmt1(struct stmt *s)
          * 76(13), which PDPPRLG set and the caller's frame keeps, so
          * leaving the block in any way gives it back (Tier 81) */
         struct sym *x = s->target;
-        int off = x->off, n = reg_get();
+        int off = x->off, n;
         comment(s);
         stk_unknown = 1;      /* storage of a size known only at run time */
-        load_const(n, 1);
-        for (int d = 0; d < x->ndims; d++) {
-            int lo = gen_int(x->lbx[d]), hi, z = new_label();
-            ins(NULL, "ST", "%d,%d(,13)", lo, off + 8 + 8 * d);
-            hi = gen_int(x->hbx[d]);
-            ins(NULL, "ST", "%d,%d(,13)", hi, off + 12 + 8 * d);
-            ins(NULL, "SR", "%d,%d", hi, lo);
-            ins(NULL, "LA", "%d,1(,%d)", hi, hi);
-            ins(NULL, "LTR", "%d,%d", hi, hi);
-            ins(NULL, "BC", "2,@L%d", z);
-            ins(NULL, "SR", "%d,%d", hi, hi);      /* no elements */
-            here(z);
-            ins(NULL, "LR", "1,%d", n);
-            ins(NULL, "MR", "0,%d", hi);
-            ins(NULL, "LR", "%d,1", n);
-            reg_free(lo);
-            reg_free(hi);
-        }
+        n = adjust_bounds(x, off + 8);
         {
             int a = reg_get();
             ins(NULL, "LR", "1,%d", n);
@@ -5958,7 +6010,9 @@ static void gen_stmt1(struct stmt *s)
                 /* a generation: A(the one before), a word, the data */
                 int a = reg_get(), b = reg_get();
                 ins(NULL, "L", "%d,=A(@V%d)", a, x->label);
-                if (s->k == S_ALLOC && x->areax) {
+                if (s->k == S_ALLOC && x->adjust) {
+                    ctl_adjust_alloc(x, a);
+                } else if (s->k == S_ALLOC && x->areax) {
                     /* AREA(expression): the size now; the area's header
                      * (size, no extent, no free list) at 8 */
                     int n = gen_int(x->areax), sz = reg_get();

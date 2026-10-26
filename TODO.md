@@ -137,6 +137,11 @@ section 3a, has the list).
       item, JOB00117); %PROCEDURE ... STATEMENT with keyword arguments
       (OPT); OPEN and CLOSE of any number of files; GET STRING of a
       constant is OPT level
+- [x] Tier 132: CONTROLLED arrays, of scalars and of structures,
+      whose bounds are expressions, evaluated at each ALLOCATE (the
+      descriptor in the generation); LBOUND/HBOUND/DIM of a member at
+      run time; ALLOCATION of a CONTROLLED array (was refused as an
+      array expression)
 - [ ] Decision: string lengths from expressions (`CHAR(N)` AUTOMATIC
       or CONTROLLED, PL/I (F) has them). The CHAR(*) parameter model
       sizes temporaries by a compile-time bound (256 for an
@@ -144,8 +149,9 @@ section 3a, has the list).
       either that bound (silent truncation beyond it) or temporaries
       sized at run time
 - [ ] LIFT, next: FLOAT DECIMAL(17..33), extended precision (line
-      21930); bounds mixing constants and `*` in a parameter,
-      `2 KTV(3,*)` (16948)
+      21930); a parameter array of structures whose member has a `*`
+      bound, `1 T10(*), 2 KTV(3,*)` (16948): the element size comes
+      with the argument (adjustable structure mapping)
 - [ ] keyed record I/O of a VARYING string, PUT DATA beyond 3
       dimensions, DEFINED with packed bit strings
 - [ ] 12 KB of code per procedure (three base registers): a large main
