@@ -1,0 +1,53 @@
+ T329CAD: PROC OPTIONS(MAIN);
+   /* TIER 132: CONTROLLED ARRAYS (OF STRUCTURES TOO) WHOSE BOUNDS ARE
+      EXPRESSIONS, EVALUATED AT EACH ALLOCATE: EACH GENERATION ITS
+      OWN BOUNDS */
+   DCL (N, M) FIXED BIN(31) INIT(4);
+   DCL A(N) FIXED BIN(31) CTL;
+   DCL B(-1:N, M) FIXED DEC(5) CTL;
+   DCL C(N) CHAR(3) CTL;
+   DCL (I, J) FIXED BIN(15);
+   DCL 1 S(0:N) CTL, 2 K FIXED BIN(15), 2 V(2) CHAR(3),
+         2 F FLOAT DEC(6);
+   ALLOCATE A;
+   A = 7;
+   PUT SKIP LIST(SUM(A), LBOUND(A, 1), HBOUND(A, 1));
+   N = 6;
+   ALLOCATE A;
+   A = 2;
+   A(6) = 10;
+   PUT SKIP LIST(SUM(A), HBOUND(A, 1), ALLOCATION(A));
+   CALL SHOW(A);
+   FREE A;
+   PUT SKIP LIST(SUM(A), HBOUND(A, 1));
+   N = 2; M = 3;
+   ALLOCATE B, C;
+   DO I = -1 TO 2;
+      DO J = 1 TO 3;
+         B(I, J) = I * 10 + J;
+      END;
+   END;
+   C = 'XY';
+   C(2) = 'ZZZ';
+   PUT SKIP LIST(SUM(B), B(2, 3), DIM(B, 1), DIM(B, 2));
+   PUT SKIP LIST(C(1), C(2), HBOUND(C, 1));
+   N = 3;
+   ALLOCATE S;
+   DO I = 0 TO 3;
+      S(I).K = I; V(I, 1) = 'AB'; S(I).V(2) = 'CD'; F(I) = I / 4E0;
+   END;
+   PUT SKIP LIST(SUM(S.K), S(3).V(2), F(3));
+   PUT SKIP LIST(LBOUND(K, 1), HBOUND(K, 1));
+   N = 1;
+   ALLOCATE S;
+   S.K = 5; S.F = 1;
+   PUT SKIP LIST(SUM(S.K), SUM(S.F), HBOUND(K, 1));
+   FREE S;
+   PUT SKIP LIST(SUM(S.K), F(2), HBOUND(K, 1));
+   FREE A, B, C, S;
+   PUT SKIP LIST(ALLOCATION(A), ALLOCATION(B), ALLOCATION(S));
+ SHOW: PROC(X);
+   DCL X(*) FIXED BIN(31);
+   PUT SKIP LIST('SHOW', LBOUND(X, 1), HBOUND(X, 1), X(HBOUND(X, 1)));
+ END SHOW;
+ END T329CAD;

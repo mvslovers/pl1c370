@@ -4111,10 +4111,20 @@ static void check_proc(struct proc *p)
             if (!arith(s->areax->t))
                 error_at(s->line, "the size of area %s must be arithmetic", s->name);
         }
-        if (s->adjust && (s->root != s || s->st != ST_AUTO || s->param || s->child ||
-                          s->init || s->ninits || s->defined || s->packed || s->star))
+        if (s->adjust && (s->root != s || (s->st != ST_AUTO && s->st != ST_CTL) || s->param ||
+                          (s->child && s->st != ST_CTL) || s->init || s->ninits ||
+                          s->defined || s->packed || s->star || (s->child && s->root->tbits)))
             error_at(s->line, "%s: bounds from expressions are supported for AUTOMATIC "
-                     "level-1 arrays of scalars without INITIAL only", s->name);
+                     "level-1 arrays of scalars and CONTROLLED level-1 arrays without "
+                     "INITIAL only", s->name);
+        else if (s->adjust && s->st == ST_CTL)
+            /* CONTROLLED: the bounds evaluated at each ALLOCATE (gen.c) */
+            for (int d = 0; d < s->ndims; d++) {
+                type_of(s->lbx[d]);
+                type_of(s->hbx[d]);
+                if (!arith(s->lbx[d]->t) || !arith(s->hbx[d]->t))
+                    error_at(s->line, "a bound of %s must be arithmetic", s->name);
+            }
         else if ((s->stardims || (s->star && s->t.k == TY_BIT)) && !s->param && !s->adjust)
             error_at(s->line, "%s: * as a bound or a length is for parameters", s->name);
     }

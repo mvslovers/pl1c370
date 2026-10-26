@@ -452,6 +452,20 @@ static struct expr *fold_bounds(struct expr *e)
 
     if (a->k != E_VAR || a->nsubs != 0 || cum_dims(a->sym) == 0)
         fatal("%s(%d): DIM, LBOUND and HBOUND need an array", src_name, e->line);
+    if (!a->sym->ndims) {
+        /* a member with its structure's dimensions only: when those are
+         * an adjustable array's, the bounds are its, at run time */
+        struct sym *o = a->sym->parent;
+        while (o && !o->ndims)
+            o = o->parent;
+        if (o && o->stardims && cum_dims(a->sym) == o->ndims) {
+            struct expr *c = mk(E_CALL, e->line);
+            *c = *e;
+            c->arg[0] = ref(o, NULL, 0, e->line);
+            c->arg[0]->qual = a->qual;
+            return c;
+        }
+    }
     if (a->sym->stardims)
         return e;                 /* an A(*) parameter: at run time (gen.c) */
     if (a->sym->refer && a->sym->refer_dim >= 0 && e->fn == B_LBOUND &&
@@ -538,7 +552,7 @@ static struct expr *subst(struct expr *e, struct sym **vars, int nv, const int *
         c->sub[i] = subst(e->sub[i], NULL, 0, NULL, NULL);
     for (int i = 0; i < e->nargs; i++) {
         if ((e->k == E_FCALL || (e->k == E_CALL && (e->fn == B_ADDR || e->fn == B_STRING || e->fn == B_STG ||
-                                 e->fn == B_CSTG))) &&
+                                 e->fn == B_CSTG || e->fn == B_ALLOCATION))) &&
             is_aggregate(e->arg[i])) {
             /* an array or structure, passed whole; a cross section by a
              * copy, assigned back after the statement */
@@ -652,7 +666,7 @@ static int has_aggregate(struct expr *e)
         return 0;
     if (e->k == E_CALL && (e->fn == B_DIM || e->fn == B_LBOUND || e->fn == B_HBOUND ||
                            e->fn == B_ADDR || e->fn == B_STRING || e->fn == B_STG ||
-                           e->fn == B_CSTG))
+                           e->fn == B_CSTG || e->fn == B_ALLOCATION))
         return 0;                         /* ADDR of an array is one address */
     if (is_reduce(e))
         return 0;                         /* an element value */
@@ -696,7 +710,7 @@ static struct expr *shape_of(struct expr *e)
     if (!e || is_reduce(e) || e->k == E_FCALL ||
         (e->k == E_CALL && (e->fn == B_DIM || e->fn == B_LBOUND || e->fn == B_HBOUND ||
                             e->fn == B_ADDR || e->fn == B_STRING || e->fn == B_STG ||
-                            e->fn == B_CSTG)))
+                            e->fn == B_CSTG || e->fn == B_ALLOCATION)))
         return NULL;
     if (e->k == E_VAR)
         return open_dims(e) > 0 || is_struct(e->sym) ? e : NULL;
