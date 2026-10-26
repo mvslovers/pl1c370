@@ -3102,18 +3102,21 @@ static struct stmt *get_stmt(int from)
 static struct stmt *open_stmt(int from, enum skind k)
 {
     struct stmt *s = new_stmt(k, from);
+    int cap = 0;
     pos++;
     for (;;) {
         struct fopen *f;
-        if ((s->nfiles & (s->nfiles - 1)) == 0) {
-            /* room doubled at 1, 2, 4, 8, ... files */
-            s->files = realloc(s->files, (size_t)(s->nfiles ? 2 * s->nfiles : 1) *
-                                         sizeof *s->files);
-            if (!s->files)
-                fatal("out of memory");
+        if (s->nfiles == cap) {
+            /* room for 4, 8, 16, ... files */
+            struct fopen *nf;
+            cap = cap ? 2 * cap : 4;
+            nf = xmalloc((size_t)cap * sizeof *nf);
+            if (s->nfiles)
+                memcpy(nf, s->files, (size_t)s->nfiles * sizeof *nf);
+            free(s->files);
+            s->files = nf;
         }
         f = &s->files[s->nfiles++];
-        memset(f, 0, sizeof *f);
         if (!isword("FILE"))
             fatal("%s(%d): FILE(...) expected", src_name, tk(0)->line);
         f->file = file_option();
