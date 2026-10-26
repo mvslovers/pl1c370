@@ -44,6 +44,7 @@ against SC26-3114-01.
 | Preprocessor: INDEX, LENGTH, COUNTER, COMPILETIME, PARMSET; omitted arguments; `%ACTIVATE x NORESCAN`/`RESCAN`; `%DECLARE f BUILTIN` | OPT | Tier 104 | GC33-0009-4, chapter 16; PL/I (F)'s preprocessor has SUBSTR only (IEM4130I) and no RESCAN option (IEM4265I) |
 | Listing control statements `%PAGE;`, `%SKIP [(n)];`, `%PRINT;`, `%NOPRINT;`, `%CONTROL(FORMAT\|NOFORMAT);` | OPT | Tier 124 | GC33-0009-4, "Listing Control Statements"; no effect: PL1C/370 prints no source listing. Not in GC28-8201; also in the text a preprocessor procedure returns (Tier 128) |
 | `%DECLARE f ENTRY;` without RETURNS: the type of the value from the `%PROCEDURE` statement's RETURNS | OPT | Tier 128 | SC26-3114-01 "%DECLARE Statement" has no RETURNS; PL/I (F) needs it on both statements (GC28-8201-4) |
+| `%PROCEDURE ... STATEMENT`: in the text the reference ends with `;`, which is not kept; arguments by position or by keyword, `F(X) C(Z) B(Y);` | OPT | Tier 131 | GC33-0009-4, SC26-3114-01 "%PROCEDURE Statement"; not in GC28-8201-4 |
 | `%NOTE(message [, code]);` (and NOTE in a preprocessor procedure) | OPT | Tier 124 | GC33-0009-4, SC26-3114-01 "%NOTE Statement": the message on stderr with its severity I, W, E, S or U (code 0, 4, 8, 12, 16; another code the next lower, beyond 0 to 16 U); E and S fail the compilation, U ends it at once |
 | SELECT, WHEN, OTHERWISE | OPT | Tier 33 | |
 | LEAVE | OPT | Tier 33 | |
@@ -106,6 +107,7 @@ against SC26-3114-01.
 | A scalar DEFINED on a subscripted base: `X DEF A(L,M,N)` | OPT | Tier 126 | GC33-0009-4, "Simple Defining": the element the subscripts name, evaluated at each reference to X. PL/I (F) calls it a deferred feature (IEM0609I, JOB00281) |
 | A cross section as the base of DEFINED: `X(4) DEF A(2,*)` | OPT | Tier 127 | GC33-0009-4, "Simple Defining" (X2(10,10) DEF A(*,*,5)): the k-th asterisk is the defined array's k-th dimension, as kSUB; as many asterisks as dimensions |
 | INITIAL CALL p(args) | OPT | Tier 102 | GC33-0009-4 and SC26-3114-01, INITIAL attribute: p called when the variable is allocated -- AUTOMATIC at the block's entry, CONTROLLED at each ALLOCATE; not for STATIC (the rule) nor, here, BASED; factored names get a call each (Tier 127). The order among the block's AUTOMATIC initializations is that of the declarations |
+| `GET STRING('constant')` | OPT | Tier 131 | PL/I (F) refuses a constant there (IEM1836I); an expression such as SUBSTR it takes |
 | ENTRY ... VARIABLE, FILE VARIABLE | OPT | Tier 75 | AUTOMATIC scalars; assigned, invoked, used in FILE(...); not compared |
 | FILE as a member of a structure or an element of an array: a file variable, VARIABLE implied | OPT | Tier 129 | SC26-3114-01, "VARIABLE Attribute"; in AUTOMATIC storage; an ENTRY member or element stays refused |
 | CONDITION, COND | OPT | Tier 74 | declares a condition name; see the deviations |

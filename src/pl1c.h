@@ -273,6 +273,8 @@ struct sym {
     struct sym  *next;
     struct rawattr raw;    /* the DECLARE's data attributes, for DEFAULT */
     int          area_dflt; /* AREA without a size: DEFAULT VALUE(AREA(n)) may give it */
+    struct expr *areax;    /* AREA(expression) CONTROLLED: its size, evaluated
+                            * at each ALLOCATE (gen.c) */
     int          is_builtin; /* DCL name BUILTIN: the built-in function */
     int          external; /* EXTERNAL: one storage for the name, in every
                             * external procedure of the source (gen.c) */
@@ -381,6 +383,7 @@ struct expr {
 
 enum skind { S_NULL, S_ASSIGN, S_IF, S_GROUP, S_WHILE, S_ITER, S_PUT,
              S_CALL, S_RETURN, S_GOTO, S_GET, S_OPEN, S_CLOSE, S_ON, S_ITEM,
+             S_FBEG,   /* EDIT: the next pair's format list (lower.c) */
              S_READ, S_WRITE, S_DELETE, S_SIGNAL, S_REVERT, S_BEGIN, S_STOP, S_ALLOC, S_FREE,
              S_REWRITE, S_ENTRY, S_SELECT, S_WHEN, S_LEAVE, S_LOCATE, S_FORMAT,
              S_CHECK, /* CHECK(cond_name): body the system action's PUT DATA (lower.c) */
@@ -426,11 +429,13 @@ struct fmt { enum fkind k; int w, d; const char *pic; /* F_P */
 struct fopen { struct expr *file; int attrs; char *title;
                struct expr *linesize, *pagesize;   /* LINESIZE(e), PAGESIZE(e) */
                struct expr *tabs[16]; int ntabs; }; /* ANSI's TAB(e, ...) */
-#define MAXFILES 8
 
 #define MAXLABELS 4
 
 struct put_item { struct expr *e; struct expr *in; struct put_item *next;  /* in: IN(area) */
+                  struct fmt *fmts;          /* EDIT: the first item of a further
+                                              * (data list)(format list) pair:
+                                              * that pair's formats (S_FBEG) */
                   struct stmt *loop;         /* (items DO v = ...): an S_ITER, its items sub */
                   struct put_item *sub; };
 
@@ -479,7 +484,7 @@ struct stmt {
     struct expr *string;     /* ... the STRING option's string */
     struct fmt  *fmts;       /* the format list, F_END-terminated */
     int          nfmts;
-    struct fopen files[MAXFILES]; /* S_OPEN, S_CLOSE */
+    struct fopen *files;     /* S_OPEN, S_CLOSE: nfiles of them */
     int          nfiles;
     enum cond    cond;       /* S_ON, S_SIGNAL, S_REVERT */
     char        *cond_name;  /* ... C_CONDITION: the name */

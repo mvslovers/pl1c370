@@ -1451,6 +1451,12 @@ static struct stmt *lower_items(struct put_item *items, struct stmt *s)
     struct stmt *list = NULL;
     for (struct put_item *it = items; it; it = it->next) {
         struct expr *e = it->e;
+        if (it->fmts) {
+            /* the next (data list)(format list) pair begins */
+            struct stmt *fb = mk_stmt(S_FBEG, s);
+            fb->fmts = it->fmts;
+            list = append(list, fb);
+        }
         if (it->loop) {
             struct stmt *lp = it->loop;
             lp->body = lower_items(it->sub, s);
@@ -1688,6 +1694,7 @@ static struct stmt *lower_one(struct stmt *s)
     case S_OPEN:
     case S_CLOSE:
     case S_ITEM:
+    case S_FBEG:
     case S_READ:
     case S_WRITE:
     case S_REWRITE:

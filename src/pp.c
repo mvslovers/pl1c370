@@ -304,6 +304,11 @@ static struct val bi_eval(int k, struct val *a, int na, const char *pname)
 static struct val expr_or(void);
 static struct val invoke(struct ppvar *v, struct val *args, int nargs);
 
+/* Keyword arguments of a STATEMENT reference, for the next invoke */
+static char kw_name[16][32];
+static struct val kw_val[16];
+static int nkw;
+
 static struct val primary(void)
 {
     ep = skipb(ep);
@@ -1333,8 +1338,14 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
     int p = find_label(v->name), q, save = nvars, savef = lframe, saveline = curline;
     int sbs = pbody_start, sbe = pbody_end, done = 0;
     char w[32], pn[16][32];
-    int np = 0, retchar = v->retchar;
+    int np = 0, retchar = v->retchar, nk = nkw;
     struct val r;
+    struct val kv[16];
+    char kn[16][32];
+
+    memcpy(kn, kw_name, sizeof kn);
+    memcpy(kv, kw_val, sizeof kv);
+    nkw = 0;
 
     if (v->running)
         /* PL/I (F): IEM4452I, a terminal error (JOB00409) */
@@ -1370,6 +1381,8 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
         if (t == q)
             pp_error("%s: a PROCEDURE option expected", v->name);
         q = t;
+        if (strcmp(w, "STATEMENT") == 0)
+            beyond_f(curline, L_OPT, "the STATEMENT option");
         if (strcmp(w, "RETURNS") != 0)
             continue;
         if (L->s[q] != '(')
@@ -1384,6 +1397,21 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
         if (L->s[q] != ')')
             pp_error("%s", "')' expected");
         q++;
+    }
+    for (int k = 0; k < nk; k++) {
+        /* a keyword argument: its parameter's place */
+        int i = 0;
+        while (i < np && strcmp(pn[i], kn[k]) != 0)
+            i++;
+        if (i == np)
+            pp_error("%s is not a parameter of the procedure", kn[k]);
+        if (i >= 16)
+            pp_error("%s", "too many arguments");
+        for (; nargs <= i; nargs++)
+            args[nargs] = charv(""), args[nargs].omitted = 1;
+        args[i] = kv[k];
+        if (i < v->nparm && !v->pchar[i] && !args[i].omitted)
+            args[i] = fixv(to_fix(args[i]));
     }
     q = past_semi(q);
     pbody_start = q;
@@ -1465,11 +1493,67 @@ static void scan_range(int p, int end)
  * for replacement, then converted (chapter 16).  Returns after it. */
 static int text_args(int p, const struct ppvar *v, struct val *args, int *nap);
 
+/* Whether procedure v's %PROCEDURE statement has the STATEMENT option. */
+static int stmt_form(const struct ppvar *v)
+{
+    int q = skipb(find_label(v->name) + 1);
+    char w[32];
+    while (isidst((unsigned char)L->s[q])) {
+        int r = skipb(ident(q, w, sizeof w));
+        if (L->s[r] != ':')
+            break;
+        q = skipb(r + 1);
+    }
+    if (!is_word(q, "PROCEDURE") && !is_word(q, "PROC"))
+        return 0;
+    for (q = skipb(q + (is_word(q, "PROC") ? 4 : 9)); q < L->n && L->s[q] != ';';) {
+        if (L->s[q] == '(') {
+            while (q < L->n && L->s[q] != ')')
+                q++;
+            q = skipb(q + 1);
+        } else if (isidst((unsigned char)L->s[q])) {
+            if (is_word(q, "STATEMENT"))
+                return 1;
+            q = skipb(ident(q, w, sizeof w));
+        } else {
+            q++;
+        }
+    }
+    return 0;
+}
+
 static int text_invoke(struct ppvar *v, int p)
 {
     struct val args[16];
     int na = 0;
+    char kn[16][32];
+    struct val kv[16];
+    int nk = 0;
     p = text_args(p, v, args, &na);
+    if (stmt_form(v)) {
+        /* STATEMENT: keyword arguments name(argument), then the ';' that
+         * ends the reference, not kept (SC26-3114-01, %PROCEDURE) */
+        for (;;) {
+            int q = skipb(p), n = 0;
+            struct val a[16];
+            if (L->s[q] == ';') {
+                p = q + 1;
+                break;
+            }
+            if (!isidst((unsigned char)L->s[q]) || nk == 16)
+                pp_error("%s: a STATEMENT reference ends with ';'", v->name);
+            q = skipb(ident(q, kn[nk], 32));
+            if (L->s[q] != '(')
+                pp_error("%s: a keyword argument is name(argument)", v->name);
+            p = text_args(q, NULL, a, &n);
+            if (n != 1)
+                pp_error("%s: a keyword argument is name(argument)", v->name);
+            kv[nk++] = a[0];
+        }
+    }
+    memcpy(kw_name, kn, sizeof kn);
+    memcpy(kw_val, kv, sizeof kv);
+    nkw = nk;
     {
         struct val r = invoke(v, args, na);
         out_ch(' ');

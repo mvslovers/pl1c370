@@ -1261,6 +1261,15 @@ static int gen_bin_at(struct expr *e, int qs)
                 ins(NULL, "LR", "%d,15", r);
                 return r;
             }
+            if (x->areax) {
+                /* AREA(expression): its size from its header */
+                struct place p = gen_place(s);
+                r = p_take(&p);
+                ins(NULL, "L", "%d,%s", r, p_rx(&p, 0));
+                p_free_except(&p, r);
+                ins(NULL, "LA", "%d,16(,%d)", r, r);
+                return r;
+            }
             r = reg_get();
             load_const(r, whole || (x->child && s->nsubs == 0) ? total_size(x) :
                           x->child ? x->size - x->tail : type_size(x->t));
@@ -5775,6 +5784,12 @@ static void gen_stmt1(struct stmt *s)
         call("PL1DLKY");
         break;
     }
+    case S_FBEG:
+        /* the next (data list)(format list) pair of an EDIT: this format
+         * list begins; the one before ends at its last data item, its
+         * control items after it not executed (PL/I (F), JOB00117) */
+        format_begin(s);
+        break;
     case S_ITEM:
         if (s->get && s->cxpair == 1) {
             /* a complex target's parts follow (rt/pl1ioget.c); the reader
@@ -5943,7 +5958,20 @@ static void gen_stmt1(struct stmt *s)
                 /* a generation: A(the one before), a word, the data */
                 int a = reg_get(), b = reg_get();
                 ins(NULL, "L", "%d,=A(@V%d)", a, x->label);
-                if (s->k == S_ALLOC) {
+                if (s->k == S_ALLOC && x->areax) {
+                    /* AREA(expression): the size now; the area's header
+                     * (size, no extent, no free list) at 8 */
+                    int n = gen_int(x->areax), sz = reg_get();
+                    ins(NULL, "LA", "%d,24(,%d)", sz, n);
+                    arg_reg(sz);
+                    reg_free(sz);
+                    call("PL1ALOC");
+                    ins(NULL, "MVC", "0(4,15),0(%d)", a);
+                    ins(NULL, "ST", "15,0(,%d)", a);
+                    ins(NULL, "ST", "%d,8(,15)", n);
+                    ins(NULL, "XC", "12(12,15),12(15)");
+                    reg_free(n);
+                } else if (s->k == S_ALLOC) {
                     arg_const(8 + total_size(x) + phase);
                     call("PL1ALOC");
                     ins(NULL, "MVC", "0(4,15),0(%d)", a);
