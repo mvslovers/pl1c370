@@ -1,0 +1,20 @@
+ T327EPR: PROC OPTIONS(MAIN);
+   /* TIER 131: EDIT WITH MORE THAN ONE (DATA LIST)(FORMAT LIST)
+      PAIR: EACH LIST ITS OWN FORMATS, CONTROL ITEMS AT A PAIR'S END */
+   DCL (I, J) FIXED BIN(15), N FIXED DEC(5) INIT(42);
+   DCL S CHAR(40), T CHAR(13) INIT('ABC123DEF4567'), (A, B) CHAR(3),
+       (X, Y) FIXED DEC(4);
+   DCL V(4) FIXED BIN(15) INIT(1, 2, 3, 4);
+ F1: FORMAT(F(3), X(1), A);
+   PUT SKIP EDIT('N=') (A) (N) (P'ZZZ9B');
+   PUT SKIP EDIT('A', 'B', 'C') (A(2)) (N, N) (F(5), SKIP, F(4));
+   PUT SKIP EDIT((V(I) DO I = 1 TO 4)) (F(3)) ('END') (X(2), A);
+   PUT SKIP EDIT(V) (2 F(2), X(3)) (7, 'R') (R(F1));
+   PUT SKIP EDIT('X') (A, X(5), A) ('Y') (A);
+   PUT STRING(S) EDIT('AB', 12) (A, F(4)) ('CD', 34) (A(3), F(3));
+   PUT SKIP EDIT(S) (A);
+   GET STRING(T) EDIT(A) (A(3)) (X) (F(3)) (B, Y) (A(3), F(4));
+   PUT SKIP EDIT(A, X, B, Y) (A, F(5), X(1), A, F(5));
+   GET EDIT(I) (F(2)) (J) (X(1), F(3));
+   PUT SKIP EDIT(I, J) (2 F(5));
+ END T327EPR;

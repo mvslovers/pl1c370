@@ -1372,11 +1372,17 @@ static void declare(void)
                     pos += 3;
                     star = 1;
                     area_dflt = 0;
+                } else if (is(T_LP) && !(tk(1)->kind == T_NUM && tk(2)->kind == T_RP)) {
+                    /* AREA(expression): its size at ALLOCATE */
+                    pos++;
+                    tmpl.areax = expr();
+                    expect(T_RP, "')'");
+                    area_dflt = 0;
                 } else if (is(T_LP)) {
                     area = number_in_parens(NULL);
                     area_dflt = 0;
                 }
-                if (area < 1 || area > 32767)
+                if (!tmpl.areax && (area < 1 || area > 32767))
                     error_at(line, "the size of an area is 1 to 32767 bytes");
             }
             else if (isword("OFFSET")) {
@@ -1857,6 +1863,7 @@ static void declare(void)
             s->ndims = tmpl.ndims;
             s->stardims = tmpl.stardims;
             s->adjust = tmpl.adjust;
+            s->areax = tmpl.areax;
             memcpy(s->lbx, tmpl.lbx, sizeof s->lbx);
             memcpy(s->hbx, tmpl.hbx, sizeof s->hbx);
             s->gen = tmpl.gen;
@@ -3022,6 +3029,23 @@ static void edit_formats(struct stmt *s)
     s->fmts[s->nfmts].k = F_END;
 }
 
+/* EDIT (list)(formats) [(list)(formats)] ...: each further pair's
+ * formats on its first item; the format list ends with each pair */
+static void edit_pairs(struct stmt *s, struct put_item ***tail, int targets)
+{
+    data_list(tail, targets);
+    edit_formats(s);
+    while (is(T_LP)) {
+        struct put_item **first = *tail;
+        struct fmt *f = xmalloc(MAXFMT * sizeof *f);
+        int n = 0;
+        data_list(tail, targets);
+        format_list(f, &n);
+        f[n].k = F_END;
+        (*first)->fmts = f;
+    }
+}
+
 /* GET [FILE(f)] [SKIP[(n)]] LIST(targets) | EDIT(targets)(formats) */
 static struct stmt *get_stmt(int from)
 {
@@ -3052,8 +3076,7 @@ static struct stmt *get_stmt(int from)
         } else if (isword("EDIT")) {
             pos++;
             s->edit = 1;
-            data_list(&tail, 1);
-            edit_formats(s);
+            edit_pairs(s, &tail, 1);
         } else if (isword("DATA")) {
             pos++;
             s->data = 1;
@@ -3082,8 +3105,13 @@ static struct stmt *open_stmt(int from, enum skind k)
     pos++;
     for (;;) {
         struct fopen *f;
-        if (s->nfiles == MAXFILES)
-            fatal("%s(%d): too many files in one statement", src_name, s->line);
+        if ((s->nfiles & (s->nfiles - 1)) == 0) {
+            /* room doubled at 1, 2, 4, 8, ... files */
+            s->files = realloc(s->files, (size_t)(s->nfiles ? 2 * s->nfiles : 1) *
+                                         sizeof *s->files);
+            if (!s->files)
+                fatal("out of memory");
+        }
         f = &s->files[s->nfiles++];
         memset(f, 0, sizeof *f);
         if (!isword("FILE"))
@@ -3182,8 +3210,7 @@ static struct stmt *put_stmt(int from)
         } else if (isword("EDIT")) {
             pos++;
             s->edit = 1;
-            data_list(&tail, 0);
-            edit_formats(s);
+            edit_pairs(s, &tail, 0);
         } else if (isword("DATA")) {
             pos++;
             s->data = 2;
@@ -4252,6 +4279,15 @@ static void expand_remote(struct stmt *s, struct proc *p)
                 s->nfmts = n;
             }
         }
+        if ((s->k == S_PUT || s->k == S_GET) && s->edit)
+            for (struct put_item *it = s->items; it; it = it->next)
+                if (it->fmts) {
+                    /* a further pair's formats (edit_pairs) */
+                    struct fmt *out = xmalloc(MAXFMT * sizeof *out);
+                    int n = expand_fmts(out, 0, it->fmts, -1, p, 0, s->line);
+                    out[n].k = F_END;
+                    it->fmts = out;
+                }
         expand_remote(s->body, p);
         expand_remote(s->els, p);
     }

@@ -3643,6 +3643,10 @@ static void check_stmts(struct stmt *s)
                     error_at(s->line, "STRING needs a character string");
                 else if (s->k == S_PUT && (s->string->k != E_VAR || s->string->sym->child))
                     error_at(s->line, "PUT STRING needs a character variable");
+                else if (s->string->k == E_STR)
+                    /* PL/I (F) refuses a constant (IEM1836I, JOB00114);
+                     * SUBSTR(...) it takes (t152rl) */
+                    beyond_f(s->line, L_OPT, "GET STRING of a constant");
                 if (s->skip >= 0 || s->page)
                     error_at(s->line, "STRING takes no SKIP, PAGE or LINE");
                 if (s->edit)
@@ -3675,6 +3679,8 @@ static void check_stmts(struct stmt *s)
 
             }
             check_stmts(s->body);
+            break;
+        case S_FBEG:
             break;
         case S_ITEM:
             if (s->get && s->lhs->k == E_VAR && cx_expr(s->lhs)) {
@@ -4096,6 +4102,15 @@ static void check_proc(struct proc *p)
         if ((s->packed || (s->root->child && s->root->tbits)) && (s->defined || s->root->defined))
             error_at(s->line, "%s: DEFINED with packed bit strings is not supported yet",
                      s->name);
+        if (s->areax) {
+            /* AREA(expression): CONTROLLED, its size at each ALLOCATE */
+            if (s->root != s || s->st != ST_CTL || s->ndims || s->t.k != TY_AREA)
+                error_at(s->line, "%s: the size of an area from an expression is supported "
+                         "for CONTROLLED level-1 scalars only", s->name);
+            type_of(s->areax);
+            if (!arith(s->areax->t))
+                error_at(s->line, "the size of area %s must be arithmetic", s->name);
+        }
         if (s->adjust && (s->root != s || s->st != ST_AUTO || s->param || s->child ||
                           s->init || s->ninits || s->defined || s->packed || s->star))
             error_at(s->line, "%s: bounds from expressions are supported for AUTOMATIC "

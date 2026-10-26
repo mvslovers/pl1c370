@@ -130,9 +130,22 @@ section 3a, has the list).
 - [x] Tier 129: FILE as a member of a structure or an element of an
       array, VARIABLE implied (OPT); AUTOMATIC only, ENTRY members
       stay refused
-- [ ] LIFT, next: string and area extents from expressions
-      (`CHAR(N)` AUTOMATIC, `AREA((expr)) CTL`); PL/I (F) has them for
-      AUTOMATIC and CONTROLLED, PL1C/370 takes constants and REFER only
+- [x] Tier 130: AREA(expression) CONTROLLED, its size at each
+      ALLOCATE (PL/I (F) has it, JOB00120)
+- [x] Tier 131: EDIT with more than one (data list)(format list) pair
+      (PL/I (F) does not run a pair's control items after its last data
+      item, JOB00117); %PROCEDURE ... STATEMENT with keyword arguments
+      (OPT); OPEN and CLOSE of any number of files; GET STRING of a
+      constant is OPT level
+- [ ] Decision: string lengths from expressions (`CHAR(N)` AUTOMATIC
+      or CONTROLLED, PL/I (F) has them). The CHAR(*) parameter model
+      sizes temporaries by a compile-time bound (256 for an
+      expression) and cuts longer values; an AUTOMATIC CHAR(N) needs
+      either that bound (silent truncation beyond it) or temporaries
+      sized at run time
+- [ ] LIFT, next: FLOAT DECIMAL(17..33), extended precision (line
+      21930); bounds mixing constants and `*` in a parameter,
+      `2 KTV(3,*)` (16948)
 - [ ] keyed record I/O of a VARYING string, PUT DATA beyond 3
       dimensions, DEFINED with packed bit strings
 - [ ] 12 KB of code per procedure (three base registers): a large main

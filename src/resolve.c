@@ -817,6 +817,7 @@ static void resolve_proc(struct proc *p)
             resolve_expr(s->hbx[d]);
         }
         resolve_expr(s->t.area);
+        resolve_expr(s->areax);
         if (s->refer_from)
             resolve_refer(s);
         for (int i = 0; i < s->ngen; i++) {
