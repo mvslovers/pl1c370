@@ -745,6 +745,8 @@ static int find_label(const char *name)
     return 0;
 }
 
+static void assign(struct ppvar *v, struct val x);
+
 static void declare(int q)
 {
     for (;;) {
@@ -782,7 +784,7 @@ static void declare(int q)
             return;
         }
         if (is_word(q, "ENTRY")) {
-            /* name ENTRY [(attributes)] RETURNS(attribute) */
+            /* name ENTRY [(attributes)] [RETURNS(attribute)] */
             struct ppvar e;
             memset(&e, 0, sizeof e);
             e.isentry = 1;
@@ -821,6 +823,10 @@ static void declare(int q)
                 if (L->s[q] != ')')
                     pp_error("%s", "')' expected");
                 q++;
+            } else {
+                /* the result's type from the %PROCEDURE statement alone
+                 * (SC26-3114-01); PL/I (F) needs RETURNS here too */
+                beyond_f(curline, L_OPT, "%DECLARE ENTRY without RETURNS");
             }
             for (int i = 0; i < nn; i++) {
                 struct ppvar *v = var(names[i]);
@@ -855,6 +861,13 @@ static void declare(int q)
                 v = &vars[nvars++];
                 memset(v, 0, sizeof *v);
                 set_name(v->name, sizeof v->name, names[i]);
+            } else if (v->hasval && v->ischar != ischar) {
+                /* a parameter bound before its DCL in the procedure
+                 * (%DECLARE name ENTRY without attributes): its value
+                 * converted to the declared type */
+                struct val x = v->ischar ? charv(v->str) : fixv(v->fix);
+                v->ischar = ischar;
+                assign(v, x);
             }
             v->ischar = ischar;
             v->active = 1;
@@ -1093,31 +1106,63 @@ static int exec(int p)
 
 static int pstmt(int p, int end, struct val *ret, int *done);
 
-/* past the body statement at p, a DO group with its END */
+/* past the THEN of the IF at p: strings and comments skipped, THEN taken
+ * only as a word of its own */
+static int past_then(int p)
+{
+    p += 2;
+    while (p < L->n) {
+        if (L->s[p] == '\'')
+            p = past_string(p);
+        else if (L->s[p] == '/' && p + 1 < L->n && L->s[p + 1] == '*')
+            p = skipb(p);
+        else if (L->s[p] == ';')
+            break;
+        else if (isidst((unsigned char)L->s[p])) {
+            if (is_word(p, "THEN"))
+                return p + 4;
+            while (p < L->n && isidch((unsigned char)L->s[p]))
+                p++;
+        } else
+            p++;
+    }
+    pp_error("%s", "THEN expected");
+    return p;
+}
+
+/* past the body statement at p: a DO group with its END, an IF with its
+ * THEN unit and its ELSE unit, each unit one of these again */
 static int skip_pstmt(int p, int end)
 {
-    int q = skipb(p), depth = 0;
+    int q = skipb(p);
     char w[32];
-    do {
-        q = skipb(q);
-        while (isidst((unsigned char)L->s[q])) {
-            int r = skipb(ident(q, w, sizeof w));
+    while (isidst((unsigned char)L->s[q])) {
+        int r = skipb(ident(q, w, sizeof w));
+        if (L->s[r] != ':')
+            break;
+        q = skipb(r + 1);
+    }
+    if (is_word(q, "IF")) {
+        int r = skip_pstmt(past_then(q), end), e = skipb(r);
+        return is_word(e, "ELSE") ? skip_pstmt(e + 4, end) : r;
+    }
+    if (!is_word(q, "DO"))
+        return past_semi(q);
+    q = past_semi(q);
+    for (;;) {
+        int s = skipb(q);
+        if (s >= end)
+            pp_error("%s", "DO without END in a preprocessor procedure");
+        while (isidst((unsigned char)L->s[s])) {
+            int r = skipb(ident(s, w, sizeof w));
             if (L->s[r] != ':')
                 break;
-            q = skipb(r + 1);
+            s = skipb(r + 1);
         }
-        if (is_word(q, "DO"))
-            depth++;
-        else if (is_word(q, "END"))
-            depth--;
-        else if (is_word(q, "IF")) {
-            /* IF e THEN unit [ELSE unit]: the units counted as they come */
-            q = past_semi(q);
-            continue;
-        }
-        q = past_semi(q);
-    } while (depth > 0 && q < end);
-    return q;
+        if (is_word(s, "END"))
+            return past_semi(s);
+        q = skip_pstmt(s, end);
+    }
 }
 
 /* the position of label: among the body's statements */
@@ -1288,7 +1333,7 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
     int p = find_label(v->name), q, save = nvars, savef = lframe, saveline = curline;
     int sbs = pbody_start, sbe = pbody_end, done = 0;
     char w[32], pn[16][32];
-    int np = 0;
+    int np = 0, retchar = v->retchar;
     struct val r;
 
     if (v->running)
@@ -1316,6 +1361,29 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
             q++;
             break;
         }
+    }
+    /* RETURNS(CHARACTER|FIXED) on the PROCEDURE statement gives the result's
+     * type; %DECLARE name ENTRY has no RETURNS (SC26-3114-01) */
+    for (q = skipb(q); q < L->n && L->s[q] != ';'; q = skipb(q)) {
+        char a[32];
+        int t = skipb(ident(q, w, sizeof w));
+        if (t == q)
+            pp_error("%s: a PROCEDURE option expected", v->name);
+        q = t;
+        if (strcmp(w, "RETURNS") != 0)
+            continue;
+        if (L->s[q] != '(')
+            pp_error("%s", "RETURNS(");
+        q = skipb(ident(skipb(q + 1), a, sizeof a));
+        if (strcmp(a, "CHARACTER") == 0 || strcmp(a, "CHAR") == 0)
+            retchar = 1;
+        else if (strcmp(a, "FIXED") == 0)
+            retchar = 0;
+        else
+            pp_error("%s: RETURNS(CHARACTER) or RETURNS(FIXED)", v->name);
+        if (L->s[q] != ')')
+            pp_error("%s", "')' expected");
+        q++;
     }
     q = past_semi(q);
     pbody_start = q;
@@ -1352,7 +1420,7 @@ static struct val invoke(struct ppvar *v, struct val *args, int nargs)
     pbody_start = sbs;
     pbody_end = sbe;
     curline = saveline;
-    return v->retchar ? charv(to_char(r)) : fixv(to_fix(r));
+    return retchar ? charv(to_char(r)) : fixv(to_fix(r));
 }
 
 static int text_invoke(struct ppvar *v, int p);

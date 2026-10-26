@@ -4,7 +4,8 @@
  * stream: a record shorter than 72 counts as padded with blanks, and a
  * string or identifier may run on into the next record.  Keywords are not
  * reserved, so every word is an identifier here; the parser decides.
- * The NOT sign is accepted as '^' or as UTF-8 U+00AC.
+ * The NOT sign is accepted as '^' or as UTF-8 U+00AC; UTF-8 up to U+00FF
+ * is read as Latin-1, other bytes as they are.
  */
 #include <ctype.h>
 #include <stdlib.h>
@@ -165,10 +166,14 @@ static void read_stream(struct lexer *lx, const char *path)
         char col[LASTCOL - FIRSTCOL + 1];
 
         line++;
-        /* UTF-8 NOT sign (C2 AC) becomes '^'. */
+        /* UTF-8 up to U+00FF (C2 or C3, then 80-BF) is one Latin-1
+         * character, so the margins count characters; the NOT sign
+         * (C2 AC) becomes '^'.  Other bytes are taken as Latin-1. */
         for (c = 0; c + 1 < len; c++)
-            if ((unsigned char)rec[c] == 0xC2 && (unsigned char)rec[c + 1] == 0xAC) {
-                rec[c] = '^';
+            if (((unsigned char)rec[c] == 0xC2 || (unsigned char)rec[c] == 0xC3) &&
+                ((unsigned char)rec[c + 1] & 0xC0) == 0x80) {
+                int u = ((unsigned char)rec[c] & 0x03) << 6 | ((unsigned char)rec[c + 1] & 0x3F);
+                rec[c] = u == 0xAC ? '^' : (char)u;
                 memmove(rec + c + 1, rec + c + 2, (size_t)(len - c - 1));
                 len--;
             }
@@ -403,6 +408,26 @@ void lex_file(struct lexer *lx, const char *path)
                 i = pp_include(lx, i, t.line);
                 continue;
             }
+            {
+                /* a listing control statement the preprocessor left in
+                 * the text (a procedure's value, say): no source listing
+                 * here, so no effect (GC33-0009-4) */
+                static const char *const lc[] = { "PAGE", "SKIP", "PRINT", "NOPRINT", "CONTROL" };
+                size_t k;
+                for (k = 0; k < sizeof lc / sizeof lc[0]; k++) {
+                    size_t ln = strlen(lc[k]);
+                    if ((size_t)(lx->n - j) >= ln && strncasecmp(lx->s + j, lc[k], ln) == 0 &&
+                        !isidch((unsigned char)lx->s[j + ln]))
+                        break;
+                }
+                if (k < sizeof lc / sizeof lc[0]) {
+                    beyond_f(t.line, L_OPT, "a listing control statement");
+                    while (j < lx->n && lx->s[j] != ';')
+                        j++;
+                    i = j + 1;
+                    continue;
+                }
+            }
             fatal("%s(%d): preprocessor statements other than %%INCLUDE are not supported yet",
                   src_name, t.line);
         }
@@ -542,9 +567,9 @@ void lex_file(struct lexer *lx, const char *path)
                 if (m > 1) {
                     char *bv = xmalloc((size_t)(n * m + 1));
                     for (int k = 0; k < n; k++) {
-                        int d = v[k] >= '0' && v[k] <= '9' ? v[k] - '0' :
-                                v[k] >= 'A' && v[k] <= 'F' ? v[k] - 'A' + 10 : 99;
-                        if (d >= 1 << m)
+                        /* a-f as A-F, as in an X constant */
+                        int d = hexval((unsigned char)v[k]);
+                        if (d < 0 || d >= 1 << m)
                             error_at(t.line, "%c is not a digit of a B%d constant", v[k], m);
                         for (int b = 0; b < m; b++)
                             bv[k * m + b] = (d >> (m - 1 - b)) & 1 ? '1' : '0';

@@ -118,6 +118,17 @@ section 3a, has the list).
       on a subscripted base (OPT)
 - [x] Tier 127: a cross section as the base of DEFINED, INITIAL CALL
       for factored names (OPT)
+- [x] Tier 128: from compiling a large real program (LIFT, 23,473
+      lines): nested IF/ELSE in a preprocessor procedure (a skipped IF
+      or DO group is one unit), the result type from the %PROCEDURE's
+      RETURNS (`%DCL f ENTRY;` alone, OPT), UTF-8 source up to U+00FF
+      read as Latin-1 so the margins count characters, B4 digits a-f,
+      listing control statements in returned text, INITIAL lists of
+      any length. Small decisions taken: lower case B4 digits accepted
+      (SC26-3114-01 does not say; X constants already took them);
+      UTF-8 beyond U+00FF stays bytes
+- [ ] LIFT, next: FILE as a structure member (FILE VARIABLE), AREA
+      with an extent expression and CONTROLLED
 - [ ] keyed record I/O of a VARYING string, PUT DATA beyond 3
       dimensions, DEFINED with packed bit strings
 - [ ] 12 KB of code per procedure (three base registers): a large main
