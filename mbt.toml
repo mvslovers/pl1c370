@@ -1312,6 +1312,16 @@ sources = ["build/gen/t322icf.asm"]
 rent    = false
 reus    = false
 
+[module.TT323PPE]
+sources = ["build/gen/t323ppe.asm"]
+rent    = false
+reus    = false
+
+[module.TT324LST]
+sources = ["build/gen/t324lst.asm"]
+rent    = false
+reus    = false
+
 [module.TT32FIN]
 sources = ["build/gen/t32fin.asm"]
 rent    = false

@@ -659,6 +659,21 @@ static struct expr *init_value1(void)
 /* The items of an INITIAL list up to its ')', appended to s->inits; a
  * group (n)(item, ...) is expanded n times here (nested to any depth
  * the source has). */
+/* room for n more items in s's INITIAL list, which grows as it is read
+ * ((466)(SYSNULL()) is 466 of them) */
+static int init_cap;
+
+static void init_room(struct sym *s, int n)
+{
+    if (s->ninits + n <= init_cap)
+        return;
+    while (s->ninits + n > init_cap)
+        init_cap *= 2;
+    s->inits = realloc(s->inits, (size_t)init_cap * sizeof *s->inits);
+    if (!s->inits)
+        fatal("out of memory");
+}
+
 static void init_list(struct sym *s)
 {
     for (;;) {
@@ -683,8 +698,7 @@ static void init_list(struct sym *s)
                 if (rep == 0)
                     s->ninits = first;
                 for (int k = 1; k < rep; k++) {
-                    if (s->ninits + n > MAXINIT)
-                        fatal("%s(%d): too many INITIAL items", src_name, s->line);
+                    init_room(s, n);
                     memcpy(&s->inits[s->ninits], &s->inits[first], (size_t)n * sizeof *s->inits);
                     s->ninits += n;
                 }
@@ -709,8 +723,7 @@ static void init_list(struct sym *s)
                 rep = 0;
             }
         }
-        if (s->ninits == MAXINIT)
-            fatal("%s(%d): too many INITIAL items", src_name, s->line);
+        init_room(s, 1);
         s->inits[s->ninits].rep = rep;
         s->inits[s->ninits].repx = repx;
         s->inits[s->ninits].e = init_value();
@@ -739,7 +752,8 @@ static void initial(struct sym *s)
         return;
     }
     expect(T_LP, "'('");
-    s->inits = xmalloc(MAXINIT * sizeof *s->inits);
+    init_cap = 16;
+    s->inits = xmalloc((size_t)init_cap * sizeof *s->inits);
     init_list(s);
     expect(T_RP, "')'");
     if (s->ninits == 1 && s->inits[0].rep == 1 && s->inits[0].e)

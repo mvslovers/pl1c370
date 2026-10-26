@@ -42,7 +42,8 @@ against SC26-3114-01.
 | Item | Level | Since | Notes |
 |---|---|---|---|
 | Preprocessor: INDEX, LENGTH, COUNTER, COMPILETIME, PARMSET; omitted arguments; `%ACTIVATE x NORESCAN`/`RESCAN`; `%DECLARE f BUILTIN` | OPT | Tier 104 | GC33-0009-4, chapter 16; PL/I (F)'s preprocessor has SUBSTR only (IEM4130I) and no RESCAN option (IEM4265I) |
-| Listing control statements `%PAGE;`, `%SKIP [(n)];`, `%PRINT;`, `%NOPRINT;`, `%CONTROL(FORMAT\|NOFORMAT);` | OPT | Tier 124 | GC33-0009-4, "Listing Control Statements"; no effect: PL1C/370 prints no source listing. Not in GC28-8201 |
+| Listing control statements `%PAGE;`, `%SKIP [(n)];`, `%PRINT;`, `%NOPRINT;`, `%CONTROL(FORMAT\|NOFORMAT);` | OPT | Tier 124 | GC33-0009-4, "Listing Control Statements"; no effect: PL1C/370 prints no source listing. Not in GC28-8201; also in the text a preprocessor procedure returns (Tier 128) |
+| `%DECLARE f ENTRY;` without RETURNS: the type of the value from the `%PROCEDURE` statement's RETURNS | OPT | Tier 128 | SC26-3114-01 "%DECLARE Statement" has no RETURNS; PL/I (F) needs it on both statements (GC28-8201-4) |
 | `%NOTE(message [, code]);` (and NOTE in a preprocessor procedure) | OPT | Tier 124 | GC33-0009-4, SC26-3114-01 "%NOTE Statement": the message on stderr with its severity I, W, E, S or U (code 0, 4, 8, 12, 16; another code the next lower, beyond 0 to 16 U); E and S fail the compilation, U ends it at once |
 | SELECT, WHEN, OTHERWISE | OPT | Tier 33 | |
 | LEAVE | OPT | Tier 33 | |
@@ -89,7 +90,7 @@ against SC26-3114-01.
 
 | Item | Level | Since | Notes |
 |---|---|---|---|
-| hexadecimal bit string constants `'F0'B4`, `'F0'BX` | MVS | Tier 71, BX Tier 86 | each digit 4 bits |
+| hexadecimal bit string constants `'F0'B4`, `'F0'BX` | MVS | Tier 71, BX Tier 86 | each digit 4 bits; the digits a to f as A to F (Tier 128), as in an X constant |
 | hexadecimal character constants `'C1C2'X` | MVS | Tier 86 | two digits a character, its EBCDIC code; an even number of digits |
 | bit string constants with the radix factors B3, B2, B1: `'17'B3`, `'13'B2`, `'101'B1` | ISO | Tier 71 | each digit 3, 2 or 1 bits (CL22, CL23) |
 | format items B1, B2, B3, B4, with or without a width | ISO | Tier 71 | the bits as digits of the radix, zero bits added to a whole digit; more digits than the width raise STRINGSIZE, then are cut (8.7.2.4) |

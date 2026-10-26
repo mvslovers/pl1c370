@@ -180,7 +180,6 @@ struct dflt {
 enum storage { ST_AUTO, ST_STATIC, ST_BASED, ST_CTL };
 
 #define MAXDIMS 8
-#define MAXINIT 256
 
 struct init_item {
     int rep;               /* the iteration factor, a constant ... */
