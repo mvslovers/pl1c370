@@ -127,8 +127,12 @@ section 3a, has the list).
       any length. Small decisions taken: lower case B4 digits accepted
       (SC26-3114-01 does not say; X constants already took them);
       UTF-8 beyond U+00FF stays bytes
-- [ ] LIFT, next: FILE as a structure member (FILE VARIABLE), AREA
-      with an extent expression and CONTROLLED
+- [x] Tier 129: FILE as a member of a structure or an element of an
+      array, VARIABLE implied (OPT); AUTOMATIC only, ENTRY members
+      stay refused
+- [ ] LIFT, next: string and area extents from expressions
+      (`CHAR(N)` AUTOMATIC, `AREA((expr)) CTL`); PL/I (F) has them for
+      AUTOMATIC and CONTROLLED, PL1C/370 takes constants and REFER only
 - [ ] keyed record I/O of a VARYING string, PUT DATA beyond 3
       dimensions, DEFINED with packed bit strings
 - [ ] 12 KB of code per procedure (three base registers): a large main

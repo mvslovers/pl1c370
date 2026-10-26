@@ -107,6 +107,7 @@ against SC26-3114-01.
 | A cross section as the base of DEFINED: `X(4) DEF A(2,*)` | OPT | Tier 127 | GC33-0009-4, "Simple Defining" (X2(10,10) DEF A(*,*,5)): the k-th asterisk is the defined array's k-th dimension, as kSUB; as many asterisks as dimensions |
 | INITIAL CALL p(args) | OPT | Tier 102 | GC33-0009-4 and SC26-3114-01, INITIAL attribute: p called when the variable is allocated -- AUTOMATIC at the block's entry, CONTROLLED at each ALLOCATE; not for STATIC (the rule) nor, here, BASED; factored names get a call each (Tier 127). The order among the block's AUTOMATIC initializations is that of the declarations |
 | ENTRY ... VARIABLE, FILE VARIABLE | OPT | Tier 75 | AUTOMATIC scalars; assigned, invoked, used in FILE(...); not compared |
+| FILE as a member of a structure or an element of an array: a file variable, VARIABLE implied | OPT | Tier 129 | SC26-3114-01, "VARIABLE Attribute"; in AUTOMATIC storage; an ENTRY member or element stays refused |
 | CONDITION, COND | OPT | Tier 74 | declares a condition name; see the deviations |
 | BASED without a pointer | OPT | Tier 76 | every reference needs a locator qualifier |
 | BASED(p) with a subscripted or qualified pointer: `BASED(P(I))` | OPT | Tier 82 | "element-locator-expression"; PL/I (F) refuses it (IEM0603I) |

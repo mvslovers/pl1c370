@@ -1270,6 +1270,7 @@ static void declare(void)
         struct { char recfm[4]; int blk, rec, bufs, ncp, iarea, opts; } env = { "", 0, 0, 0, 0, 0, 0 };
         const char *extname = NULL;
         /* ANSI's attributes that spell out what PL/I (F) implies (Tier 74) */
+        int implied_var = 0;
         int a_const = 0, a_var = 0, a_parm = 0, a_local = 0, a_struct = 0, a_member = 0,
             a_nonvar = 0, a_cond = 0, based_np = 0;
         int haspic = 0, islabel = 0, ctl = 0, area = 0, offs = 0, clen_given = 0, star = 0,
@@ -1761,9 +1762,22 @@ static void declare(void)
             error_at(line, "%s: CONSTANT and VARIABLE", names[0]);
         if (a_const && !file && !fattr && !entry && !hasret)
             error_at(line, "%s: CONSTANT is for a file or an entry", names[0]);
-        if (a_var && (file || fattr || entry || hasret) && (level > 1 || tmpl.ndims || ctl ||
+        if ((file || fattr) && !a_const && (level > 1 || tmpl.ndims)) {
+            /* a FILE member of a structure or element of an array: a file
+             * variable, VARIABLE implied (SC26-3114-01, "VARIABLE
+             * Attribute") */
+            beyond_f(line, L_OPT, "a file variable");
+            implied_var = 1;
+        }
+        if ((file || fattr) && (data || entry || hasret))
+            error_at(line, "%s: a file takes no other attributes", names[0]);
+        if ((a_var || implied_var) && (file || fattr) && (ctl || stat || tmpl.based ||
+                                                         tmpl.defined))
+            fatal("%s(%d): %s: a FILE variable not AUTOMATIC is not supported yet",
+                  src_name, line, names[0]);
+        if (a_var && (entry || hasret) && (level > 1 || tmpl.ndims || ctl ||
                                                            stat || tmpl.based || tmpl.defined))
-            fatal("%s(%d): %s: an ENTRY or FILE variable in a structure, an array or "
+            fatal("%s(%d): %s: an ENTRY variable in a structure, an array or "
                   "not AUTOMATIC is not supported yet",
                   src_name, line, names[0]);
         if (a_local && !islabel)
@@ -1882,8 +1896,6 @@ static void declare(void)
             }
             s->t.k = TY_NONE;
             if (file || fattr) {
-                if (data || entry || hasret || level > 1 || tmpl.ndims)
-                    error_at(line, "%s: a file takes no other attributes", names[i]);
                 if ((fattr & FL_RECORD) && (fattr & FL_PRINT))
                     error_at(line, "%s: a RECORD file cannot be PRINT", names[i]);
                 if (excl && (fattr & FL_STREAM))
@@ -1891,7 +1903,7 @@ static void declare(void)
                 s->is_file = fattr & FL_RECORD ? fattr : fattr | FL_STREAM;
                 s->t.k = TY_FILE;
                 s->t.p = 4;
-                s->var_ef = a_var;
+                s->var_ef = a_var || implied_var;
                 memcpy(s->env_recfm, env.recfm, sizeof s->env_recfm);
                 s->env_blk = env.blk;
                 s->env_rec = env.rec;
