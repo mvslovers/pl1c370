@@ -39,6 +39,7 @@ static int elem_size(struct type t)
     case TY_PTR:    return 4;
     case TY_PIC:    return pic_length(t);
     case TY_LABEL:  return 8;
+    case TY_FILE:   return 4;           /* a file variable: A(the file) */
     case TY_AREA:   return 16 + t.p;
     case TY_OFFSET: return 4;
     case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN: case TY_CPIC:
@@ -58,6 +59,7 @@ static int elem_align(struct type t)
     case TY_FLTBIN: return flt_long(t) ? 8 : 4;
     case TY_PTR:    return 4;
     case TY_LABEL:  return 4;
+    case TY_FILE:   return 4;
     case TY_AREA:   return 8;
     case TY_OFFSET: return 4;
     case TY_CFIXBIN: case TY_CFIXDEC: case TY_CFLTDEC: case TY_CFLTBIN: case TY_CPIC:
